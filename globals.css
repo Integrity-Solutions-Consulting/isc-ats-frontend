@@ -1,0 +1,200 @@
+/* globals.css — Tailwind v4 (CSS-first). Fuente de verdad de los design tokens.
+ * Ver docs/03_design_tokens.md.
+ *
+ * Patrón: los valores de marca viven como CSS variables en :root y se exponen a
+ * Tailwind con `@theme inline`. Así las utilidades (bg-primary-600, text-ink…)
+ * referencian var(--…) y se pueden cambiar en runtime: editas :root y todo el
+ * sistema se ajusta (escenario "el cliente cambia el azul corporativo").
+ *
+ * En v4 NO hay tailwind.config.ts: la configuración es este archivo.
+ */
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+:root {
+  /* Marca / primary (azul zafiro del logo) */
+  --primary-50:  #F0F4FB;
+  --primary-100: #E2EAF8;
+  --primary-200: #C2D3F2;
+  --primary-300: #8AAAE6;
+  --primary-400: #4B7AD0;
+  --primary-500: #2856B0;
+  --primary-600: #1F4898; /* acción primaria */
+  --primary-700: #163572; /* Sapphire — marca */
+  --primary-800: #162C56; /* Darkslate — sidebar */
+  --primary-900: #0F2342;
+
+  /* Acento (cian del degradado del logo) */
+  --accent-400: #4DB8E6;
+  --accent-500: #24A4DB;
+  --accent-600: #1B85B8;
+
+  /* Neutrales */
+  --bg:         #F5F5F5; /* White Smoke */
+  --surface:    #FFFFFF;
+  --surface-2:  #F1F3F6;
+  --border:     #E2E5EB;
+  --ink:        #1A2332;
+  --ink-muted:  #5B6573;
+  --ink-subtle: #8A92A0;
+
+  /* Semánticos */
+  --success: #16A34A;
+  --warning: #D97706;
+  --danger:  #DC2626;
+  --info:    #24A4DB;
+
+  /* Module accent palette — used only for per-module badge chips in RolesPage.
+   * Each pair: -bg (light tint) + -fg (dark text). Not for semantic status use. */
+  --module-orange-bg: #FFEDD5;
+  --module-orange-fg: #9A3412;
+  --module-purple-bg: #EDE9FE;
+  --module-purple-fg: #5B21B6;
+  --module-neutral-bg: #F1F5F9;
+  --module-neutral-fg: #475569;
+}
+
+/* Exponer las variables a Tailwind. `inline` hace que las utilidades usen
+ * var(--…) directamente, conservando el theming en runtime. */
+@theme inline {
+  --color-primary-50:  var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+  --color-primary-900: var(--primary-900);
+
+  --color-accent-400: var(--accent-400);
+  --color-accent-500: var(--accent-500);
+  --color-accent-600: var(--accent-600);
+
+  --color-bg:        var(--bg);
+  --color-surface:   var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border:    var(--border);
+  --color-ink:        var(--ink);
+  --color-ink-muted:  var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger:  var(--danger);
+  --color-info:    var(--info);
+
+  --color-module-orange-bg: var(--module-orange-bg);
+  --color-module-orange-fg: var(--module-orange-fg);
+  --color-module-purple-bg: var(--module-purple-bg);
+  --color-module-purple-fg: var(--module-purple-fg);
+  --color-module-neutral-bg: var(--module-neutral-bg);
+  --color-module-neutral-fg: var(--module-neutral-fg);
+
+  /* Tipografía */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* Radios */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Sombras (sutiles, herramienta interna) */
+  --shadow-sm: 0 1px 2px rgba(16,35,66,.06);
+  --shadow-md: 0 2px 8px rgba(16,35,66,.08);
+  --shadow-lg: 0 8px 24px rgba(16,35,66,.10);
+  /* Brand-coloured shadow — used on floating panels and pill navbars.
+   * Uses primary-700 (#163572) tinted at low opacity so the shadow
+   * carries the brand blue rather than plain black. */
+  --shadow-brand-sm:  0 4px 12px  rgba(22,53,114,.10);
+  --shadow-brand-md:  0 6px 24px  rgba(22,53,114,.12);
+  --shadow-brand-lg:  0 8px 24px  rgba(22,53,114,.12);
+
+  /* shadcn/ui semantic colors — mapped to the brand primitives in the
+   * :root block below. Edit the brand scale, not these. */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* shadcn extra radius step (sm/md/lg already defined above) */
+  --radius-xl: 16px;
+}
+
+/* shadcn/ui primitives — semantic aliases layered over the brand tokens.
+ * These reference the brand scale in :root above, so changing the corporate
+ * blue in one place cascades to every shadcn component. */
+:root {
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--primary-600);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--primary-50);
+  --accent-foreground: var(--primary-700);
+  --destructive: var(--danger);
+  --destructive-foreground: #FFFFFF;
+  --input: var(--border);
+  --ring: var(--accent-500);
+  --radius: 8px;
+
+  /* Sidebar — dark navy surface (Darkslate) */
+  --sidebar: var(--primary-800);
+  --sidebar-foreground: #E2EAF8;
+  --sidebar-primary: var(--accent-500);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: var(--primary-700);
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: var(--accent-500);
+
+  /* Charts */
+  --chart-1: var(--primary-600);
+  --chart-2: var(--accent-500);
+  --chart-3: var(--primary-400);
+  --chart-4: var(--warning);
+  --chart-5: var(--success);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html { font-family: var(--font-sans); }
+  body { background: var(--color-bg); color: var(--color-ink); }
+  .tabular { font-variant-numeric: tabular-nums; }
+}

@@ -1,0 +1,237 @@
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { backendGet, backendPatch, backendPost } from "@/lib/backendFetch";
+import { decodeUserId } from "@/lib/decodeUserId";
+import { setSessionUserCookie } from "@/lib/sessionCookie";
+import type { SessionUserPayload } from "@/lib/sessionCookie";
+import type { CandidateProfile } from "@/features/candidate-portal/types";
+
+interface BackendCandidateExpanded {
+  id: number;
+  user_id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  cedula: string | null;
+  birth_date: string | null;
+  phone: string | null;
+  city: string | null;
+  province: string | null;
+  education_level: string | null;
+  career: string | null;
+  university: string | null;
+  home_address: string | null;
+  is_studying: boolean;
+  is_working: boolean;
+  current_company: string | null;
+  cv_file_id: number | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export async function GET() {
+  try {
+    const store = await cookies();
+    const token = store.get("access-token")?.value;
+    if (!token) return NextResponse.json(null, { status: 401 });
+
+    const userId = decodeUserId(token);
+    if (!userId) return NextResponse.json(null, { status: 401 });
+
+    const data = await backendGet<{ items: BackendCandidateExpanded[] }>(
+      `/recruitment/candidates/expanded?user_id=${userId}`,
+    );
+
+    const candidate = data.items[0];
+    if (!candidate) return NextResponse.json(null, { status: 404 });
+
+    let cvFileName = "";
+    let cvSizeKb = 0;
+    let cvUpdatedDaysAgo = 0;
+    let cvFileId: number | undefined;
+
+    if (candidate.cv_file_id) {
+      cvFileId = candidate.cv_file_id;
+      try {
+        const fileData = await backendGet<{
+          id: number;
+          original_name: string;
+          size_bytes: number | null;
+          created_at: string;
+        }>(`/storage/files/${candidate.cv_file_id}`);
+        cvFileName = fileData.original_name;
+        cvSizeKb = fileData.size_bytes ? Math.round(fileData.size_bytes / 1024) : 0;
+        const uploadedAt = new Date(fileData.created_at);
+        cvUpdatedDaysAgo = Math.floor((Date.now() - uploadedAt.getTime()) / 86_400_000);
+      } catch {
+        cvFileName = `cv_${candidate.id}.pdf`;
+      }
+    }
+
+    const profile: CandidateProfile = {
+      id: candidate.id,
+      firstName: candidate.first_name,
+      lastName: candidate.last_name,
+      email: candidate.email,
+      phone: candidate.phone ?? "",
+      idNumber: candidate.cedula ?? "",
+      birthDate: candidate.birth_date ?? "",
+      city: candidate.city ?? "",
+      province: candidate.province ?? "",
+      educationLevel: candidate.education_level ?? "",
+      career: candidate.career ?? "",
+      university: candidate.university ?? "",
+      homeAddress: candidate.home_address ?? "",
+      isStudying: candidate.is_studying,
+      isWorking: candidate.is_working,
+      currentCompany: candidate.current_company ?? undefined,
+      cvFileId,
+      cvFileName,
+      cvSizeKb,
+      cvUpdatedDaysAgo,
+      stats: {
+        vacanciesViewed: 0,
+        applicationsCount: 0,
+        interviewsCount: 0,
+        hiredCount: 0,
+      },
+    };
+
+    return NextResponse.json(profile);
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const store = await cookies();
+    const token = store.get("access-token")?.value;
+    if (!token) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
+    const userId = decodeUserId(token);
+    if (!userId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
+    const body = await request.json() as {
+      cvFileId?: number;
+      candidateId: number;
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      homeAddress?: string | null;
+      universityId?: number | null;
+    };
+
+    const { candidateId } = body;
+
+    // Build a snake_case payload with only the fields that were sent
+    const payload: Record<string, unknown> = {};
+    if (body.cvFileId !== undefined) payload.cv_file_id = body.cvFileId;
+    if (body.firstName !== undefined) payload.first_name = body.firstName;
+    if (body.lastName !== undefined) payload.last_name = body.lastName;
+    if (body.phone !== undefined) payload.phone = body.phone;
+    if (body.homeAddress !== undefined) payload.home_address = body.homeAddress;
+    if (body.universityId !== undefined) payload.university_id = body.universityId;
+
+    await backendPatch(`/recruitment/candidates/${candidateId}`, payload);
+    return NextResponse.json({ ok: true });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const store = await cookies();
+    const token = store.get("access-token")?.value;
+    if (!token) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
+    const userId = decodeUserId(token);
+    if (!userId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
+    const body = await request.json();
+    const {
+      firstName,
+      lastName,
+      idNumber,
+      birthDate,
+      phone,
+      homeAddress,
+      educationLevel,
+      completedCareer,
+      universityId,
+      city,
+      province,
+      isStudying,
+      career,
+      isWorking,
+      currentCompany,
+      cvFileId,
+    } = body;
+
+    // Fetch parameters to map names to IDs (city, province, education_level, career)
+    const paramsPage = await backendGet<any>("/org/parameters?size=200");
+    const params = paramsPage.items || [];
+
+    const findId = (type: string, name: string) => {
+      if (!name) return null;
+      const match = params.find(
+        (p: any) =>
+          p.type === type &&
+          (p.name.toLowerCase() === name.toLowerCase() ||
+            p.code.toLowerCase() === name.toLowerCase()),
+      );
+      return match ? match.id : null;
+    };
+
+    // Map properties
+    const cityId = findId("city", city);
+    const provinceId = findId("province", province);
+    const educationLevelId = findId("education_level", educationLevel);
+    // career in step 2 can be 'completedCareer' or the current 'career'
+    const careerName = completedCareer || career;
+    const careerId = findId("career", careerName);
+
+    const payload = {
+      user_id: userId,
+      first_name: firstName,
+      last_name: lastName,
+      cedula: idNumber || null,
+      birth_date: birthDate || null,
+      phone: phone || null,
+      home_address: homeAddress || null,
+      city_id: cityId,
+      province_id: provinceId,
+      education_level_id: educationLevelId,
+      career_id: careerId,
+      // universityId comes directly as a numeric parameter id from the catalog select
+      university_id: universityId ?? null,
+      is_studying: !!isStudying,
+      is_working: !!isWorking,
+      current_company: currentCompany || null,
+      cv_file_id: cvFileId ?? null,
+    };
+
+    const created = await backendPost<any>("/recruitment/candidates", payload);
+
+    // Re-issue session-user cookie with has_profile: true so the server is
+    // the single source of truth — the client must never mutate this cookie.
+    const sessionRaw = store.get("session-user")?.value;
+    if (sessionRaw) {
+      try {
+        const current = JSON.parse(sessionRaw) as SessionUserPayload;
+        const response = NextResponse.json(created, { status: 201 });
+        setSessionUserCookie(response.cookies, { ...current, has_profile: true });
+        return response;
+      } catch {
+        // Malformed cookie — still return success; client will reload via window.location
+      }
+    }
+
+    return NextResponse.json(created, { status: 201 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

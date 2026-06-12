@@ -1,0 +1,41 @@
+/**
+ * Ecuador-specific field validators.
+ *
+ * validateCedulaEC  — Validates an Ecuadorian cédula de identidad (10 digits).
+ *   Algorithm: Luhn-style modulus-10 check used by the Registro Civil.
+ *   - First two digits = province code (01–24).
+ *   - Third digit must be < 6 (natural person) for the standard check digit.
+ *   - Digits 1–9 weighted [2,1,2,1,2,1,2,1,2]; if product ≥ 10 subtract 9.
+ *   - Sum of products mod 10 must equal digit 10.
+ *
+ * validatePhoneEC — Validates an Ecuadorian mobile number.
+ *   Accepts: 09XXXXXXXX (10 digits) or +5939XXXXXXXX (13 chars including "+").
+ */
+
+export function validateCedulaEC(value: string): boolean {
+  if (!/^\d{10}$/.test(value)) return false;
+
+  const province = parseInt(value.slice(0, 2), 10);
+  if (province < 1 || province > 24) return false;
+
+  const thirdDigit = parseInt(value[2], 10);
+  if (thirdDigit >= 6) return false; // Only natural persons; RUC/juridical entities differ
+
+  const coefficients = [2, 1, 2, 1, 2, 1, 2, 1, 2];
+  let total = 0;
+  for (let i = 0; i < 9; i++) {
+    let product = parseInt(value[i], 10) * coefficients[i];
+    if (product >= 10) product -= 9;
+    total += product;
+  }
+
+  const remainder = total % 10;
+  const checkDigit = remainder === 0 ? 0 : 10 - remainder;
+  return checkDigit === parseInt(value[9], 10);
+}
+
+export function validatePhoneEC(value: string): boolean {
+  // Accepts: 09XXXXXXXX  (10 digits, starts with 09)
+  //       or +5939XXXXXXXX (country code +593 then 9XXXXXXXX)
+  return /^09\d{8}$/.test(value) || /^\+5939\d{8}$/.test(value);
+}

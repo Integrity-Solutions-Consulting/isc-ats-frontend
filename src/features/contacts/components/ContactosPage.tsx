@@ -1,0 +1,240 @@
+'use client';
+
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Check, Loader2, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Button } from '@/design-system/ui/button';
+import { Badge } from '@/design-system/ui/badge';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/design-system/ui/dialog';
+import { DataTable, type ColumnDef } from '@/design-system/organisms/DataTable';
+import { FilterBar } from '@/design-system/molecules/FilterBar';
+import { Pagination } from '@/design-system/molecules/Pagination';
+import { Select } from '@/design-system/atoms/Select';
+
+interface Contact {
+  id: string; firstName: string; lastName: string;
+  email: string; clientCompany: string; clientCompanyId: string; is_active: boolean;
+}
+interface Company { id: number; name: string; is_active: boolean; }
+
+const CONTACTS_KEY = ['org', 'contacts'];
+const COMPANIES_KEY = ['org', 'client-companies'];
+const INLINE = 'w-full rounded border border-primary-300 bg-bg px-2 py-1 text-sm text-ink focus:outline-none';
+
+type EditForm = { firstName: string; lastName: string; email: string; clientCompanyId: string };
+
+export function ContactosPage() {
+  const qc = useQueryClient();
+  const { data: contacts = [], isLoading } = useQuery<Contact[]>({
+    queryKey: CONTACTS_KEY,
+    queryFn: () => fetch('/api/org/contacts', { cache: 'no-store' }).then((r) => r.json() as Promise<Contact[]>),
+  });
+  const { data: companies = [] } = useQuery<Company[]>({
+    queryKey: COMPANIES_KEY,
+    queryFn: () => fetch('/api/org/client-companies', { cache: 'no-store' }).then((r) => r.json() as Promise<Company[]>),
+  });
+
+  const createMut = useMutation({
+    mutationFn: async (form: EditForm) => {
+      const res = await fetch('/api/org/contacts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error('Error creating contact');
+    },
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: CONTACTS_KEY }); },
+  });
+
+  const updateMut = useMutation({
+    mutationFn: async ({ id, ...form }: EditForm & { id: string }) => {
+      const res = await fetch(`/api/org/contacts/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error('Error updating contact');
+    },
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: CONTACTS_KEY }); },
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/org/contacts/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Error deleting contact');
+    },
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: CONTACTS_KEY }); },
+  });
+
+  const firstCompanyId = companies[0] ? String(companies[0].id) : '';
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<EditForm>({ firstName: '', lastName: '', email: '', clientCompanyId: '' });
+  const [showModal, setShowModal] = useState(false);
+  const [newForm, setNewForm] = useState<EditForm>({ firstName: '', lastName: '', email: '', clientCompanyId: firstCompanyId });
+  const [search, setSearch] = useState('');
+  const [filterClient, setFilterClient] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 10;
+
+  const startEdit = (c: Contact) => {
+    setEditingId(c.id);
+    setEditForm({ firstName: c.firstName, lastName: c.lastName, email: c.email, clientCompanyId: c.clientCompanyId });
+  };
+  const cancelEdit = () => setEditingId(null);
+  const saveEdit = () => {
+    if (!editingId) return;
+    updateMut.mutate({ id: editingId, ...editForm });
+    setEditingId(null);
+  };
+
+  const handleCreate = () => {
+    if (!newForm.firstName || !newForm.email) return;
+    createMut.mutate(newForm, {
+      onSuccess: () => {
+        setNewForm({ firstName: '', lastName: '', email: '', clientCompanyId: firstCompanyId });
+        setShowModal(false);
+      },
+    });
+  };
+
+  const visible = contacts.filter((c) => {
+    const q = search.toLowerCase();
+    if (q && !c.firstName.toLowerCase().includes(q) && !c.lastName.toLowerCase().includes(q) && !c.email.toLowerCase().includes(q)) return false;
+    if (filterClient && c.clientCompany !== filterClient) return false;
+    if (filterStatus === 'active' && !c.is_active) return false;
+    if (filterStatus === 'inactive' && c.is_active) return false;
+    if (!filterStatus && !c.is_active) return false;
+    return true;
+  });
+
+  const pageCount = Math.ceil(visible.length / PAGE_SIZE);
+  const paginated = visible.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const clientNames = [...new Set(contacts.map((c) => c.clientCompany))];
+
+  const columns: ColumnDef<Contact>[] = [
+    {
+      key: 'firstName', header: 'Nombres',
+      render: (c) => c.id === editingId
+        ? <input value={editForm.firstName} onChange={(e) => setEditForm((f) => ({ ...f, firstName: e.target.value }))} className={INLINE} />
+        : <span className="text-ink-muted">{c.firstName}</span>,
+    },
+    {
+      key: 'lastName', header: 'Apellidos',
+      render: (c) => c.id === editingId
+        ? <input value={editForm.lastName} onChange={(e) => setEditForm((f) => ({ ...f, lastName: e.target.value }))} className={INLINE} />
+        : <span className="text-ink-muted">{c.lastName}</span>,
+    },
+    {
+      key: 'clientCompany', header: 'Cliente',
+      render: (c) => c.id === editingId
+        ? (
+          <select value={editForm.clientCompanyId} onChange={(e) => setEditForm((f) => ({ ...f, clientCompanyId: e.target.value }))}
+            className="w-full rounded border border-primary-300 bg-bg px-2 py-1 text-sm text-ink focus:outline-none">
+            {companies.map((co) => <option key={co.id} value={String(co.id)}>{co.name}</option>)}
+          </select>
+        )
+        : <span className="text-ink-muted">{c.clientCompany}</span>,
+    },
+    {
+      key: 'email', header: 'Correo',
+      render: (c) => c.id === editingId
+        ? <input type="email" value={editForm.email} onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))} className={INLINE} />
+        : <span className="text-ink-muted">{c.email}</span>,
+    },
+    {
+      key: 'status', header: 'Estado',
+      render: (c) => <Badge variant={c.is_active ? 'success' : 'neutral'}>{c.is_active ? 'Activo' : 'Inactivo'}</Badge>,
+    },
+    {
+      key: 'actions', header: '', align: 'right', width: 'w-24',
+      render: (c) => (
+        <div className="flex items-center justify-end gap-1">
+          {c.id === editingId ? (
+            <>
+              <Button variant="ghost" size="icon" aria-label="Guardar" className="size-8" onClick={saveEdit}><Check className="size-4" /></Button>
+              <Button variant="ghost" size="icon" aria-label="Cancelar" className="size-8" onClick={cancelEdit}><X className="size-4" /></Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" size="icon" aria-label="Editar" className="size-8" onClick={() => startEdit(c)}><Pencil className="size-4" /></Button>
+              <Button variant="ghost" size="icon" aria-label="Eliminar" className="size-8 text-danger hover:bg-danger/10 hover:text-danger" onClick={() => deleteMut.mutate(c.id)}>
+                <Trash2 className="size-4" />
+              </Button>
+            </>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center gap-2 py-16 text-sm text-ink-muted"><Loader2 className="size-4 animate-spin" /> Cargando contactos…</div>;
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-ink">Contactos</h1>
+        <Button onClick={() => setShowModal(true)}><Plus className="mr-1.5 size-4" />Nuevo contacto</Button>
+      </div>
+
+      <FilterBar search={{ value: search, onChange: (v) => { setSearch(v); setPage(0); }, placeholder: 'Buscar por nombre o correo…' }}>
+        <Select aria-label="Filtrar por cliente" className="w-auto min-w-[180px]" value={filterClient} onChange={(e) => { setFilterClient(e.target.value); setPage(0); }}>
+          <option value="">Cliente: Todos</option>
+          {clientNames.map((name) => <option key={name} value={name}>{name}</option>)}
+        </Select>
+        <Select aria-label="Filtrar por estado" className="w-auto min-w-[150px]" value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}>
+          <option value="">Estado: Todos</option>
+          <option value="active">Activo</option>
+          <option value="inactive">Inactivo</option>
+        </Select>
+      </FilterBar>
+
+      <DataTable columns={columns} data={paginated} rowKey={(c) => c.id} emptyState={{ title: 'Sin contactos para los filtros seleccionados.' }} />
+
+      <div className="flex items-center justify-between text-sm text-ink-muted">
+        <span>Mostrando {paginated.length} de <span className="font-medium text-ink">{visible.length}</span></span>
+        <Pagination page={page} pageCount={pageCount} onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
+      </div>
+
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Nuevo contacto</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-ink">Nombre</label>
+                <input value={newForm.firstName} onChange={(e) => setNewForm((f) => ({ ...f, firstName: e.target.value }))}
+                  className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-ink">Apellido</label>
+                <input value={newForm.lastName} onChange={(e) => setNewForm((f) => ({ ...f, lastName: e.target.value }))}
+                  className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300" />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-ink">Correo electrónico</label>
+              <input type="email" value={newForm.email} onChange={(e) => setNewForm((f) => ({ ...f, email: e.target.value }))}
+                className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300" />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-ink">Cliente</label>
+              <select value={newForm.clientCompanyId} onChange={(e) => setNewForm((f) => ({ ...f, clientCompanyId: e.target.value }))}
+                className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300">
+                {companies.map((co) => <option key={co.id} value={String(co.id)}>{co.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowModal(false)}>Cancelar</Button>
+            <Button onClick={handleCreate} disabled={!newForm.firstName || !newForm.email || createMut.isPending}>
+              {createMut.isPending ? <Loader2 className="size-4 animate-spin" /> : 'Crear contacto'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
