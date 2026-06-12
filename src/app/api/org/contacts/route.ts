@@ -31,10 +31,16 @@ async function authedFetch(path: string, init?: RequestInit) {
   });
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const clientCompanyId = searchParams.get("client_company_id");
+    const contactsUrl = clientCompanyId
+      ? `/org/contacts?size=100&client_company_id=${clientCompanyId}`
+      : `/org/contacts?size=100`;
+
     const [contactsData, companiesData] = await Promise.all([
-      backendGet<BackendPage<BackendContact>>("/org/contacts?size=100"),
+      backendGet<BackendPage<BackendContact>>(contactsUrl),
       backendGet<BackendPage<BackendCompany>>("/org/client-companies?size=100"),
     ]);
     const companyMap = new Map(companiesData.items.map((c) => [c.id, c.name]));

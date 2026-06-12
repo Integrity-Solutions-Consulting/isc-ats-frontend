@@ -36,3 +36,23 @@ export function useVacancyCatalogs() {
     staleTime: 5 * 60_000,
   });
 }
+
+export function useContactsByClient(clientId: string) {
+  return useQuery({
+    queryKey: ["contacts", "byClient", clientId] as const,
+    queryFn: async () => {
+      const res = await fetch(`/api/org/contacts?client_company_id=${clientId}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) return [] as Array<{ id: string; label: string }>;
+      const rows = (await res.json()) as Array<{
+        id: string;
+        firstName: string;
+        lastName: string;
+      }>;
+      return rows.map((c) => ({ id: c.id, label: `${c.firstName} ${c.lastName}` }));
+    },
+    enabled: Boolean(clientId),
+    staleTime: 5 * 60_000,
+  });
+}

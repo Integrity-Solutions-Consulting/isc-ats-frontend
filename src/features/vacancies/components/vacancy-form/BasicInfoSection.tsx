@@ -1,10 +1,11 @@
 "use client";
 
-import { useFormContext, Controller } from "react-hook-form";
+import { useEffect } from "react";
+import { useFormContext, Controller, useWatch } from "react-hook-form";
 
 import { Combobox } from "@/design-system/atoms/Combobox";
 import { Select } from "@/design-system/atoms/Select";
-import { useVacancyCatalogs } from "../../hooks/useVacancies";
+import { useVacancyCatalogs, useContactsByClient } from "../../hooks/useVacancies";
 import type { VacancyFormValues } from "../../types";
 import { Section, RequiredLabel } from "./FormSection";
 
@@ -13,8 +14,16 @@ export function BasicInfoSection() {
   const {
     control,
     register,
+    setValue,
     formState: { errors },
   } = useFormContext<VacancyFormValues>();
+
+  const selectedClient = useWatch({ name: "clientCompany" });
+  const { data: contacts = [] } = useContactsByClient(selectedClient ?? "");
+
+  useEffect(() => {
+    setValue("contact", "");
+  }, [selectedClient, setValue]);
 
   return (
     <Section num={1} title="Información básica">
@@ -69,10 +78,13 @@ export function BasicInfoSection() {
             id="contact"
             className="mt-1.5"
             aria-invalid={!!errors.contact}
+            disabled={!selectedClient}
             {...register("contact")}
           >
-            <option value="">Selecciona…</option>
-            {catalogs?.contacts.map((c) => (
+            <option value="">
+              {selectedClient ? "Selecciona…" : "Selecciona un cliente primero"}
+            </option>
+            {contacts.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.label}
               </option>
