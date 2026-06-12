@@ -22,7 +22,6 @@ export function PermissionModuleCard({ mod, role, onTogglePerm, onToggleModule }
         <span className="flex-1 text-sm font-semibold text-ink">{mod.label}</span>
         <button
           type="button"
-          disabled={role.isSystem}
           onClick={() => onToggleModule(mod, state !== 'all')}
           className={cn(
             'rounded-full px-2 py-0.5 text-xs font-medium transition-colors disabled:opacity-40',
@@ -47,13 +46,11 @@ export function PermissionModuleCard({ mod, role, onTogglePerm, onToggleModule }
               className={cn(
                 'flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors',
                 checked ? 'bg-primary-50 text-ink' : 'text-ink-muted hover:bg-surface-2',
-                role.isSystem && 'pointer-events-none',
               )}
             >
               <input
                 type="checkbox"
                 checked={checked}
-                disabled={role.isSystem}
                 onChange={(e) => onTogglePerm(perm.id, e.target.checked)}
                 className="h-4 w-4 rounded border-border text-primary-600 focus:ring-primary-300"
               />

@@ -14,8 +14,12 @@ import {
   useDeleteRole,
 } from '../hooks/useRoles';
 
+function copyRole(r: Role): Role {
+  return { ...r, permissionIds: new Set(r.permissionIds) };
+}
+
 export function RolesPage() {
-  const { data: roles = [], isLoading } = useRoles();
+  const { data: roles = [], isLoading, error } = useRoles();
   const createMutation = useCreateRole();
   const updateMutation = useUpdateRole();
   const deleteMutation = useDeleteRole();
@@ -28,9 +32,8 @@ export function RolesPage() {
   // Default selection when roles list is loaded
   useEffect(() => {
     if (roles.length > 0 && !selectedId) {
-      const firstRole = roles[0];
-      setSelectedId(firstRole.id);
-      setDraftRole(JSON.parse(JSON.stringify(firstRole)) as Role);
+      setSelectedId(roles[0].id);
+      setDraftRole(copyRole(roles[0]));
     }
   }, [roles, selectedId]);
 
@@ -39,7 +42,7 @@ export function RolesPage() {
     if (selectedId && roles.length > 0) {
       const activeRole = roles.find((r) => r.id === selectedId);
       if (activeRole && !dirty) {
-        setDraftRole(JSON.parse(JSON.stringify(activeRole)) as Role);
+        setDraftRole(copyRole(activeRole));
       }
     }
   }, [roles, selectedId, dirty]);
@@ -89,7 +92,7 @@ export function RolesPage() {
   function discardChanges() {
     const original = roles.find((r) => r.id === selectedId);
     if (original) {
-      setDraftRole(JSON.parse(JSON.stringify(original)) as Role);
+      setDraftRole(copyRole(original));
     }
     setDirty(false);
   }
@@ -121,8 +124,7 @@ export function RolesPage() {
       const nextSelected = remaining[0]?.id ?? '';
       setSelectedId(nextSelected);
       if (nextSelected) {
-        const nextRole = remaining[0];
-        setDraftRole(JSON.parse(JSON.stringify(nextRole)) as Role);
+        setDraftRole(copyRole(remaining[0]));
       } else {
         setDraftRole(null);
       }
@@ -139,7 +141,7 @@ export function RolesPage() {
     const role = roles.find((r) => r.id === id);
     if (role) {
       setSelectedId(id);
-      setDraftRole(JSON.parse(JSON.stringify(role)) as Role);
+      setDraftRole(copyRole(role));
       setDirty(false);
     }
   }
@@ -148,6 +150,17 @@ export function RolesPage() {
     return (
       <div className="flex h-full items-center justify-center p-10">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-full items-center justify-center p-10">
+        <div className="flex items-center gap-3 rounded-md border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">
+          <AlertCircle className="size-4 shrink-0" />
+          No se pudo cargar los roles. Verificá tu conexión e intentá de nuevo.
+        </div>
       </div>
     );
   }

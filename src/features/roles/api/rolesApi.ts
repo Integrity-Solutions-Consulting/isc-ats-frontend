@@ -24,11 +24,11 @@ function mapRole(r: any): Role {
 
 export async function listRoles(): Promise<Role[]> {
   const res = await fetch('/api/auth/roles', { cache: 'no-store' });
+  const data = await res.json().catch(() => ({}));
   if (res.ok) {
-    const data = (await res.json()) as any[];
-    return data.map(mapRole);
+    return (data as any[]).map(mapRole);
   }
-  return [];
+  throw new Error((data as { error?: string }).error ?? 'Error al cargar los roles');
 }
 
 export async function createRole(data: { name: string; description: string }): Promise<Role> {

@@ -79,7 +79,7 @@ export function RoleEditor({
           </span>
         )}
         <div className="ml-auto flex gap-2">
-          <Button variant="outline" size="sm" onClick={onDiscard} disabled={!dirty || role.isSystem}>
+          <Button variant="outline" size="sm" onClick={onDiscard} disabled={!dirty}>
             Descartar
           </Button>
           <Button
@@ -93,7 +93,7 @@ export function RoleEditor({
             <Trash2 className="mr-1.5 size-3.5" />
             Eliminar rol
           </Button>
-          <Button size="sm" disabled={role.isSystem || !dirty} onClick={onSave}>
+          <Button size="sm" disabled={!dirty} onClick={onSave}>
             <Save className="mr-1.5 size-3.5" />
             Guardar
           </Button>
