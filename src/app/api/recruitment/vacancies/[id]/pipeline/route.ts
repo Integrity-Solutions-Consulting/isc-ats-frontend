@@ -15,12 +15,10 @@ export async function GET(
     );
     return NextResponse.json(data);
   } catch (error) {
-    // Return an empty pipeline so the UI doesn't crash on vacancies with no data
-    const empty: VacancyPipeline = {
-      stages: [],
-      cards: [],
-      rejectionSummary: { total: 0, reasons: [] },
-    };
-    return NextResponse.json(empty);
+    console.error(`[pipeline] vacancy ${id} failed:`, error);
+    return NextResponse.json(
+      { error: String(error) },
+      { status: 502 },
+    );
   }
 }
