@@ -5,6 +5,7 @@ export interface BackendVacancyItem {
   id: number;
   vacancy_name: string;
   client_company: string;
+  contact_id: number;
   contact: string;
   department: string;
   process: string;
@@ -53,7 +54,7 @@ export function mapVacancy(v: BackendVacancyItem, catalogs?: CatalogMaps): Vacan
     career: v.career,
     process: v.process,
     clientCompanyId: catalogs?.companyNameToId.get(v.client_company) ?? "",
-    contactId: catalogs?.contactNameToId.get(v.contact) ?? "",
+    contactId: String(v.contact_id),
     departmentId: catalogs?.deptNameToId.get(v.department) ?? "",
     cityId: catalogs?.cityNameToId.get(v.city) ?? "",
     careerId: catalogs?.careerNameToId.get(v.career) ?? "",
