@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Calendar, Clipboard, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 import { Button } from '@/design-system/ui/button';
 import { cn } from '@/shared/utils';
-import type { CandidateApplication } from '../types';
-import { applySlotSelection } from '../api/candidateApi';
+import type { CandidateApplication, OfferSlot } from '../types';
+import { confirmInterviewOffer } from '../api/candidateApi';
 import { ROUTES } from '@/shared/constants/routes';
 
 interface MyApplicationsPageProps {
@@ -37,17 +39,64 @@ const ACTIVE_STATUSES: CandidateApplication['status'][] = [
 ];
 const FINISHED_STATUSES: CandidateApplication['status'][] = ['hired', 'rejected', 'cancelled'];
 
+// Offered slots arrive as UTC ISO strings. Ecuador is a fixed UTC-5 (no DST);
+// we render the Ecuador wall-clock time by shifting and reading UTC components.
+const EC_OFFSET_MS = 5 * 60 * 60 * 1000;
+
+function ecTime(iso: string): string {
+  return new Date(new Date(iso).getTime() - EC_OFFSET_MS).toISOString().slice(11, 16);
+}
+
+function ecDayKey(iso: string): string {
+  return new Date(new Date(iso).getTime() - EC_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+function ecDayLabel(iso: string): string {
+  const shifted = new Date(new Date(iso).getTime() - EC_OFFSET_MS);
+  // Rebuild a local date from the Ecuador calendar fields so the day label is
+  // correct regardless of the browser timezone (date-only, no time shift).
+  const local = new Date(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate());
+  return format(local, "EEE d 'de' MMM", { locale: es });
+}
+
+function slotKey(slot: OfferSlot): string {
+  return `${slot.start}|${slot.end}`;
+}
+
+interface DayGroup {
+  key: string;
+  label: string;
+  slots: OfferSlot[];
+}
+
+function groupSlotsByDay(slots: OfferSlot[]): DayGroup[] {
+  const byDay = new Map<string, DayGroup>();
+  for (const slot of [...slots].sort((a, b) => a.start.localeCompare(b.start))) {
+    const key = ecDayKey(slot.start);
+    let group = byDay.get(key);
+    if (!group) {
+      group = { key, label: ecDayLabel(slot.start), slots: [] };
+      byDay.set(key, group);
+    }
+    group.slots.push(slot);
+  }
+  return [...byDay.values()];
+}
+
 function ApplicationCard({ app }: { app: CandidateApplication }) {
   const statusConfig = STATUS_CONFIG[app.status];
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<OfferSlot | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [confirmedSlot, setConfirmedSlot] = useState<{ day: string; time: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const offer = app.offer;
+  const dayGroups = offer ? groupSlotsByDay(offer.slots) : [];
 
   const showSlotPicker =
     app.slotStatus === 'pending_selection' &&
-    app.pendingSlots &&
-    app.pendingSlots.length > 0 &&
+    offer !== undefined &&
+    offer.slots.length > 0 &&
     !confirmedSlot;
 
   const showInterviewBanner =
@@ -56,13 +105,18 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
     app.interview !== undefined;
 
   const handleConfirm = async () => {
-    if (!selectedDay || !selectedTime) return;
+    if (!offer || !selectedSlot) return;
     setConfirming(true);
+    setError(null);
     try {
-      await applySlotSelection(app.id, selectedDay, selectedTime);
-      setConfirmedSlot({ day: selectedDay, time: selectedTime });
-      setSelectedDay(null);
-      setSelectedTime(null);
+      await confirmInterviewOffer(offer.interviewId, selectedSlot);
+      setConfirmedSlot({
+        day: ecDayLabel(selectedSlot.start),
+        time: `${ecTime(selectedSlot.start)}–${ecTime(selectedSlot.end)}`,
+      });
+      setSelectedSlot(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo confirmar el horario');
     } finally {
       setConfirming(false);
     }
@@ -149,19 +203,17 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
           </div>
 
           <div className="flex gap-3 flex-wrap">
-            {app.pendingSlots!.map((dayGroup) => (
-              <div key={dayGroup.day} className="flex flex-col gap-1.5">
-                <p className="text-[12px] font-semibold text-primary-800">{dayGroup.day}</p>
-                {dayGroup.slots.map((slot) => {
-                  const isSelected = selectedDay === dayGroup.day && selectedTime === slot;
+            {dayGroups.map((group) => (
+              <div key={group.key} className="flex flex-col gap-1.5">
+                <p className="text-[12px] font-semibold text-primary-800">{group.label}</p>
+                {group.slots.map((slot) => {
+                  const isSelected =
+                    selectedSlot !== null && slotKey(selectedSlot) === slotKey(slot);
                   return (
                     <button
-                      key={slot}
+                      key={slotKey(slot)}
                       type="button"
-                      onClick={() => {
-                        setSelectedDay(dayGroup.day);
-                        setSelectedTime(slot);
-                      }}
+                      onClick={() => setSelectedSlot(slot)}
                       className={cn(
                         'text-[12px] rounded-lg px-2 py-1.5 transition-colors',
                         isSelected
@@ -169,7 +221,7 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
                           : 'bg-white border border-primary-200 text-ink-muted hover:border-primary-700 hover:text-primary-700',
                       )}
                     >
-                      {slot}
+                      {ecTime(slot.start)}–{ecTime(slot.end)}
                     </button>
                   );
                 })}
@@ -177,10 +229,12 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
             ))}
           </div>
 
+          {error && <p className="text-[12px] text-danger">{error}</p>}
+
           <div className="flex justify-end pt-1">
             <button
               type="button"
-              disabled={!selectedDay || !selectedTime || confirming}
+              disabled={!selectedSlot || confirming}
               onClick={handleConfirm}
               className="bg-primary-700 text-white text-[13px] font-semibold rounded-lg px-5 py-2 hover:bg-primary-600 disabled:opacity-40 transition-colors"
             >

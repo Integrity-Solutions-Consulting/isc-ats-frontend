@@ -8,7 +8,7 @@ export async function PATCH(
 ) {
   const { id } = await params;
   try {
-    await backendPatch(`/comms/notifications/${Number(id)}/read`, {});
+    await backendPatch(`/comms/notifications/me/${Number(id)}/read`, {});
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });

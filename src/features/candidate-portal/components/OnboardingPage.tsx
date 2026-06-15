@@ -70,6 +70,9 @@ export function OnboardingPage() {
       }
 
       // --- Phase 2: save profile ---
+      // Step 2 selects now hold catalog parameter ids (as strings); send them as
+      // numeric ids so the backend stores FKs directly — no name→id mapping needed.
+      const toId = (v?: string) => (v ? Number(v) : undefined);
       const body = {
         firstName: step1Values.firstName,
         lastName: step1Values.lastName,
@@ -77,14 +80,13 @@ export function OnboardingPage() {
         birthDate: step1Values.birthDate,
         phone: step1Values.phone,
         homeAddress: step1Values.homeAddress || undefined,
-        educationLevel: step2Values.educationLevel,
-        completedCareer: step2Values.completedCareer || undefined,
-        // university holds the parameter id as string; send as number if present
-        universityId: step2Values.university ? Number(step2Values.university) : undefined,
-        city: step2Values.city,
-        province: step2Values.province || undefined,
+        educationLevelId: toId(step2Values.educationLevel),
+        cityId: toId(step2Values.city),
+        provinceId: toId(step2Values.province),
+        universityId: toId(step2Values.university),
+        // Career: prefer the completed degree, fall back to the one being studied.
+        careerId: toId(step2Values.completedCareer) ?? toId(step2Values.career),
         isStudying: step2Values.isStudying,
-        career: step2Values.career || undefined,
         isWorking: step2Values.isWorking,
         currentCompany: step2Values.currentCompany || undefined,
         cvFileId,
@@ -114,13 +116,13 @@ export function OnboardingPage() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-[500px] rounded-2xl bg-surface p-8 shadow-xl">
+      <div className="w-full max-w-[500px] max-h-[90vh] overflow-y-auto rounded-2xl bg-surface p-6 shadow-xl sm:p-8">
         {error && (
           <div className="mb-4 rounded-lg bg-danger/10 p-3 text-sm text-danger border border-danger/20">
             {error}
           </div>
         )}
-        <ProgressIndicator current={step} />
+        <ProgressIndicator steps={STEPS} current={step} />
 
         <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-subtle">
           Paso {step + 1} de {STEPS.length}

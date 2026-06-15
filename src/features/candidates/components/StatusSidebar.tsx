@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/design-system/ui/badge';
 import { Button } from '@/design-system/ui/button';
 import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
-import type { CandidateStageStatus, PipelineStage } from '@/features/pipeline/types';
+import type { PipelineStage } from '@/features/pipeline/types';
 import {
   useAddToTalentPool,
   useMoveToNextStage,
@@ -34,8 +34,6 @@ export function StatusSidebar({
   otherApplications,
   vacancyId,
   candidateName,
-  candidateInitials,
-  candidateAvatarColor,
   position,
 }: StatusSidebarProps) {
   const router = useRouter();
@@ -258,9 +256,13 @@ export function StatusSidebar({
 
     {showScheduleModal && (
       <AgendarEntrevistaModal
+        applicationId={parseInt(application.id, 10)}
+        processStageId={
+          application.stageId === 'rejected'
+            ? undefined
+            : parseInt(application.stageId, 10)
+        }
         candidateName={candidateName}
-        candidateInitials={candidateInitials}
-        avatarColor={candidateAvatarColor}
         position={position}
         onClose={() => setShowScheduleModal(false)}
       />

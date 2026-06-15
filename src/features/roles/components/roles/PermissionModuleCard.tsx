@@ -1,5 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/shared/utils';
+import { Card } from '@/design-system/ui/card';
 import { type ModuleDef } from './permissions';
 import { type Role } from './mockRoles';
 import { moduleGranted } from './helpers';
@@ -13,7 +14,7 @@ export function PermissionModuleCard({ mod, role, onTogglePerm, onToggleModule }
   const state = moduleGranted(role, mod);
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-4 shadow-sm">
+    <Card padding="sm">
       {/* Module header */}
       <div className="mb-3 flex items-center gap-2 border-b border-border pb-3">
         <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-md text-xs font-bold', mod.accent)}>
@@ -62,6 +63,6 @@ export function PermissionModuleCard({ mod, role, onTogglePerm, onToggleModule }
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 }

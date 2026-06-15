@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { Mail } from 'lucide-react';
 import Link from 'next/link';
 
+
 import { Brand } from '@/design-system/atoms/Brand';
-import { Button } from '@/design-system/ui/button';
 import { ROUTES } from '@/shared/constants/routes';
 
 const RESEND_SECONDS = 45;
@@ -14,6 +14,8 @@ export function EmailVerificationPage({ email = 'tu@correo.com' }: { email?: str
   const [countdown, setCountdown] = useState(RESEND_SECONDS);
   const canResend = countdown <= 0;
   const [resent, setResent] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -21,10 +23,28 @@ export function EmailVerificationPage({ email = 'tu@correo.com' }: { email?: str
     return () => clearTimeout(t);
   }, [countdown]);
 
-  const handleResend = () => {
-    setResent(true);
-    setCountdown(RESEND_SECONDS);
-    setTimeout(() => setResent(false), 3000);
+  const handleResend = async () => {
+    setResendError(null);
+    setResending(true);
+    try {
+      const res = await fetch('/api/auth/resend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setResendError(data.error || 'No se pudo reenviar el correo');
+        return;
+      }
+      setResent(true);
+      setCountdown(RESEND_SECONDS);
+      setTimeout(() => setResent(false), 3000);
+    } catch {
+      setResendError('No se pudo conectar con el servidor');
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
@@ -48,12 +68,6 @@ export function EmailVerificationPage({ email = 'tu@correo.com' }: { email?: str
           Haz clic en el enlace para activar tu cuenta y comenzar a explorar vacantes.
         </p>
 
-        <Link href={ROUTES.candidato.onboarding} className="block">
-          <Button size="lg" className="w-full mb-4">
-            Abrir correo
-          </Button>
-        </Link>
-
         <div className="mb-4 text-sm text-ink-muted">
           {resent ? (
             <span className="text-success font-medium">✓ Correo reenviado</span>
@@ -61,9 +75,10 @@ export function EmailVerificationPage({ email = 'tu@correo.com' }: { email?: str
             <button
               type="button"
               onClick={handleResend}
-              className="font-medium text-primary-600 hover:underline"
+              disabled={resending}
+              className="font-medium text-primary-600 hover:underline disabled:opacity-50"
             >
-              Reenviar correo
+              {resending ? 'Reenviando…' : 'Reenviar correo'}
             </button>
           ) : (
             <span>
@@ -73,6 +88,7 @@ export function EmailVerificationPage({ email = 'tu@correo.com' }: { email?: str
               </span>
             </span>
           )}
+          {resendError && <p className="mt-1 text-danger">{resendError}</p>}
         </div>
 
         <Link

@@ -156,7 +156,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
       <div className="space-y-2.5">
 
         {/* Row 1: Nombres | Apellidos */}
-        <div className="grid grid-cols-2 gap-4 pb-2.5 border-b border-surface-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pb-2.5 border-b border-surface-2">
           <div>
             <FieldLabel htmlFor={editing ? 'edit-firstName' : undefined}>Nombres</FieldLabel>
             {editing
@@ -174,7 +174,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
         </div>
 
         {/* Row 2: Cédula (read-only) | Fecha de nacimiento (read-only) */}
-        <div className="grid grid-cols-2 gap-4 pb-2.5 border-b border-surface-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pb-2.5 border-b border-surface-2">
           <div>
             <FieldLabel>Cédula</FieldLabel>
             <FieldValue>{profile.idNumber}</FieldValue>
@@ -186,7 +186,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
         </div>
 
         {/* Row 3: Celular | Correo (email always read-only — login identity) */}
-        <div className="grid grid-cols-2 gap-4 pb-2.5 border-b border-surface-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pb-2.5 border-b border-surface-2">
           <div>
             <FieldLabel htmlFor={editing ? 'edit-phone' : undefined}>Celular</FieldLabel>
             {editing
@@ -228,7 +228,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
           </h4>
 
           {/* Row 5: Nivel de educación | Carrera */}
-          <div className="grid grid-cols-2 gap-4 pb-2.5 border-b border-surface-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pb-2.5 border-b border-surface-2">
             <div>
               <FieldLabel>Nivel de educación</FieldLabel>
               <FieldValue>{profile.educationLevel}</FieldValue>
@@ -262,7 +262,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
           </div>
 
           {/* Row 6: ¿Estudia? | ¿Trabaja? */}
-          <div className="grid grid-cols-2 gap-4 pb-2.5 border-b border-surface-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pb-2.5 border-b border-surface-2">
             <div>
               <FieldLabel>¿Estudia?</FieldLabel>
               <StatusPill active={profile.isStudying} labelYes="Sí, actualmente" labelNo="No" />

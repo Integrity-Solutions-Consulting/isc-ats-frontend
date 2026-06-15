@@ -4,7 +4,7 @@ import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from 
 import { useState } from 'react';
 
 import { Button } from '@/design-system/ui/button';
-import { cn } from '@/shared/utils';
+import { TogglePill } from '@/design-system/molecules/TogglePill';
 import { useMovePipelineCard, usePipeline } from '../hooks/usePipeline';
 import type { PipelineCard } from '../types';
 import { CandidateCard } from './CandidateCard';
@@ -92,26 +92,16 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
       {/* Filter pills */}
       <div className="flex items-center justify-end gap-2">
         <span className="text-xs text-ink-muted">Filtrar por match:</span>
-        {(
-          [
-            { key: 'all', label: 'Sin filtro' },
-            { key: 'high', label: 'Match > 75%' },
-            { key: 'medium', label: 'Match > 50%' },
-          ] as { key: MatchFilter; label: string }[]
-        ).map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setMatchFilter(key)}
-            className={cn(
-              'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-              matchFilter === key
-                ? 'bg-primary-600 text-white'
-                : 'bg-surface-2 text-ink-muted hover:bg-primary-50 hover:text-primary-700',
-            )}
-          >
-            {label}
-          </button>
-        ))}
+        <TogglePill
+          label="Filtrar por match"
+          value={matchFilter}
+          onValueChange={(v) => setMatchFilter(v as MatchFilter)}
+          items={[
+            { value: 'all', label: 'Sin filtro' },
+            { value: 'high', label: 'Match > 75%' },
+            { value: 'medium', label: 'Match > 50%' },
+          ]}
+        />
       </div>
 
       {/* Board */}

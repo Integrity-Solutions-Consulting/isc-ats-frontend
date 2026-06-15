@@ -10,7 +10,7 @@ interface MyProfilePageProps {
 
 export function MyProfilePage({ profile }: MyProfilePageProps) {
   return (
-    <div className="grid grid-cols-[1fr_0.67fr] gap-5">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_0.67fr]">
       {/* ── LEFT COLUMN ─────────────────────────────────────────────────── */}
       <div>
         <PersonalInfoCard profile={profile} />

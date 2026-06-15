@@ -29,9 +29,18 @@ export interface CandidateVacancy {
   applicationStatus: 'none' | 'applied' | 'closing_soon';
 }
 
-export interface OfferedSlot {
-  day: string;
-  slots: string[];
+/** A single offered interview slot — UTC ISO-8601 datetimes. */
+export interface OfferSlot {
+  start: string;
+  end: string;
+}
+
+/** An open interview offer (Mode B) the candidate still has to respond to. */
+export interface InterviewOffer {
+  interviewId: number;
+  slots: OfferSlot[];
+  /** Offer expiry (UTC ISO-8601), or null when none. */
+  expiresAt: string | null;
 }
 
 export interface VacancyStage {
@@ -61,7 +70,8 @@ export interface CandidateApplication {
   currentStageId: number | null;
   salaryExpectation: number;
   slotStatus: 'pending_selection' | 'confirmed' | null;
-  pendingSlots?: OfferedSlot[];
+  /** Present when the candidate has an open interview offer to respond to. */
+  offer?: InterviewOffer;
   interview?: {
     date: string;
     time: string;

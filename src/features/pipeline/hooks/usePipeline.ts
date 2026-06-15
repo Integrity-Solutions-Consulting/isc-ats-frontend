@@ -99,6 +99,16 @@ export function useMovePipelineCard(): UseMutationResult<
         );
       }
     },
+
+    onSettled: (_data, _err, _vars, context) => {
+      // Refetch the pipeline so server-computed aggregates (hiredCount,
+      // rejectionSummary, match) reflect the move — the optimistic update only
+      // shifts the card's stageId and cannot recompute those counts.
+      const ctx = context as { targetVacancyId?: string } | undefined;
+      if (ctx?.targetVacancyId) {
+        queryClient.invalidateQueries({ queryKey: pipelineKeys.pipeline(ctx.targetVacancyId) });
+      }
+    },
   });
 }
 

@@ -51,10 +51,17 @@ export async function applyToVacancy(vacancyId: string, salaryExpectation: numbe
   }
 }
 
-export async function applySlotSelection(
-  _appId: string,
-  _day: string,
-  _slot: string,
+export async function confirmInterviewOffer(
+  interviewId: number,
+  slot: { start: string; end: string },
 ): Promise<void> {
-  // Slot selection not yet implemented in the backend.
+  const res = await fetch(`/api/recruitment/interviews/me/${interviewId}/confirm`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(slot),
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(data.error ?? 'No se pudo confirmar el horario');
+  }
 }

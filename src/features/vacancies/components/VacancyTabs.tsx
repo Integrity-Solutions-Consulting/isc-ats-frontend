@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-import { cn } from '@/shared/utils';
+import { Tabs } from '@/design-system/molecules/Tabs';
 import type { Vacancy } from '@/features/vacancies/types';
 import { PipelineBoard } from '@/features/pipeline/components/PipelineBoard';
 import { DetallesTab } from './DetallesTab';
@@ -12,17 +12,12 @@ import { ImagenesTab } from './ImagenesTab';
 
 type TabKey = 'pipeline' | 'detalles' | 'imagenes' | 'documentos';
 
-interface Tab {
-  key: TabKey;
-  label: string;
-}
-
-const TABS: Tab[] = [
-  { key: 'pipeline', label: 'Pipeline' },
-  { key: 'detalles', label: 'Detalles de la vacante' },
-  { key: 'imagenes', label: 'Imágenes publicitarias' },
-  { key: 'documentos', label: 'Documentos' },
-];
+const TAB_ITEMS = [
+  { value: 'pipeline',   label: 'Pipeline' },
+  { value: 'detalles',   label: 'Detalles de la vacante' },
+  { value: 'imagenes',   label: 'Imágenes publicitarias' },
+  { value: 'documentos', label: 'Documentos' },
+] satisfies { value: TabKey; label: string }[];
 
 interface VacancyTabsProps {
   vacancy: Vacancy;
@@ -35,40 +30,33 @@ export function VacancyTabs({ vacancy, initialTab }: VacancyTabsProps) {
   const searchParams = useSearchParams();
 
   const rawTab = searchParams.get('tab') ?? initialTab;
-  const activeTab = TABS.some((t) => t.key === rawTab)
+  const activeTab = TAB_ITEMS.some((t) => t.value === rawTab)
     ? (rawTab as TabKey)
     : 'pipeline';
 
-  function handleTabClick(key: TabKey) {
-    router.replace(`${pathname}?tab=${key}`);
+  function handleTabChange(value: string) {
+    router.replace(`${pathname}?tab=${value}`);
   }
 
   return (
     <div className="flex flex-col gap-0">
       {/* Tab bar */}
-      <div className="flex border-b border-border">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => handleTabClick(tab.key)}
-            className={cn(
-              'relative px-4 py-2.5 text-sm font-medium transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400',
-              activeTab === tab.key
-                ? 'text-primary-700'
-                : 'text-ink-muted hover:text-ink',
-            )}
-          >
-            {tab.label}
-            {activeTab === tab.key && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full bg-primary-600" />
-            )}
-          </button>
-        ))}
+      <div className="border-b border-border pb-0">
+        <Tabs
+          items={TAB_ITEMS}
+          value={activeTab}
+          onValueChange={handleTabChange}
+          className="-mb-px"
+        />
       </div>
 
       {/* Tab panel */}
-      <div className="pt-4">
+      <div
+        role="tabpanel"
+        id={`panel-${activeTab}`}
+        aria-labelledby={`tab-${activeTab}`}
+        className="pt-4"
+      >
         <Suspense
           fallback={
             <div className="flex h-40 items-center justify-center">

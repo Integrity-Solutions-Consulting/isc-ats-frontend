@@ -23,7 +23,7 @@ export function Step1PersonalData({ defaultValues, onNext }: {
 
   return (
     <form onSubmit={handleSubmit(onNext)} noValidate className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="s1-firstName">Nombres *</Label>
           <Input id="s1-firstName" placeholder="Juan" {...register('firstName')} />
@@ -35,7 +35,7 @@ export function Step1PersonalData({ defaultValues, onNext }: {
           <FieldError message={errors.lastName?.message} />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="s1-idNumber">Cédula o pasaporte *</Label>
           <Input id="s1-idNumber" placeholder="1234567890" {...register('idNumber')} />

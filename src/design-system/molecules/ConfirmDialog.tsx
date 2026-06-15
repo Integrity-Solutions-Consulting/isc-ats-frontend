@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/design-system/ui/dialog";
 import { Button } from "@/design-system/ui/button";
+import { Modal } from "./Modal";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -23,7 +16,7 @@ interface ConfirmDialogProps {
 }
 
 /**
- * Accessible confirmation dialog built on the shadcn Dialog primitive.
+ * Accessible confirmation dialog built on Modal (which facades ui/dialog).
  * Replace every `window.confirm` call with this two-step pattern:
  *   1. User triggers an action → set `open = true` and store pending context.
  *   2. User clicks Confirm → call `onConfirm` which runs the actual action.
@@ -44,13 +37,14 @@ export function ConfirmDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          {description && <DialogDescription>{description}</DialogDescription>}
-        </DialogHeader>
-        <DialogFooter>
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={title}
+      description={description}
+      showClose={false}
+      footer={
+        <>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {cancelLabel}
           </Button>
@@ -60,8 +54,8 @@ export function ConfirmDialog({
           >
             {confirmLabel}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </>
+      }
+    />
   );
 }

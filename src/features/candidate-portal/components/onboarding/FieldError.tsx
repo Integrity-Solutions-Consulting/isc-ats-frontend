@@ -1,4 +1,2 @@
-export function FieldError({ message }: { message?: string }) {
-  if (!message) return null;
-  return <p className="text-xs text-danger mt-1">{message}</p>;
-}
+// Shim — FieldError was promoted to design-system/atoms. Import from @/design-system/atoms/FieldError.
+export { FieldError } from "@/design-system/atoms/FieldError";

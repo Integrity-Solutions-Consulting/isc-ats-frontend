@@ -158,41 +158,19 @@ export async function POST(request: Request) {
       birthDate,
       phone,
       homeAddress,
-      educationLevel,
-      completedCareer,
+      educationLevelId,
+      careerId,
       universityId,
-      city,
-      province,
+      cityId,
+      provinceId,
       isStudying,
-      career,
       isWorking,
       currentCompany,
       cvFileId,
     } = body;
 
-    // Fetch parameters to map names to IDs (city, province, education_level, career)
-    const paramsPage = await backendGet<any>("/org/parameters?size=200");
-    const params = paramsPage.items || [];
-
-    const findId = (type: string, name: string) => {
-      if (!name) return null;
-      const match = params.find(
-        (p: any) =>
-          p.type === type &&
-          (p.name.toLowerCase() === name.toLowerCase() ||
-            p.code.toLowerCase() === name.toLowerCase()),
-      );
-      return match ? match.id : null;
-    };
-
-    // Map properties
-    const cityId = findId("city", city);
-    const provinceId = findId("province", province);
-    const educationLevelId = findId("education_level", educationLevel);
-    // career in step 2 can be 'completedCareer' or the current 'career'
-    const careerName = completedCareer || career;
-    const careerId = findId("career", careerName);
-
+    // The onboarding form sends catalog parameter ids directly, so the FKs map
+    // straight through — no name lookup against /org/parameters is needed.
     const payload = {
       user_id: userId,
       first_name: firstName,
@@ -201,11 +179,10 @@ export async function POST(request: Request) {
       birth_date: birthDate || null,
       phone: phone || null,
       home_address: homeAddress || null,
-      city_id: cityId,
-      province_id: provinceId,
-      education_level_id: educationLevelId,
-      career_id: careerId,
-      // universityId comes directly as a numeric parameter id from the catalog select
+      city_id: cityId ?? null,
+      province_id: provinceId ?? null,
+      education_level_id: educationLevelId ?? null,
+      career_id: careerId ?? null,
       university_id: universityId ?? null,
       is_studying: !!isStudying,
       is_working: !!isWorking,
@@ -213,7 +190,10 @@ export async function POST(request: Request) {
       cv_file_id: cvFileId ?? null,
     };
 
-    const created = await backendPost<any>("/recruitment/candidates", payload);
+    const created = await backendPost<Record<string, unknown>>(
+      "/recruitment/candidates",
+      payload,
+    );
 
     // Re-issue session-user cookie with has_profile: true so the server is
     // the single source of truth — the client must never mutate this cookie.

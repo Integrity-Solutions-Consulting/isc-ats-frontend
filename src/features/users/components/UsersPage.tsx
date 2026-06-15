@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Plus, Power, PowerOff } from 'lucide-react';
+import { Plus, Power, Trash2 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Badge } from '@/design-system/ui/badge';
@@ -72,6 +72,9 @@ export function UsersPage() {
   const { data: roles = [] } = useQuery({ queryKey: ['roles-simple'], queryFn: listRoles });
 
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  // Read the id from a client-only cookie post-mount; reading it during render
+  // would cause a hydration mismatch (the server can't see this cookie).
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only cookie sync, hydration-safe
   useEffect(() => { setCurrentUserId(readCurrentUserId()); }, []);
 
   // Create user modal state
@@ -220,7 +223,7 @@ export function UsersPage() {
               disabled={toggleMutation.isPending || isSelf}
               onClick={() => handleToggle(user)}
             >
-              {isActive ? <PowerOff className="size-4" /> : <Power className="size-4" />}
+              {isActive ? <Trash2 className="size-4" /> : <Power className="size-4" />}
             </Button>
           </div>
         );
@@ -331,7 +334,8 @@ export function UsersPage() {
           <DialogHeader>
             <DialogTitle>Nuevo usuario</DialogTitle>
             <DialogDescription>
-              El usuario podrá iniciar sesión de inmediato con la contraseña que indiques.
+              Definí el rol y la contraseña inicial. Podés activar la cuenta ahora o dejarla
+              inactiva para habilitarla más tarde.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -375,7 +379,10 @@ export function UsersPage() {
                 className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300"
               >
                 <option value="">Seleccionar rol…</option>
-                {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                {/* Staff-only: the candidate role is portal-candidate, never assignable here. */}
+                {roles
+                  .filter((r) => !/candidat/i.test(r.name))
+                  .map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
               {formErrors.role && <p className="mt-1 text-xs text-danger">{formErrors.role}</p>}
             </div>

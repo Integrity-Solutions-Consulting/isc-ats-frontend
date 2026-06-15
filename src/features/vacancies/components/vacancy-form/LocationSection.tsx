@@ -1,19 +1,19 @@
 "use client";
 
-import { useFormContext } from "react-hook-form";
+import { useFormContext, Controller } from "react-hook-form";
 
 import { Input } from "@/design-system/ui/input";
 import { Label } from "@/design-system/ui/label";
-import { Select } from "@/design-system/atoms/Select";
+import { Combobox } from "@/design-system/molecules/Combobox";
 import { cn } from "@/shared/utils";
 import { useVacancyCatalogs } from "../../hooks/useVacancies";
-import { WORK_MODE_LABEL } from "../../labels";
 import type { VacancyFormValues } from "../../types";
 import { Section, RequiredLabel } from "./FormSection";
 
 export function LocationSection() {
   const { data: catalogs } = useVacancyCatalogs();
   const {
+    control,
     register,
     setValue,
     watch,
@@ -33,19 +33,22 @@ export function LocationSection() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <RequiredLabel htmlFor="city">Ciudad de trabajo</RequiredLabel>
-          <Select
-            id="city"
-            className="mt-1.5"
-            aria-invalid={!!errors.city}
-            {...register("city")}
-          >
-            <option value="">Selecciona…</option>
-            {catalogs?.cities.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </Select>
+          <Controller
+            name="city"
+            control={control}
+            render={({ field }) => (
+              <Combobox
+                id="city"
+                className="mt-1.5"
+                valueKey="id"
+                options={catalogs?.cities ?? []}
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="Selecciona…"
+                aria-invalid={!!errors.city}
+              />
+            )}
+          />
           {errors.city && (
             <p className="mt-1 text-xs text-danger">{errors.city.message}</p>
           )}
@@ -97,19 +100,22 @@ export function LocationSection() {
 
         <div>
           <RequiredLabel htmlFor="career">Carrera requerida</RequiredLabel>
-          <Select
-            id="career"
-            className="mt-1.5"
-            aria-invalid={!!errors.career}
-            {...register("career")}
-          >
-            <option value="">Selecciona…</option>
-            {catalogs?.careers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </Select>
+          <Controller
+            name="career"
+            control={control}
+            render={({ field }) => (
+              <Combobox
+                id="career"
+                className="mt-1.5"
+                valueKey="id"
+                options={catalogs?.careers ?? []}
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="Selecciona…"
+                aria-invalid={!!errors.career}
+              />
+            )}
+          />
           {errors.career && (
             <p className="mt-1 text-xs text-danger">{errors.career.message}</p>
           )}

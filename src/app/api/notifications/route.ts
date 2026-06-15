@@ -30,7 +30,7 @@ export async function GET() {
     if (!userId) return NextResponse.json([], { status: 401 });
 
     const data = await backendGet<BackendPage<BackendNotification>>(
-      `/comms/notifications?recipient_id=${userId}&size=50`,
+      `/comms/notifications/me?size=50`,
     );
 
     const notifications: Notification[] = data.items.map((n) => ({
@@ -54,11 +54,11 @@ export async function PATCH() {
     if (!userId) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
     const unread = await backendGet<BackendPage<BackendNotification>>(
-      `/comms/notifications?recipient_id=${userId}&unread_only=true&size=100`,
+      `/comms/notifications/me?unread_only=true&size=100`,
     );
 
     await Promise.all(
-      unread.items.map((n) => backendPatch(`/comms/notifications/${n.id}/read`, {})),
+      unread.items.map((n) => backendPatch(`/comms/notifications/me/${n.id}/read`, {})),
     );
 
     return NextResponse.json({ ok: true });

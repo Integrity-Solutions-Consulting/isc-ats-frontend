@@ -5,6 +5,11 @@ export const metadata: Metadata = {
   title: 'Verifica tu correo · Bolsa de Empleo',
 };
 
-export default function VerificationPage() {
-  return <EmailVerificationPage />;
+export default async function VerificationPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ email?: string }>;
+}) {
+  const { email } = await searchParams;
+  return <EmailVerificationPage email={email} />;
 }

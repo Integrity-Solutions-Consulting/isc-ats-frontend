@@ -8,24 +8,22 @@ import { format, isAfter, isToday, isYesterday, parseISO, startOfWeek } from 'da
 import { es } from 'date-fns/locale';
 
 import { cn } from '@/shared/utils';
+import { Brand } from '@/design-system/atoms/Brand';
 import { ROUTES } from '@/shared/constants/routes';
 import { logout } from '@/features/auth/api/authApi';
 import { getClientSessionUser } from '@/shared/constants/mockSession';
+import {
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotifications,
+} from '@/features/notifications/hooks/useNotifications';
+import type { Notification } from '@/features/notifications/types';
 import { getMyProfile } from '../api/candidateApi';
 
 const NAV_LINKS = [
   { href: ROUTES.candidato.vacantes, label: 'Vacantes' },
   { href: ROUTES.candidato.misPostulaciones, label: 'Mis postulaciones' },
 ];
-
-interface Notification {
-  id: string;
-  read: boolean;
-  title: string;
-  body: string;
-  createdAt: string;
-}
-
 
 function groupByDate(notifications: Notification[]): { label: string; items: Notification[] }[] {
   const now = new Date();
@@ -67,13 +65,18 @@ export function TopNav() {
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAvatar, setShowAvatar] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { data: notifications = [] } = useNotifications();
+  const markAllReadMutation = useMarkAllNotificationsRead();
+  const markReadMutation = useMarkNotificationRead();
   const [user, setUser] = useState<{ name: string; initials: string } | null>(null);
 
   useEffect(() => {
-    // 1. Fallback to email-derived name from session cookie
+    // 1. Fallback to email-derived name from session cookie. Done post-mount on
+    // purpose: the cookie is a client-only external source, and reading it during
+    // render would cause a hydration mismatch (server has no access to it).
     const sessionUser = getClientSessionUser();
     if (sessionUser) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from a client-only cookie, hydration-safe
       setUser(sessionUser);
     }
 
@@ -98,9 +101,8 @@ export function TopNav() {
   const unreadCount = notifications.filter((n) => !n.read).length;
   const groups = groupByDate(notifications);
 
-  const markAllRead = () => setNotifications((ns) => ns.map((n) => ({ ...n, read: true })));
-  const markRead = (id: string) =>
-    setNotifications((ns) => ns.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  const markAllRead = () => markAllReadMutation.mutate();
+  const markRead = (id: string) => markReadMutation.mutate(id);
 
   const handleLogout = async () => {
     await logout();
@@ -111,21 +113,16 @@ export function TopNav() {
     <div className="w-full pt-5 pb-4 flex justify-center sticky top-0 z-40">
       <div className="bg-white/90 backdrop-blur-md border border-white/95 rounded-[100px] shadow-brand-md px-2 py-[5px] pl-4 flex items-center gap-3">
 
-        {/* Logo */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="w-[29px] h-[29px] bg-primary-700 rounded-[7px] flex items-center justify-center">
-            <div className="w-[15px] h-[15px] border-2 border-white rotate-45" />
-          </div>
-          <div className="flex flex-col leading-tight">
-            <span className="text-[12px] font-bold text-primary-800">Integrity Solutions</span>
-            <span className="text-[10px] text-ink-subtle">Mi Camello</span>
-          </div>
+        {/* Logo — same corporate lockup as the public header */}
+        <div className="shrink-0">
+          <Brand tone="header" subtitle="Mi Camello" />
         </div>
 
-        <div className="w-px h-8 bg-primary-800/10" />
+        {/* Divider + inline nav: desktop only. On mobile these live in BottomNav. */}
+        <div className="hidden w-px h-8 bg-primary-800/10 md:block" />
 
         {/* Nav links */}
-        <nav className="flex items-center gap-1">
+        <nav className="hidden items-center gap-1 md:flex">
           {NAV_LINKS.map(({ href, label }) => {
             const isActive = pathname.startsWith(href);
             return (
@@ -167,7 +164,7 @@ export function TopNav() {
             </button>
 
             {showNotifications && (
-              <div className="absolute right-0 top-[calc(100%+12px)] w-[360px] bg-white/95 backdrop-blur-md rounded-xl border border-primary-200 shadow-brand-lg overflow-hidden z-50 flex flex-col">
+              <div className="absolute right-0 top-[calc(100%+12px)] w-[calc(100vw-2rem)] max-w-[360px] bg-white/95 backdrop-blur-md rounded-xl border border-primary-200 shadow-brand-lg overflow-hidden z-50 flex flex-col">
                 {/* Header */}
                 <div className="flex items-center gap-2.5 px-4 py-3 border-b border-primary-200">
                   <span className="text-[15px] font-bold text-primary-800">Notificaciones</span>

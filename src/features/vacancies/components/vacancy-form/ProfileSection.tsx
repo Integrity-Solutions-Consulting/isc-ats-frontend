@@ -5,7 +5,7 @@ import { useFormContext } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 
 import { Label } from "@/design-system/ui/label";
-import { Select } from "@/design-system/atoms/Select";
+import { Combobox } from "@/design-system/molecules/Combobox";
 import { TagInput } from "@/design-system/molecules/TagInput";
 import { listTemplates } from "@/features/profile-templates/api/profileTemplatesApi";
 import type { ProfileTemplateRecord } from "@/features/profile-templates/api/mockData";
@@ -46,19 +46,15 @@ export function ProfileSection() {
       <div className="mb-4">
         <Label htmlFor="profileTemplate">Cargar desde plantilla</Label>
         <div className="mt-1.5 flex items-center gap-2">
-          <Select
+          <Combobox
             id="profileTemplate"
             className="flex-1"
+            valueKey="id"
+            options={filteredTemplates.map((t) => ({ id: t.id, label: t.name }))}
             value={appliedTemplate?.id ?? ""}
-            onChange={(e) => applyTemplate(e.target.value)}
-          >
-            <option value="">Seleccionar plantilla…</option>
-            {filteredTemplates.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </Select>
+            onChange={applyTemplate}
+            placeholder="Seleccionar plantilla…"
+          />
           {appliedTemplate && (
             <span className="shrink-0 rounded-md bg-primary-50 px-2.5 py-1.5 text-xs text-primary-700">
               Cargado: {appliedTemplate.name}

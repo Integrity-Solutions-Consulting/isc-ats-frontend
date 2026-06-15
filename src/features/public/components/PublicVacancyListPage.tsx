@@ -34,11 +34,14 @@ export function PublicVacancyListPage({ vacancies }: PublicVacancyListPageProps)
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-[26px] font-bold text-ink leading-tight">
+      <div className="mx-auto max-w-2xl pt-2 text-center">
+        <h1 className="text-[28px] font-bold leading-tight text-primary-800 sm:text-[32px]">
           Encuentra tu próxima oportunidad
         </h1>
-        <p className="text-ink-muted mt-1">Vacantes disponibles</p>
+        <p className="mt-2 text-ink-muted">
+          Explora las vacantes disponibles en{' '}
+          <span className="font-semibold text-primary-700">Integrity Solutions</span>
+        </p>
       </div>
 
       <div className="bg-surface shadow-sm rounded-lg p-4 flex flex-col sm:flex-row gap-3">
@@ -86,14 +89,9 @@ export function PublicVacancyListPage({ vacancies }: PublicVacancyListPageProps)
             vacancy={vacancy}
             onClick={() => handleCardClick(vacancy.id)}
             footer={
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] text-ink-muted">
-                  Publicada hace {vacancy.publishedDaysAgo} día{vacancy.publishedDaysAgo !== 1 ? 's' : ''}
-                </span>
-                <span className="text-[13px] font-semibold text-primary-700">
-                  Ver detalles →
-                </span>
-              </div>
+              <span className="text-[12px] text-ink-muted">
+                Publicada hace {vacancy.publishedDaysAgo} día{vacancy.publishedDaysAgo !== 1 ? 's' : ''}
+              </span>
             }
           />
         ))}

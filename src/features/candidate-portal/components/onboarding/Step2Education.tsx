@@ -8,14 +8,29 @@ import { Input } from '@/design-system/ui/input';
 import { Label } from '@/design-system/ui/label';
 import { cn } from '@/shared/utils';
 import { step2Schema, type Step2Values, type Step2FormValues } from './schemas';
-import { EDUCATION_OPTIONS, CAREERS, CITIES, PROVINCE_OPTIONS } from './constants';
 import { FieldError } from './FieldError';
 
-interface UniversityOption {
+interface CatalogOption {
   id: number;
   code: string;
   name: string;
 }
+
+interface Catalogs {
+  cities: CatalogOption[];
+  provinces: CatalogOption[];
+  educationLevels: CatalogOption[];
+  careers: CatalogOption[];
+  universities: CatalogOption[];
+}
+
+const EMPTY_CATALOGS: Catalogs = {
+  cities: [],
+  provinces: [],
+  educationLevels: [],
+  careers: [],
+  universities: [],
+};
 
 function ToggleCards({ value, onChange, options, error }: {
   value: boolean | null;
@@ -52,16 +67,22 @@ export function Step2Education({ defaultValues, onNext, onBack }: {
   onNext: (data: Step2Values) => void;
   onBack: () => void;
 }) {
-  const [universities, setUniversities] = useState<UniversityOption[]>([]);
+  const [catalogs, setCatalogs] = useState<Catalogs>(EMPTY_CATALOGS);
 
   useEffect(() => {
     fetch('/api/catalogs/registration')
       .then((r) => r.json())
-      .then((data: { universities?: UniversityOption[] }) => {
-        if (data.universities) setUniversities(data.universities);
+      .then((data: Partial<Catalogs>) => {
+        setCatalogs({
+          cities: data.cities ?? [],
+          provinces: data.provinces ?? [],
+          educationLevels: data.educationLevels ?? [],
+          careers: data.careers ?? [],
+          universities: data.universities ?? [],
+        });
       })
       .catch(() => {
-        // Non-blocking — form still works without the catalog
+        // Non-blocking — form still renders, selects stay empty until retried
       });
   }, []);
 
@@ -86,7 +107,7 @@ export function Step2Education({ defaultValues, onNext, onBack }: {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="s2-educationLevel">Último nivel de educación finalizado *</Label>
           <select
@@ -95,7 +116,9 @@ export function Step2Education({ defaultValues, onNext, onBack }: {
             className="w-full h-10 rounded-md border border-border bg-bg px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">Selecciona un nivel</option>
-            {EDUCATION_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+            {catalogs.educationLevels.map((o) => (
+              <option key={o.id} value={String(o.id)}>{o.name}</option>
+            ))}
           </select>
           <FieldError message={errors.educationLevel?.message} />
         </div>
@@ -107,7 +130,9 @@ export function Step2Education({ defaultValues, onNext, onBack }: {
             className="w-full h-10 rounded-md border border-border bg-bg px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">Selecciona</option>
-            {CAREERS.map((c) => <option key={c} value={c}>{c}</option>)}
+            {catalogs.careers.map((c) => (
+              <option key={c.id} value={String(c.id)}>{c.name}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -122,13 +147,13 @@ export function Step2Education({ defaultValues, onNext, onBack }: {
           className="w-full h-10 rounded-md border border-border bg-bg px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="">Selecciona tu universidad</option>
-          {universities.map((u) => (
+          {catalogs.universities.map((u) => (
             <option key={u.id} value={String(u.id)}>{u.name}</option>
           ))}
         </select>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="s2-city">Ciudad *</Label>
           <select
@@ -137,7 +162,9 @@ export function Step2Education({ defaultValues, onNext, onBack }: {
             className="w-full h-10 rounded-md border border-border bg-bg px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">Selecciona</option>
-            {CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            {catalogs.cities.map((c) => (
+              <option key={c.id} value={String(c.id)}>{c.name}</option>
+            ))}
           </select>
           <FieldError message={errors.city?.message} />
         </div>
@@ -149,7 +176,9 @@ export function Step2Education({ defaultValues, onNext, onBack }: {
             className="w-full h-10 rounded-md border border-border bg-bg px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">Selecciona</option>
-            {PROVINCE_OPTIONS.map((p) => <option key={p} value={p}>{p}</option>)}
+            {catalogs.provinces.map((p) => (
+              <option key={p.id} value={String(p.id)}>{p.name}</option>
+            ))}
           </select>
           <FieldError message={errors.province?.message} />
         </div>
@@ -172,7 +201,9 @@ export function Step2Education({ defaultValues, onNext, onBack }: {
               className="w-full h-10 rounded-md border border-border bg-bg px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="">Selecciona</option>
-              {CAREERS.map((c) => <option key={c} value={c}>{c}</option>)}
+              {catalogs.careers.map((c) => (
+                <option key={c.id} value={String(c.id)}>{c.name}</option>
+              ))}
             </select>
           </div>
         )}

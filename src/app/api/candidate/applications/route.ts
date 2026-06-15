@@ -3,9 +3,57 @@ import type { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { backendGet, backendPost } from "@/lib/backendFetch";
 import { decodeUserId } from "@/lib/decodeUserId";
-import type { CandidateApplication, VacancyStage } from "@/features/candidate-portal/types";
+import type {
+  CandidateApplication,
+  InterviewOffer,
+  VacancyStage,
+} from "@/features/candidate-portal/types";
 
 interface BackendPage<T> { items: T[]; total: number; }
+
+/** Subset of the backend InterviewRead we need for the candidate offer picker. */
+interface BackendInterviewOffer {
+  id: number;
+  application_id: number;
+  offered_slots: { start: string; end: string }[] | null;
+  token_expires_at: string | null;
+}
+
+/** Subset of the backend InterviewRead for an already-scheduled interview. */
+interface BackendScheduledInterview {
+  id: number;
+  application_id: number;
+  scheduled_at: string | null;
+  ends_at: string | null;
+  teams_meeting_url: string | null;
+}
+
+// Ecuador is a fixed UTC-5; format scheduled interviews in its wall-clock time.
+const EC_DATE_FMT = new Intl.DateTimeFormat("es-EC", {
+  timeZone: "America/Guayaquil",
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+});
+const EC_TIME_FMT = new Intl.DateTimeFormat("es-EC", {
+  timeZone: "America/Guayaquil",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+function formatScheduledInterview(
+  i: BackendScheduledInterview,
+): { date: string; time: string; platform: string } {
+  const start = new Date(i.scheduled_at as string);
+  let time = EC_TIME_FMT.format(start);
+  if (i.ends_at) time += `–${EC_TIME_FMT.format(new Date(i.ends_at))}`;
+  return {
+    date: EC_DATE_FMT.format(start),
+    time,
+    platform: i.teams_meeting_url ? "Microsoft Teams" : "Entrevista agendada",
+  };
+}
 
 interface BackendApplication {
   id: number;
@@ -73,11 +121,37 @@ export async function GET() {
       }),
     );
 
+    // Open offers (Mode B) and scheduled interviews for this candidate, keyed by
+    // application. Best-effort: a failure here must never break the list.
+    const offerByApp = new Map<number, InterviewOffer>();
+    const interviewByApp = new Map<number, CandidateApplication["interview"]>();
+    const [offersRes, scheduledRes] = await Promise.allSettled([
+      backendGet<BackendInterviewOffer[]>("/interviews/me/offers"),
+      backendGet<BackendScheduledInterview[]>("/interviews/me/scheduled"),
+    ]);
+    if (offersRes.status === "fulfilled") {
+      for (const o of offersRes.value) {
+        offerByApp.set(o.application_id, {
+          interviewId: o.id,
+          slots: (o.offered_slots ?? []).map((s) => ({ start: s.start, end: s.end })),
+          expiresAt: o.token_expires_at ?? null,
+        });
+      }
+    }
+    if (scheduledRes.status === "fulfilled") {
+      for (const i of scheduledRes.value) {
+        if (!i.scheduled_at) continue;
+        interviewByApp.set(i.application_id, formatScheduledInterview(i));
+      }
+    }
+
     const result: CandidateApplication[] = appsData.items.map((app) => {
       const vacancy = vacancyMap.get(app.vacancy_id);
       const daysAgo = Math.floor((Date.now() - new Date(app.applied_at).getTime()) / 86_400_000);
       const lastUpdate = daysAgo === 0 ? "hoy" : daysAgo === 1 ? "hace 1 día" : `hace ${daysAgo} días`;
       const stages = stagesMap.get(app.vacancy_id) ?? [];
+      const offer = offerByApp.get(app.id);
+      const interview = interviewByApp.get(app.id);
 
       return {
         id: String(app.id),
@@ -89,7 +163,13 @@ export async function GET() {
         stages,
         currentStageId: app.current_stage_id,
         salaryExpectation: 0,
-        slotStatus: null,
+        slotStatus: offer
+          ? ("pending_selection" as const)
+          : interview
+            ? ("confirmed" as const)
+            : null,
+        offer,
+        interview,
       };
     });
 

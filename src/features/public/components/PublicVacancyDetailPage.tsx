@@ -94,12 +94,12 @@ export function PublicVacancyDetailPage({ vacancy, isAuthenticated }: PublicVaca
           Vacantes
         </Link>
 
-        <div className="flex gap-5 items-start">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
           {/* Left column */}
           <div className="flex-1 flex flex-col gap-4">
 
             {/* Header card */}
-            <div className="bg-white rounded-xl border border-primary-200 p-7">
+            <div className="bg-white rounded-xl border border-primary-200 p-5 sm:p-7">
               <h1 className="text-[22px] font-bold text-primary-800 mb-5">{vacancy.title}</h1>
 
               {/* Description */}
@@ -115,7 +115,7 @@ export function PublicVacancyDetailPage({ vacancy, isAuthenticated }: PublicVaca
                 <h3 className="text-[11px] text-ink-subtle uppercase font-semibold tracking-wide mb-3">
                   Requisitos técnicos
                 </h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {vacancy.requirements.knowledge.length > 0 && (
                     <div>
                       <p className="text-[13px] text-ink-muted mb-2">Conocimientos</p>
@@ -156,7 +156,7 @@ export function PublicVacancyDetailPage({ vacancy, isAuthenticated }: PublicVaca
                 <h3 className="text-[11px] text-ink-subtle uppercase font-semibold tracking-wide mb-3">
                   Condiciones
                 </h3>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
                   <ConditionRow icon={Monitor} label="Modalidad" value={WORK_MODE_LABEL[vacancy.workMode]} />
                   <ConditionRow icon={MapPin} label="Ciudad" value={vacancy.city} />
                   <ConditionRow icon={Briefcase} label="Nivel" value={vacancy.conditions.level} />
@@ -170,8 +170,8 @@ export function PublicVacancyDetailPage({ vacancy, isAuthenticated }: PublicVaca
 
           </div>
 
-          {/* Right sidebar */}
-          <div className="w-[35%] shrink-0 sticky top-6">
+          {/* Right sidebar — stacks below content on mobile, sticky aside on desktop */}
+          <div className="w-full shrink-0 lg:w-[35%] lg:sticky lg:top-6">
             <div className="bg-white rounded-xl border border-primary-200 p-6">
               {applied ? (
                 <div className="text-center flex flex-col items-center gap-3">

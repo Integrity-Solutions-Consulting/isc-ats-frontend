@@ -1,9 +1,9 @@
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/design-system/atoms/Spinner";
 
 export default function Loading() {
   return (
     <div className="flex items-center justify-center gap-2 py-16 text-sm text-ink-muted">
-      <Loader2 className="size-4 animate-spin" />
+      <Spinner size="sm" label="" aria-hidden />
       Cargando…
     </div>
   );

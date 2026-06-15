@@ -1,66 +1,189 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Send, Check, CheckCircle2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { addDays, format, startOfToday } from 'date-fns';
+import { es } from 'date-fns/locale';
+import {
+  Check,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Send,
+  X,
+} from 'lucide-react';
+
 import { Button } from '@/design-system/ui/button';
 import { cn } from '@/shared/utils';
+import {
+  useAvailableSlots,
+  useCreateInterview,
+  useInterviewers,
+  useOfferSlots,
+} from '../hooks/useInterviews';
+import type { Slot } from '../types';
 
 interface Props {
+  applicationId: number;
+  /** org.process_stages id; undefined when the candidate is rejected (no stage). */
+  processStageId: number | undefined;
   candidateName: string;
-  candidateInitials: string;
-  avatarColor: string;
   position: string;
   onClose: () => void;
 }
 
 type Tab = 'candidate-chooses' | 'rh-selects';
 
-const AVAILABILITY = [
-  { day: 'Lun 2 jun', slots: ['09:00–09:30', '09:30–10:00', '14:00–14:30'] },
-  { day: 'Mar 3 jun', slots: ['10:00–10:30', '10:30–11:00'] },
-  { day: 'Mié 4 jun', slots: ['09:00–09:30', '14:00–14:30', '15:00–15:30'] },
-  { day: 'Jue 5 jun', slots: ['09:30–10:00'] },
-  { day: 'Vie 6 jun', slots: ['10:00–10:30', '11:00–11:30'] },
-];
+interface OfferedEntry {
+  slot: Slot;
+  dayLabel: string;
+}
 
-// Simulate taken slots
-const TAKEN_SLOTS = new Set(['Lun 2 jun|09:30–10:00', 'Mié 4 jun|14:00–14:30']);
+// Ecuador is a fixed UTC-5 (no DST). Slots arrive as UTC ISO strings; we render
+// their Ecuador wall-clock time by shifting and reading the UTC components.
+const EC_OFFSET_MS = 5 * 60 * 60 * 1000;
 
-export function AgendarEntrevistaModal({ candidateName, candidateInitials: _candidateInitials, avatarColor: _avatarColor, position, onClose }: Props) {
+function ecTime(iso: string): string {
+  return new Date(new Date(iso).getTime() - EC_OFFSET_MS).toISOString().slice(11, 16);
+}
+
+function slotKey(s: Slot): string {
+  return `${s.start}|${s.end}`;
+}
+
+export function AgendarEntrevistaModal({
+  applicationId,
+  processStageId,
+  candidateName,
+  position,
+  onClose,
+}: Props) {
   const [tab, setTab] = useState<Tab>('candidate-chooses');
+  const [interviewerId, setInterviewerId] = useState<number | null>(null);
+  const [date, setDate] = useState<Date>(startOfToday());
+  const [selected, setSelected] = useState<Slot | null>(null); // Mode A — single
+  const [offered, setOffered] = useState<OfferedEntry[]>([]); // Mode B — accumulated
+  const [extraEmail, setExtraEmail] = useState('');
   const [subject, setSubject] = useState(`Entrevista para ${position}`);
-  const [extraParticipant, setExtraParticipant] = useState('');
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
 
-  const handleSend = () => {
-    setSent(true);
-    setTimeout(onClose, 1500);
-  };
+  const { data: interviewers = [], isLoading: loadingInterviewers } = useInterviewers();
+  // Effective interviewer = the explicit choice, else default to the first available.
+  const effectiveInterviewerId = interviewerId ?? interviewers[0]?.id ?? null;
+
+  const dateApi = format(date, 'yyyy-MM-dd');
+  const dayLabel = format(date, 'EEE d MMM', { locale: es });
+  const { data: slots = [], isLoading: loadingSlots } = useAvailableSlots(
+    effectiveInterviewerId,
+    dateApi,
+  );
+
+  // The Mode A pick only applies to the current day + interviewer, so clear it
+  // in the change handlers (never in an effect — that triggers cascading renders).
+  function changeDate(delta: number) {
+    setDate((d) => addDays(d, delta));
+    setSelected(null);
+  }
+
+  function changeInterviewer(id: number | null) {
+    setInterviewerId(id);
+    setSelected(null);
+  }
+
+  const createMutation = useCreateInterview();
+  const offerMutation = useOfferSlots();
+  const submitting = createMutation.isPending || offerMutation.isPending;
+  const isSuccess = createMutation.isSuccess || offerMutation.isSuccess;
+  const error = createMutation.error?.message ?? offerMutation.error?.message ?? null;
+
+  useEffect(() => {
+    if (!isSuccess) return;
+    const t = setTimeout(onClose, 1600);
+    return () => clearTimeout(t);
+  }, [isSuccess, onClose]);
+
+  const offeredKeys = useMemo(
+    () => new Set(offered.map((o) => slotKey(o.slot))),
+    [offered],
+  );
+
+  const noStage = processStageId === undefined;
+  const canPrev = date > startOfToday();
+
+  function toggleOffered(slot: Slot) {
+    const key = slotKey(slot);
+    setOffered((prev) =>
+      prev.some((o) => slotKey(o.slot) === key)
+        ? prev.filter((o) => slotKey(o.slot) !== key)
+        : [...prev, { slot, dayLabel }],
+    );
+  }
+
+  function handleConfirmModeA() {
+    if (!effectiveInterviewerId || !selected || processStageId === undefined) return;
+    createMutation.mutate({
+      applicationId,
+      processStageId,
+      interviewerId: effectiveInterviewerId,
+      start: selected.start,
+      end: selected.end,
+      extraEmail: extraEmail || undefined,
+    });
+  }
+
+  function handleSendModeB() {
+    if (!effectiveInterviewerId || offered.length === 0 || processStageId === undefined) return;
+    offerMutation.mutate({
+      applicationId,
+      processStageId,
+      interviewerId: effectiveInterviewerId,
+      offeredSlots: offered.map((o) => o.slot),
+      extraEmail: extraEmail || undefined,
+      subject: subject || undefined,
+    });
+  }
+
+  const successMessage =
+    tab === 'candidate-chooses'
+      ? 'El candidato recibirá una notificación y un correo para elegir su horario.'
+      : 'La entrevista quedó agendada. Se creará la reunión de Teams y se enviará la invitación.';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Scrim */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Modal */}
       <div className="relative z-10 flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-border bg-surface px-5 py-4">
           <div className="flex-1">
             <h2 className="text-lg font-bold text-ink">Agendar entrevista</h2>
+            <p className="text-xs text-ink-muted">
+              {candidateName} · {position}
+            </p>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}><X className="size-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="size-4" />
+          </Button>
         </div>
 
         {/* Tabs */}
         <div className="flex border-b border-border">
-          {([
-            { key: 'candidate-chooses', label: 'Candidato elige horario' },
-            { key: 'rh-selects', label: 'RH selecciona' },
-          ] as const).map(({ key, label }) => (
-            <button key={key} type="button" onClick={() => setTab(key)}
-              className={cn('flex-1 px-4 py-3 text-sm transition-colors', tab === key ? 'border-b-2 border-primary-600 font-semibold text-primary-700' : 'text-ink-muted hover:text-ink')}>
+          {(
+            [
+              { key: 'candidate-chooses', label: 'Candidato elige horario' },
+              { key: 'rh-selects', label: 'RH selecciona' },
+            ] as const
+          ).map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setTab(key)}
+              className={cn(
+                'flex-1 px-4 py-3 text-sm transition-colors',
+                tab === key
+                  ? 'border-b-2 border-primary-600 font-semibold text-primary-700'
+                  : 'text-ink-muted hover:text-ink',
+              )}
+            >
               {label}
             </button>
           ))}
@@ -68,150 +191,250 @@ export function AgendarEntrevistaModal({ candidateName, candidateInitials: _cand
 
         {/* Body */}
         <div className="flex-1 overflow-auto p-5">
-          {tab === 'candidate-chooses' && sent ? (
+          {isSuccess ? (
             <div className="flex flex-col items-center justify-center gap-4 py-10 text-center">
               <CheckCircle2 size={56} className="text-success" />
               <div>
-                <p className="text-lg font-bold text-ink">Invitación enviada</p>
-                <p className="mt-1 text-sm text-ink-muted max-w-sm">
-                  El candidato recibirá un correo con los horarios disponibles para elegir.
+                <p className="text-lg font-bold text-ink">
+                  {tab === 'candidate-chooses' ? 'Invitación enviada' : 'Entrevista agendada'}
                 </p>
-                <p className="mt-2 text-xs text-ink-subtle max-w-sm">
-                  Los slots ofrecidos quedarán registrados y se confirmará automáticamente cuando el candidato elija.
-                </p>
+                <p className="mt-1 max-w-sm text-sm text-ink-muted">{successMessage}</p>
               </div>
             </div>
-          ) : tab === 'candidate-chooses' ? (
-            <div className="space-y-4">
-              {/* Availability grid */}
-              <div className="rounded-lg border border-border bg-surface-2 p-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-muted">Disponibilidad del equipo RH</p>
-                <div className="grid grid-cols-5 gap-2">
-                  {AVAILABILITY.map((day) => (
-                    <div key={day.day} className="rounded-md border border-border bg-surface p-2 text-center">
-                      <p className="mb-1.5 text-xs font-semibold text-ink">{day.day}</p>
-                      {day.slots.map((slot) => (
-                        <p key={slot} className="text-xs text-ink-muted">{slot}</p>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Email preview */}
-              <div className="rounded-lg border border-border overflow-hidden">
-                <div className="flex items-center justify-between border-b border-border bg-surface-2 px-4 py-2">
-                  <p className="text-xs font-semibold text-ink-muted">Vista previa del correo</p>
-                  <span className="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-700">Se enviará automáticamente</span>
-                </div>
-                <div className="bg-surface p-4">
-                  <div className="mb-3 space-y-1 text-xs text-ink-muted">
-                    <p><span className="font-medium text-ink">Para:</span> {candidateName.toLowerCase().replace(' ', '.')}@email.com</p>
-                    <p><span className="font-medium text-ink">Asunto:</span> {subject}</p>
-                  </div>
-                  <div className="text-sm leading-relaxed text-ink-muted">
-                    <p>Estimado/a <span className="rounded bg-warning/20 px-1 text-xs font-medium text-warning-700">{`{{nombre}}`}</span>,</p>
-                    <p className="mt-2">Le invitamos a seleccionar un horario para su entrevista para el cargo de <span className="rounded bg-warning/20 px-1 text-xs font-medium text-warning-700">{`{{cargo}}`}</span>.</p>
-                    <div className="mt-3">
-                      <div className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white">
-                        Elegir mi horario
-                      </div>
-                    </div>
-                    <p className="mt-3 text-xs text-ink-subtle">La reunión de Teams se creará automáticamente cuando confirme su horario.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Fields */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink">Asunto del correo</label>
-                  <input value={subject} onChange={(e) => setSubject(e.target.value)}
-                    className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300" />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink">Participante adicional (opcional)</label>
-                  <input type="email" value={extraParticipant} onChange={(e) => setExtraParticipant(e.target.value)}
-                    placeholder="correo@empresa.com"
-                    className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300 placeholder:text-ink-subtle" />
-                </div>
-              </div>
+          ) : noStage ? (
+            <div className="rounded-lg border border-warning/40 bg-warning/10 p-4 text-sm text-ink">
+              No se puede agendar una entrevista para un candidato rechazado. Movelo a una
+              etapa del proceso primero.
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Slot grid */}
-              <div className="rounded-lg border border-border bg-surface-2 p-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-muted">Seleccionar horario</p>
-                <div className="grid grid-cols-5 gap-2">
-                  {AVAILABILITY.map((day) => (
-                    <div key={day.day} className="rounded-md border border-border bg-surface p-2">
-                      <p className="mb-2 text-center text-xs font-semibold text-ink">{day.day}</p>
-                      {day.slots.map((slot) => {
-                        const key = `${day.day}|${slot}`;
-                        const taken = TAKEN_SLOTS.has(key);
-                        const isSelected = selectedSlot === key;
-                        return (
-                          <button key={slot} type="button" disabled={taken}
-                            onClick={() => setSelectedSlot(isSelected ? null : key)}
-                            className={cn(
-                              'mb-1 w-full rounded px-1 py-1 text-center text-xs transition-colors',
-                              taken ? 'text-ink-subtle line-through opacity-40 cursor-not-allowed' :
-                              isSelected ? 'bg-primary-600 font-medium text-white' :
-                              'bg-bg hover:bg-primary-100 text-ink-muted border border-border',
-                            )}>
-                            {slot}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ))}
+              {/* Interviewer + date controls */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="interviewer-select"
+                    className="mb-1 block text-xs font-medium text-ink"
+                  >
+                    Entrevistador
+                  </label>
+                  <select
+                    id="interviewer-select"
+                    value={effectiveInterviewerId ?? ''}
+                    onChange={(e) => changeInterviewer(Number(e.target.value) || null)}
+                    disabled={loadingInterviewers || interviewers.length === 0}
+                    className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300 disabled:opacity-50"
+                  >
+                    {interviewers.length === 0 && (
+                      <option value="">
+                        {loadingInterviewers ? 'Cargando…' : 'Sin entrevistadores con disponibilidad'}
+                      </option>
+                    )}
+                    {interviewers.map((i) => (
+                      <option key={i.id} value={i.id}>
+                        {i.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <span className="mb-1 block text-xs font-medium text-ink">Día</span>
+                  <div className="flex items-center justify-between rounded-md border border-border bg-bg px-2 py-1.5">
+                    <button
+                      type="button"
+                      onClick={() => changeDate(-1)}
+                      disabled={!canPrev}
+                      className="rounded p-1 text-ink-muted hover:bg-primary-50 disabled:opacity-30"
+                      aria-label="Día anterior"
+                    >
+                      <ChevronLeft className="size-4" />
+                    </button>
+                    <span className="text-sm font-medium capitalize text-ink">
+                      {format(date, "EEE d 'de' MMM", { locale: es })}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => changeDate(1)}
+                      className="rounded p-1 text-ink-muted hover:bg-primary-50"
+                      aria-label="Día siguiente"
+                    >
+                      <ChevronRight className="size-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {selectedSlot && (
-                <div className="rounded-lg border border-primary-200 bg-primary-50 p-3 text-sm">
-                  <p className="font-medium text-ink">Resumen de entrevista</p>
-                  <p className="mt-1 text-ink-muted">
-                    {candidateName} · {position} · {selectedSlot.split('|').join(' — ')}
+              {/* Slots grid */}
+              <div className="rounded-lg border border-border bg-surface-2 p-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                  {tab === 'rh-selects' ? 'Elegí un horario' : 'Sumá los horarios a ofrecer'}
+                </p>
+                {loadingSlots ? (
+                  <p className="py-6 text-center text-sm text-ink-muted">
+                    <Loader2 className="mr-2 inline size-4 animate-spin" />
+                    Cargando horarios…
                   </p>
-                  <p className="mt-1 text-xs text-ink-subtle">La reunión de Teams se creará al confirmar.</p>
+                ) : slots.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-ink-muted">
+                    Sin horarios disponibles para este día.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-4 gap-2">
+                    {slots.map((s) => {
+                      const key = slotKey(s);
+                      const active =
+                        tab === 'rh-selects'
+                          ? selected !== null && slotKey(selected) === key
+                          : offeredKeys.has(key);
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() =>
+                            tab === 'rh-selects'
+                              ? setSelected(active ? null : s)
+                              : toggleOffered(s)
+                          }
+                          className={cn(
+                            'rounded-md border px-2 py-1.5 text-xs transition-colors',
+                            active
+                              ? 'border-primary-600 bg-primary-600 font-medium text-white'
+                              : 'border-border bg-bg text-ink-muted hover:bg-primary-50',
+                          )}
+                        >
+                          {ecTime(s.start)}–{ecTime(s.end)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Mode B — accumulated selection */}
+              {tab === 'candidate-chooses' && offered.length > 0 && (
+                <div className="rounded-lg border border-primary-200 bg-primary-50 p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary-700">
+                    Seleccionados ({offered.length})
+                  </p>
+                  <ul className="space-y-1.5">
+                    {offered.map((o) => (
+                      <li
+                        key={slotKey(o.slot)}
+                        className="flex items-center justify-between text-sm text-ink"
+                      >
+                        <span className="capitalize">
+                          {o.dayLabel} · {ecTime(o.slot.start)}–{ecTime(o.slot.end)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => toggleOffered(o.slot)}
+                          className="rounded p-0.5 text-ink-muted hover:text-danger"
+                          aria-label="Quitar horario"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink">Asunto</label>
-                  <input value={subject} onChange={(e) => setSubject(e.target.value)}
-                    className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300" />
+              {/* Mode A — summary */}
+              {tab === 'rh-selects' && selected && (
+                <div className="rounded-lg border border-primary-200 bg-primary-50 p-3 text-sm">
+                  <p className="font-medium text-ink">Resumen</p>
+                  <p className="mt-1 capitalize text-ink-muted">
+                    {candidateName} · {format(date, "EEE d 'de' MMM", { locale: es })} ·{' '}
+                    {ecTime(selected.start)}–{ecTime(selected.end)}
+                  </p>
+                  <p className="mt-1 text-xs text-ink-subtle">
+                    La reunión de Teams se creará al confirmar.
+                  </p>
                 </div>
+              )}
+
+              {/* Extra fields */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {tab === 'candidate-chooses' && (
+                  <div>
+                    <label htmlFor="subject" className="mb-1 block text-xs font-medium text-ink">
+                      Asunto del correo
+                    </label>
+                    <input
+                      id="subject"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300"
+                    />
+                  </div>
+                )}
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-ink">Participante adicional</label>
-                  <input type="email" value={extraParticipant} onChange={(e) => setExtraParticipant(e.target.value)}
+                  <label htmlFor="extra-email" className="mb-1 block text-xs font-medium text-ink">
+                    Participante adicional (opcional)
+                  </label>
+                  <input
+                    id="extra-email"
+                    type="email"
+                    value={extraEmail}
+                    onChange={(e) => setExtraEmail(e.target.value)}
                     placeholder="correo@empresa.com"
-                    className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300 placeholder:text-ink-subtle" />
+                    className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-primary-300"
+                  />
                 </div>
               </div>
+
+              {error && (
+                <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>
+              )}
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center gap-3 border-t border-border bg-surface px-5 py-4">
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button
-            className="ml-auto"
-            onClick={handleSend}
-            disabled={sent || (tab === 'rh-selects' && !selectedSlot)}
-          >
-            {sent ? (
-              <><Check className="mr-1.5 size-4" />Enviado</>
-            ) : tab === 'candidate-chooses' ? (
-              <><Send className="mr-1.5 size-4" />Enviar invitación</>
+        {!isSuccess && (
+          <div className="flex items-center gap-3 border-t border-border bg-surface px-5 py-4">
+            <Button variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+            {tab === 'candidate-chooses' ? (
+              <Button
+                className="ml-auto"
+                onClick={handleSendModeB}
+                disabled={noStage || submitting || !effectiveInterviewerId || offered.length === 0}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-1.5 size-4 animate-spin" />
+                    Enviando…
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-1.5 size-4" />
+                    Enviar invitación{offered.length > 0 ? ` (${offered.length})` : ''}
+                  </>
+                )}
+              </Button>
             ) : (
-              <><Check className="mr-1.5 size-4" />Confirmar entrevista</>
+              <Button
+                className="ml-auto"
+                onClick={handleConfirmModeA}
+                disabled={noStage || submitting || !effectiveInterviewerId || !selected}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-1.5 size-4 animate-spin" />
+                    Agendando…
+                  </>
+                ) : (
+                  <>
+                    <Check className="mr-1.5 size-4" />
+                    Confirmar entrevista
+                  </>
+                )}
+              </Button>
             )}
-          </Button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

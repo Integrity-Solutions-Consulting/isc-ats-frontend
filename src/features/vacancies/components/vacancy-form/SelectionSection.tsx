@@ -1,12 +1,12 @@
 "use client";
 
-import { useFormContext } from "react-hook-form";
+import { useFormContext, Controller } from "react-hook-form";
 import { Minus, Plus } from "lucide-react";
 
 import { Button } from "@/design-system/ui/button";
 import { Input } from "@/design-system/ui/input";
 import { Label } from "@/design-system/ui/label";
-import { Select } from "@/design-system/atoms/Select";
+import { Combobox } from "@/design-system/molecules/Combobox";
 import { cn } from "@/shared/utils";
 import { useVacancyCatalogs } from "../../hooks/useVacancies";
 import type { VacancyFormValues } from "../../types";
@@ -15,6 +15,7 @@ import { Section, RequiredLabel } from "./FormSection";
 export function SelectionSection() {
   const { data: catalogs } = useVacancyCatalogs();
   const {
+    control,
     register,
     setValue,
     watch,
@@ -28,19 +29,22 @@ export function SelectionSection() {
     <Section num={3} title="Proceso de selección y nivel">
       <div className="mb-4">
         <RequiredLabel htmlFor="process">Proceso de selección</RequiredLabel>
-        <Select
-          id="process"
-          className="mt-1.5"
-          aria-invalid={!!errors.process}
-          {...register("process")}
-        >
-          <option value="">Selecciona…</option>
-          {catalogs?.processes.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label}
-            </option>
-          ))}
-        </Select>
+        <Controller
+          name="process"
+          control={control}
+          render={({ field }) => (
+            <Combobox
+              id="process"
+              className="mt-1.5"
+              valueKey="id"
+              options={catalogs?.processes ?? []}
+              value={field.value}
+              onChange={field.onChange}
+              placeholder="Selecciona…"
+              aria-invalid={!!errors.process}
+            />
+          )}
+        />
         {errors.process && (
           <p className="mt-1 text-xs text-danger">{errors.process.message}</p>
         )}

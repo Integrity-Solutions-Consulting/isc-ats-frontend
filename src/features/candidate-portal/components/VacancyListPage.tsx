@@ -31,19 +31,12 @@ export function VacancyListPage({ vacancies }: VacancyListPageProps) {
   });
 
   const handleCardClick = (id: string) => router.push(ROUTES.candidato.vacante(id));
-  const handleApply = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    router.push(ROUTES.candidato.vacante(id));
-  };
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-[26px] font-bold text-ink leading-tight">
-          Encuentra tu próxima oportunidad
-        </h1>
-        <p className="text-ink-muted mt-1">Vacantes disponibles de nuestros clientes</p>
-      </div>
+      <h1 className="text-[22px] font-bold leading-tight text-primary-800">
+        Vacantes
+      </h1>
 
       <div className="bg-surface shadow-sm rounded-lg p-4 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -94,19 +87,10 @@ export function VacancyListPage({ vacancies }: VacancyListPageProps) {
             vacancy={vacancy}
             onClick={() => handleCardClick(vacancy.id)}
             footer={
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-[12px] text-ink-muted">
                   Publicada hace {vacancy.publishedDaysAgo} día{vacancy.publishedDaysAgo !== 1 ? 's' : ''}
                 </span>
-
-                {vacancy.applicationStatus === 'none' && (
-                  <button
-                    onClick={(e) => handleApply(e, vacancy.id)}
-                    className="px-4 h-9 bg-primary-700 text-white text-[13px] font-semibold rounded-lg hover:bg-primary-600 transition-colors"
-                  >
-                    Postular →
-                  </button>
-                )}
 
                 {vacancy.applicationStatus === 'applied' && (
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-primary-50 text-primary-400 rounded-full text-[12px]">
@@ -115,17 +99,9 @@ export function VacancyListPage({ vacancies }: VacancyListPageProps) {
                 )}
 
                 {vacancy.applicationStatus === 'closing_soon' && vacancy.closingDaysLeft !== null && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-warning font-medium">
-                      Cierra en {vacancy.closingDaysLeft}d
-                    </span>
-                    <button
-                      onClick={(e) => handleApply(e, vacancy.id)}
-                      className="px-4 h-9 bg-white border border-primary-700 text-primary-700 text-[13px] font-semibold rounded-lg hover:bg-primary-50 transition-colors"
-                    >
-                      Ver detalles
-                    </button>
-                  </div>
+                  <span className="text-[11px] text-warning font-medium">
+                    Cierra en {vacancy.closingDaysLeft}d
+                  </span>
                 )}
               </div>
             }

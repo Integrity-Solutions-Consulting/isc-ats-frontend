@@ -4,7 +4,6 @@ import { useDroppable } from '@dnd-kit/core';
 import { Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-import { Button } from '@/design-system/ui/button';
 import { cn } from '@/shared/utils';
 import { usePipelineNavStore } from '@/shared/stores/pipelineNavStore';
 import type { PipelineCard, PipelineStage, RejectionSummary } from '../types';
@@ -129,17 +128,6 @@ export function PipelineColumn({
           <div className="flex items-center justify-center rounded-md border border-dashed border-border py-6">
             <p className="text-xs text-ink-subtle">Sin candidatos</p>
           </div>
-        )}
-
-        {!isRejected && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-1 w-full text-xs text-ink-subtle"
-            disabled
-          >
-            + Agregar candidato
-          </Button>
         )}
       </div>
     </div>

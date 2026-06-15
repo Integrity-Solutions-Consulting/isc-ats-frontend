@@ -3,8 +3,7 @@
 import { useEffect } from "react";
 import { useFormContext, Controller, useWatch } from "react-hook-form";
 
-import { Combobox } from "@/design-system/atoms/Combobox";
-import { Select } from "@/design-system/atoms/Select";
+import { Combobox } from "@/design-system/molecules/Combobox";
 import { useVacancyCatalogs, useContactsByClient } from "../../hooks/useVacancies";
 import type { VacancyFormValues } from "../../types";
 import { Section, RequiredLabel } from "./FormSection";
@@ -13,7 +12,6 @@ export function BasicInfoSection() {
   const { data: catalogs } = useVacancyCatalogs();
   const {
     control,
-    register,
     setValue,
     formState: { errors },
   } = useFormContext<VacancyFormValues>();
@@ -52,19 +50,22 @@ export function BasicInfoSection() {
 
         <div>
           <RequiredLabel htmlFor="clientCompany">Cliente</RequiredLabel>
-          <Select
-            id="clientCompany"
-            className="mt-1.5"
-            aria-invalid={!!errors.clientCompany}
-            {...register("clientCompany")}
-          >
-            <option value="">Selecciona…</option>
-            {catalogs?.clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </Select>
+          <Controller
+            name="clientCompany"
+            control={control}
+            render={({ field }) => (
+              <Combobox
+                id="clientCompany"
+                className="mt-1.5"
+                valueKey="id"
+                options={catalogs?.clients ?? []}
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="Selecciona…"
+                aria-invalid={!!errors.clientCompany}
+              />
+            )}
+          />
           {errors.clientCompany && (
             <p className="mt-1 text-xs text-danger">
               {errors.clientCompany.message}
@@ -74,22 +75,23 @@ export function BasicInfoSection() {
 
         <div>
           <RequiredLabel htmlFor="contact">Persona de contacto</RequiredLabel>
-          <Select
-            id="contact"
-            className="mt-1.5"
-            aria-invalid={!!errors.contact}
-            disabled={!selectedClient}
-            {...register("contact")}
-          >
-            <option value="">
-              {selectedClient ? "Selecciona…" : "Selecciona un cliente primero"}
-            </option>
-            {contacts.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </Select>
+          <Controller
+            name="contact"
+            control={control}
+            render={({ field }) => (
+              <Combobox
+                id="contact"
+                className="mt-1.5"
+                valueKey="id"
+                options={contacts}
+                value={field.value}
+                onChange={field.onChange}
+                placeholder={selectedClient ? "Selecciona…" : "Selecciona un cliente primero"}
+                disabled={!selectedClient}
+                aria-invalid={!!errors.contact}
+              />
+            )}
+          />
           {errors.contact && (
             <p className="mt-1 text-xs text-danger">{errors.contact.message}</p>
           )}
@@ -97,19 +99,22 @@ export function BasicInfoSection() {
 
         <div>
           <RequiredLabel htmlFor="department">Departamento</RequiredLabel>
-          <Select
-            id="department"
-            className="mt-1.5"
-            aria-invalid={!!errors.department}
-            {...register("department")}
-          >
-            <option value="">Selecciona…</option>
-            {catalogs?.departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.label}
-              </option>
-            ))}
-          </Select>
+          <Controller
+            name="department"
+            control={control}
+            render={({ field }) => (
+              <Combobox
+                id="department"
+                className="mt-1.5"
+                valueKey="id"
+                options={catalogs?.departments ?? []}
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="Selecciona…"
+                aria-invalid={!!errors.department}
+              />
+            )}
+          />
           {errors.department && (
             <p className="mt-1 text-xs text-danger">
               {errors.department.message}

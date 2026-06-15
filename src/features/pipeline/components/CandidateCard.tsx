@@ -8,6 +8,7 @@ import { Eye } from 'lucide-react';
 
 import { cn } from '@/shared/utils';
 import { Avatar } from '@/design-system/atoms/Avatar';
+import { MatchBadge } from '@/design-system/molecules/MatchBadge';
 import type { CandidateStageStatus, PipelineCard } from '../types';
 
 
@@ -37,40 +38,6 @@ function formatDate(isoDate: string): string {
   if (isToday(date)) return 'Hoy';
   if (isYesterday(date)) return 'Ayer';
   return formatDistanceToNow(date, { addSuffix: true, locale: es });
-}
-
-interface MatchBadgeProps {
-  matchPercent: number | null;
-  matchStatus: PipelineCard['matchStatus'];
-}
-
-function MatchBadge({ matchPercent, matchStatus }: MatchBadgeProps) {
-  if (matchStatus === 'analyzing' || matchPercent === null) {
-    return (
-      <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-ink-subtle">
-        Analizando
-      </span>
-    );
-  }
-  if (matchPercent >= 75) {
-    return (
-      <span className="rounded-full bg-success/15 px-2 py-0.5 text-xs font-medium text-success">
-        {matchPercent}% match
-      </span>
-    );
-  }
-  if (matchPercent >= 50) {
-    return (
-      <span className="rounded-full bg-warning/15 px-2 py-0.5 text-xs font-medium text-warning">
-        {matchPercent}% match
-      </span>
-    );
-  }
-  return (
-    <span className="rounded-full bg-danger/15 px-2 py-0.5 text-xs font-medium text-danger">
-      {matchPercent}% match
-    </span>
-  );
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -123,7 +90,7 @@ export function CandidateCard({ card, isDragging = false, onView }: CandidateCar
         <Avatar size="sm" initials={card.initials} className={cn('text-white', card.avatarColor)} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-ink">{card.candidateName}</p>
-          <MatchBadge matchPercent={card.matchPercent} matchStatus={card.matchStatus} />
+          <MatchBadge score={card.matchStatus === 'analyzing' ? null : card.matchPercent} />
         </div>
       </div>
 

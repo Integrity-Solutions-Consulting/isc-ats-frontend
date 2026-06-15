@@ -70,7 +70,9 @@ export function RegistrationForm() {
         setSubmitError(resData.error || 'Error al registrar la cuenta');
         return;
       }
-      router.push(`${ROUTES.login}?verified=true`);
+      // Account is created but unverified — send the user to the "check your
+      // email" screen, not to login (login rejects unverified accounts).
+      router.push(`${ROUTES.registroVerificacion}?email=${encodeURIComponent(data.email)}`);
     } catch (err) {
       setSubmitError('No se pudo conectar con el servidor');
     }

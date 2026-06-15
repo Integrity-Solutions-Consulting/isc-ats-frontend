@@ -14,6 +14,7 @@ import type { Vacancy, VacancyFormValues } from '@/features/vacancies/types';
 import { deleteVacancy, reactivateVacancy, updateVacancy } from '@/features/vacancies/api/vacanciesApi';
 import { vacancyKeys } from '@/features/vacancies/hooks/useVacancies';
 import type { VacancyPipelineStats } from '@/features/pipeline/types';
+import { usePipeline } from '@/features/pipeline/hooks/usePipeline';
 import { ROUTES } from '@/shared/constants/routes';
 
 interface VacancyStripProps {
@@ -23,16 +24,19 @@ interface VacancyStripProps {
 
 function toFormValues(vacancy: Vacancy): VacancyFormValues {
   return {
+    // position/workMode/level are resolved by name/code on the backend; the FK
+    // fields must carry ids (the *Id variants), not the display names — otherwise
+    // the PATCH route's Number(...) coercion yields NaN and the update fails.
     position: vacancy.position,
-    clientCompany: vacancy.clientCompany,
-    contact: vacancy.contact,
-    department: vacancy.department,
-    city: vacancy.city,
+    clientCompany: vacancy.clientCompanyId ?? '',
+    contact: vacancy.contactId ?? '',
+    department: vacancy.departmentId ?? '',
+    city: vacancy.cityId ?? '',
     workMode: vacancy.workMode,
     durationYears: vacancy.durationYears,
     durationMonths: vacancy.durationMonths,
-    career: vacancy.career,
-    process: vacancy.process,
+    career: vacancy.careerId ?? '',
+    process: vacancy.processId ?? '',
     level: vacancy.level,
     openings: vacancy.openings,
     experienceYears: vacancy.experienceYears ?? 0,
@@ -57,6 +61,7 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
   const queryClient = useQueryClient();
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
 
   const { mutate: changeStatus, isPending } = useMutation({
     mutationFn: ({ newStatus }: { newStatus: Vacancy['status'] }) =>
@@ -97,6 +102,33 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
   });
 
   const isClosed = vacancy.status === 'closed';
+
+  // Derive live stats from the shared pipeline query so the header updates as
+  // cards are moved on the board (Cubiertas, Rechazados, Match). Falls back to
+  // the server-rendered `stats` prop until the client query resolves.
+  const { data: livePipeline } = usePipeline(vacancy.id);
+  const liveStats: VacancyPipelineStats = livePipeline
+    ? {
+        totalApplicants: livePipeline.cards.length,
+        newApplicants: stats.newApplicants,
+        filledCount: livePipeline.hiredCount ?? 0,
+        openings: livePipeline.openings ?? stats.openings,
+        rejectedCount: livePipeline.rejectionSummary.total,
+        highMatchCount: livePipeline.cards.filter((c) => (c.matchPercent ?? 0) >= 80).length,
+      }
+    : stats;
+
+  // Closing a vacancy whose openings are filled is frictionless; if it is still
+  // incomplete, warn first (but still allow it — a vacancy may be cancelled).
+  const coverageComplete =
+    liveStats.openings > 0 && liveStats.filledCount >= liveStats.openings;
+  const handleCloseClick = () => {
+    if (coverageComplete) {
+      changeStatus({ newStatus: 'closed' });
+    } else {
+      setConfirmCloseOpen(true);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -139,7 +171,7 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
               </Button>
 
               {!isClosed && (
-                <Button variant="destructive" size="sm" disabled={isPending} onClick={() => changeStatus({ newStatus: 'closed' })}>
+                <Button variant="destructive" size="sm" disabled={isPending} onClick={handleCloseClick}>
                   Cerrar
                 </Button>
               )}
@@ -163,16 +195,16 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
           label="Postulantes"
           value={
             <span className="flex items-center gap-1">
-              {stats.totalApplicants}
-              {stats.newApplicants > 0 && (
-                <Badge variant="default" className="text-xs">+{stats.newApplicants}</Badge>
+              {liveStats.totalApplicants}
+              {liveStats.newApplicants > 0 && (
+                <Badge variant="default" className="text-xs">+{liveStats.newApplicants}</Badge>
               )}
             </span>
           }
         />
-        <StatItem label="Cubiertas" value={`${stats.filledCount}/${stats.openings}`} />
-        <StatItem label="Rechazados" value={stats.rejectedCount} />
-        <StatItem label="Match >75%" value={<span className="text-success">{stats.highMatchCount}</span>} />
+        <StatItem label="Cubiertas" value={`${liveStats.filledCount}/${liveStats.openings}`} />
+        <StatItem label="Rechazados" value={liveStats.rejectedCount} />
+        <StatItem label="Match >75%" value={<span className="text-success">{liveStats.highMatchCount}</span>} />
       </div>
 
       {actionError && (
@@ -189,6 +221,16 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
         confirmLabel="Eliminar"
         variant="danger"
         onConfirm={() => eliminar()}
+      />
+
+      <ConfirmDialog
+        open={confirmCloseOpen}
+        onOpenChange={setConfirmCloseOpen}
+        title="¿Cerrar vacante?"
+        description={`Cubiertas ${liveStats.filledCount}/${liveStats.openings}: aún no se cubrieron todos los recursos. ¿Cerrar la vacante de todas formas?`}
+        confirmLabel="Cerrar igual"
+        variant="danger"
+        onConfirm={() => changeStatus({ newStatus: 'closed' })}
       />
     </div>
   );
