@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/design-system/ui/button';
+import { Select } from '@/design-system/atoms/Select';
 import { cn } from '@/shared/utils';
 import {
   useAvailableSlots,
@@ -217,12 +218,11 @@ export function AgendarEntrevistaModal({
                   >
                     Entrevistador
                   </label>
-                  <select
+                  <Select
                     id="interviewer-select"
                     value={effectiveInterviewerId ?? ''}
                     onChange={(e) => changeInterviewer(Number(e.target.value) || null)}
                     disabled={loadingInterviewers || interviewers.length === 0}
-                    className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300 disabled:opacity-50"
                   >
                     {interviewers.length === 0 && (
                       <option value="">
@@ -234,7 +234,7 @@ export function AgendarEntrevistaModal({
                         {i.email}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
 
                 <div>

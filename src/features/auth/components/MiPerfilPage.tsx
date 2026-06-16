@@ -5,6 +5,7 @@ import { Eye, EyeOff, Loader2, Pencil, Save, X } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/design-system/ui/button';
+import { Select } from '@/design-system/atoms/Select';
 import { cn } from '@/shared/utils';
 import {
   createAvailability,
@@ -361,31 +362,31 @@ export function MiPerfilPage() {
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <label className="block text-xs font-medium text-ink">
                   Duración de cada slot
-                  <select
+                  <Select
                     value={draftDuration}
                     onChange={(e) => setDraftDuration(Number(e.target.value))}
-                    className="mt-1 w-full rounded-md border border-border bg-bg px-2 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300"
+                    className="mt-1"
                   >
                     {SLOT_DURATIONS.map((d) => (
                       <option key={d} value={d}>
                         {d} min
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
                 <label className="block text-xs font-medium text-ink">
                   Buffer entre slots
-                  <select
+                  <Select
                     value={draftBuffer}
                     onChange={(e) => setDraftBuffer(Number(e.target.value))}
-                    className="mt-1 w-full rounded-md border border-border bg-bg px-2 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300"
+                    className="mt-1"
                   >
                     {BUFFER_OPTIONS.map((b) => (
                       <option key={b} value={b}>
                         {b} min
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
               </div>
 

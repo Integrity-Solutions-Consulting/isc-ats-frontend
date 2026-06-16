@@ -6,6 +6,7 @@ import { FileDown, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/design-system/ui/badge';
 import { Button } from '@/design-system/ui/button';
+import { Select } from '@/design-system/atoms/Select';
 import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
 import type { PipelineStage } from '@/features/pipeline/types';
 import {
@@ -142,12 +143,11 @@ export function StatusSidebar({
 
           <div>
             <label htmlFor="sub-estado-select" className="text-xs text-ink-subtle mb-1 block">Sub-estado</label>
-            <select
+            <Select
               id="sub-estado-select"
               value={application.currentStatusId ?? ""}
               onChange={handleStatusChange}
               disabled={isLoading || stageStatuses.length === 0}
-              className="w-full rounded-md border border-border bg-bg px-2.5 py-1.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300 disabled:opacity-50"
             >
               <option value="">— Sin sub-estado —</option>
               {stageStatuses.map((s) => (
@@ -155,7 +155,7 @@ export function StatusSidebar({
                   {s.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
       </div>

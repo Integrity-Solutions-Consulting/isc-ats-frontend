@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/design-system/ui/button';
 import { Input } from '@/design-system/ui/input';
 import { Label } from '@/design-system/ui/label';
+import { Select } from '@/design-system/atoms/Select';
 import { cn } from '@/shared/utils';
 import { step2Schema, type Step2Values, type Step2FormValues } from './schemas';
 import { FieldError } from './FieldError';
@@ -110,30 +111,22 @@ export function Step2Education({ defaultValues, onNext, onBack }: {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="s2-educationLevel">Último nivel de educación finalizado *</Label>
-          <select
-            id="s2-educationLevel"
-            {...register('educationLevel')}
-            className="w-full h-10 rounded-md border border-border bg-bg px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ring"
-          >
+          <Select id="s2-educationLevel" {...register('educationLevel')}>
             <option value="">Selecciona un nivel</option>
             {catalogs.educationLevels.map((o) => (
               <option key={o.id} value={String(o.id)}>{o.name}</option>
             ))}
-          </select>
+          </Select>
           <FieldError message={errors.educationLevel?.message} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="s2-completedCareer">Carrera / Título obtenido</Label>
-          <select
-            id="s2-completedCareer"
-            {...register('completedCareer')}
-            className="w-full h-10 rounded-md border border-border bg-bg px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ring"
-          >
+          <Select id="s2-completedCareer" {...register('completedCareer')}>
             <option value="">Selecciona</option>
             {catalogs.careers.map((c) => (
               <option key={c.id} value={String(c.id)}>{c.name}</option>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -141,45 +134,33 @@ export function Step2Education({ defaultValues, onNext, onBack }: {
         <Label htmlFor="s2-university">
           Universidad <span className="text-ink-subtle">(opcional)</span>
         </Label>
-        <select
-          id="s2-university"
-          {...register('university')}
-          className="w-full h-10 rounded-md border border-border bg-bg px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ring"
-        >
+        <Select id="s2-university" {...register('university')}>
           <option value="">Selecciona tu universidad</option>
           {catalogs.universities.map((u) => (
             <option key={u.id} value={String(u.id)}>{u.name}</option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="s2-city">Ciudad *</Label>
-          <select
-            id="s2-city"
-            {...register('city')}
-            className="w-full h-10 rounded-md border border-border bg-bg px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ring"
-          >
+          <Select id="s2-city" {...register('city')}>
             <option value="">Selecciona</option>
             {catalogs.cities.map((c) => (
               <option key={c.id} value={String(c.id)}>{c.name}</option>
             ))}
-          </select>
+          </Select>
           <FieldError message={errors.city?.message} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="s2-province">Provincia *</Label>
-          <select
-            id="s2-province"
-            {...register('province')}
-            className="w-full h-10 rounded-md border border-border bg-bg px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ring"
-          >
+          <Select id="s2-province" {...register('province')}>
             <option value="">Selecciona</option>
             {catalogs.provinces.map((p) => (
               <option key={p.id} value={String(p.id)}>{p.name}</option>
             ))}
-          </select>
+          </Select>
           <FieldError message={errors.province?.message} />
         </div>
       </div>
@@ -195,16 +176,12 @@ export function Step2Education({ defaultValues, onNext, onBack }: {
         {isStudying && (
           <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
             <Label htmlFor="s2-career">Carrera que estudias</Label>
-            <select
-              id="s2-career"
-              {...register('career')}
-              className="w-full h-10 rounded-md border border-border bg-bg px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ring"
-            >
+            <Select id="s2-career" {...register('career')}>
               <option value="">Selecciona</option>
               {catalogs.careers.map((c) => (
                 <option key={c.id} value={String(c.id)}>{c.name}</option>
               ))}
-            </select>
+            </Select>
           </div>
         )}
       </div>

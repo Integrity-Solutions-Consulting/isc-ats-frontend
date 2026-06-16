@@ -373,17 +373,16 @@ export function UsersPage() {
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Rol</label>
-              <select
+              <Select
                 value={form.role_id || ''}
                 onChange={(e) => setForm((f) => ({ ...f, role_id: Number(e.target.value) }))}
-                className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300"
               >
                 <option value="">Seleccionar rol…</option>
                 {/* Staff-only: the candidate role is portal-candidate, never assignable here. */}
                 {roles
                   .filter((r) => !/candidat/i.test(r.name))
                   .map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-              </select>
+              </Select>
               {formErrors.role && <p className="mt-1 text-xs text-danger">{formErrors.role}</p>}
             </div>
             <div className="flex items-center gap-2">

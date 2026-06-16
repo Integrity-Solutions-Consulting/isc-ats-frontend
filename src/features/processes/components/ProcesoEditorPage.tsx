@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, Pencil, Plus, RefreshCw, Save, Trash2, X } from 'lucide-react';
 import { Button } from '@/design-system/ui/button';
+import { Select } from '@/design-system/atoms/Select';
 import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
 import { cn } from '@/shared/utils';
 import {
@@ -172,19 +173,17 @@ export function ProcesoEditorPage({ id }: Props) {
             <div className="flex flex-wrap items-end gap-3">
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-ink-muted">Cliente</label>
-                <select value={draft.clientCompany} onChange={(e) => update('clientCompany', e.target.value)}
-                  className="h-9 rounded-md border border-border bg-bg px-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300">
+                <Select value={draft.clientCompany} onChange={(e) => update('clientCompany', e.target.value)}>
                   <option value="">Selecciona…</option>
                   {clients.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
+                </Select>
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-ink-muted">Departamento</label>
-                <select value={draft.department} onChange={(e) => update('department', e.target.value)}
-                  className="h-9 rounded-md border border-border bg-bg px-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300">
+                <Select value={draft.department} onChange={(e) => update('department', e.target.value)}>
                   <option value="">Selecciona…</option>
                   {departments.map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
-                </select>
+                </Select>
               </div>
               <div className="flex flex-1 flex-col gap-1">
                 <label className="text-xs text-ink-muted">Nombre del proceso</label>

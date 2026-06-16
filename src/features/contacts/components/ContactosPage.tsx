@@ -129,10 +129,9 @@ export function ContactosPage() {
       key: 'clientCompany', header: 'Cliente',
       render: (c) => c.id === editingId
         ? (
-          <select value={editForm.clientCompanyId} onChange={(e) => setEditForm((f) => ({ ...f, clientCompanyId: e.target.value }))}
-            className="w-full rounded border border-primary-300 bg-bg px-2 py-1 text-sm text-ink focus:outline-none">
+          <Select value={editForm.clientCompanyId} onChange={(e) => setEditForm((f) => ({ ...f, clientCompanyId: e.target.value }))}>
             {companies.map((co) => <option key={co.id} value={String(co.id)}>{co.name}</option>)}
-          </select>
+          </Select>
         )
         : <span className="text-ink-muted">{c.clientCompany}</span>,
     },
@@ -221,10 +220,9 @@ export function ContactosPage() {
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Cliente</label>
-              <select value={newForm.clientCompanyId} onChange={(e) => setNewForm((f) => ({ ...f, clientCompanyId: e.target.value }))}
-                className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300">
+              <Select value={newForm.clientCompanyId} onChange={(e) => setNewForm((f) => ({ ...f, clientCompanyId: e.target.value }))}>
                 {companies.map((co) => <option key={co.id} value={String(co.id)}>{co.name}</option>)}
-              </select>
+              </Select>
             </div>
           </div>
           <DialogFooter>

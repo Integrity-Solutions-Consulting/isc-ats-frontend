@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Camera, Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Select } from '@/design-system/atoms/Select';
 import type { CandidateProfile } from '../../types';
 import { FieldLabel, FieldValue, FieldInput, StatusPill } from './fields';
 import { formatBirthDate } from './formatBirthDate';
@@ -243,11 +244,10 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
           <div className="pb-2.5 border-b border-surface-2">
             <FieldLabel htmlFor={editing ? 'edit-university' : undefined}>Universidad</FieldLabel>
             {editing ? (
-              <select
+              <Select
                 id="edit-university"
                 value={form.universityId}
                 onChange={(e) => setForm((f) => ({ ...f, universityId: e.target.value }))}
-                className="w-full h-9 px-3 bg-white border border-primary-200 rounded-lg text-[14px] focus:outline-none focus:border-primary-700 transition-all"
               >
                 <option value="">
                   {profile.university ? `(actual: ${profile.university})` : 'Selecciona tu universidad'}
@@ -255,7 +255,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
                 {universities.map((u) => (
                   <option key={u.id} value={String(u.id)}>{u.name}</option>
                 ))}
-              </select>
+              </Select>
             ) : (
               <FieldValue>{profile.university || '—'}</FieldValue>
             )}

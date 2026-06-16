@@ -121,7 +121,7 @@ export function Combobox({
           }
         }}
         className={cn(
-          "h-9 w-full rounded-md border border-border bg-surface px-3 py-1 pr-8 text-sm text-ink shadow-sm outline-none transition-colors",
+          "h-9 w-full rounded-md border border-border bg-surface px-3 py-1 pr-9 text-sm text-ink shadow-sm outline-none transition-colors",
           "placeholder:text-ink-subtle",
           "focus-visible:border-primary-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
           "disabled:cursor-not-allowed disabled:opacity-50",
@@ -129,8 +129,7 @@ export function Combobox({
         )}
       />
       <ChevronDown
-        size={14}
-        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted"
+        className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-ink-subtle"
       />
       {open && (
         <ul
