@@ -142,7 +142,7 @@ function DayEditor({
   onRemoveSlot: (i: number) => void;
 }) {
   return (
-    <div className="rounded-md border border-border p-3">
+    <div className="rounded-md border border-border bg-surface-2 p-3">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-ink">{day}</span>
         <button
@@ -150,7 +150,7 @@ function DayEditor({
           onClick={onToggle}
           className={cn(
             'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-primary-300',
-            avail.enabled ? 'bg-primary-600' : 'bg-surface-2',
+            avail.enabled ? 'bg-primary-600' : 'bg-ink-subtle/40',
           )}
         >
           <span
@@ -179,8 +179,8 @@ function DayEditor({
                   value={slot.from}
                   onChange={(e) => onUpdateSlot(i, 'from', e.target.value)}
                   className={cn(
-                    'h-8 rounded-md border bg-bg px-2 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-primary-300',
-                    invalid ? 'border-danger' : 'border-border',
+                    'h-8 rounded-md border bg-surface px-2 text-xs text-ink shadow-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1',
+                    invalid ? 'border-danger' : 'border-border focus-visible:border-primary-600',
                   )}
                 />
                 <span className="text-xs text-ink-subtle" aria-hidden="true">
@@ -195,8 +195,8 @@ function DayEditor({
                   value={slot.to}
                   onChange={(e) => onUpdateSlot(i, 'to', e.target.value)}
                   className={cn(
-                    'h-8 rounded-md border bg-bg px-2 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-primary-300',
-                    invalid ? 'border-danger' : 'border-border',
+                    'h-8 rounded-md border bg-surface px-2 text-xs text-ink shadow-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1',
+                    invalid ? 'border-danger' : 'border-border focus-visible:border-primary-600',
                   )}
                 />
                 <button
@@ -326,7 +326,7 @@ export function MiPerfilPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* ── Availability card ──────────────────────────────────────────── */}
-        <div className="rounded-lg border border-border bg-surface-2 p-5 shadow-sm">
+        <div className="rounded-lg border border-border bg-surface p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm font-semibold text-ink">Disponibilidad para entrevistas</p>
             {!editingAvailability && !isLoading && (
@@ -444,7 +444,7 @@ export function MiPerfilPage() {
         </div>
 
         {/* ── Security card ─────────────────────────────────────────────── */}
-        <div className="rounded-lg border border-border bg-surface-2 p-5 shadow-sm">
+        <div className="rounded-lg border border-border bg-surface p-5 shadow-sm">
           <p className="mb-3 text-sm font-semibold text-ink">Seguridad</p>
 
           {!showPasswordForm ? (
@@ -452,50 +452,52 @@ export function MiPerfilPage() {
               Cambiar contraseña
             </Button>
           ) : (
-            <div className="space-y-3">
-              {[
-                { label: 'Contraseña actual', key: 'current', show: showCurrent, toggle: () => setShowCurrent((v) => !v) },
-                { label: 'Nueva contraseña', key: 'next', show: showNew, toggle: () => setShowNew((v) => !v) },
-                { label: 'Confirmar nueva contraseña', key: 'confirm', show: showConfirm, toggle: () => setShowConfirm((v) => !v) },
-              ].map(({ label, key, show, toggle }) => {
-                const fieldId = `miperfil-pw-${key}`;
-                return (
-                  <div key={key}>
-                    <label htmlFor={fieldId} className="mb-1 block text-xs text-ink-muted">
-                      {label}
-                    </label>
-                    <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-bg px-3">
-                      <input
-                        id={fieldId}
-                        type={show ? 'text' : 'password'}
-                        value={pwForm[key as keyof typeof pwForm]}
-                        onChange={(e) => setPwForm((f) => ({ ...f, [key]: e.target.value }))}
-                        className="flex-1 bg-transparent text-sm text-ink outline-none"
-                      />
-                      <button
-                        type="button"
-                        aria-label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                        onClick={toggle}
-                        className="text-ink-subtle hover:text-ink"
-                      >
-                        {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                      </button>
+            <div className="rounded-lg border border-border bg-surface-2 p-4">
+              <div className="space-y-3">
+                {[
+                  { label: 'Contraseña actual', key: 'current', show: showCurrent, toggle: () => setShowCurrent((v) => !v) },
+                  { label: 'Nueva contraseña', key: 'next', show: showNew, toggle: () => setShowNew((v) => !v) },
+                  { label: 'Confirmar nueva contraseña', key: 'confirm', show: showConfirm, toggle: () => setShowConfirm((v) => !v) },
+                ].map(({ label, key, show, toggle }) => {
+                  const fieldId = `miperfil-pw-${key}`;
+                  return (
+                    <div key={key}>
+                      <label htmlFor={fieldId} className="mb-1 block text-xs text-ink-muted">
+                        {label}
+                      </label>
+                      <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-surface px-3 shadow-sm transition-colors focus-within:border-primary-600 focus-within:ring-2 focus-within:ring-ring/30 focus-within:ring-offset-1">
+                        <input
+                          id={fieldId}
+                          type={show ? 'text' : 'password'}
+                          value={pwForm[key as keyof typeof pwForm]}
+                          onChange={(e) => setPwForm((f) => ({ ...f, [key]: e.target.value }))}
+                          className="flex-1 bg-transparent text-sm text-ink outline-none"
+                        />
+                        <button
+                          type="button"
+                          aria-label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                          onClick={toggle}
+                          className="text-ink-subtle hover:text-ink"
+                        >
+                          {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-              <div className="flex justify-end gap-2 pt-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShowPasswordForm(false);
-                    setPwForm({ current: '', next: '', confirm: '' });
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button size="sm">Guardar contraseña</Button>
+                  );
+                })}
+                <div className="flex justify-end gap-2 pt-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowPasswordForm(false);
+                      setPwForm({ current: '', next: '', confirm: '' });
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button size="sm">Guardar contraseña</Button>
+                </div>
               </div>
             </div>
           )}
