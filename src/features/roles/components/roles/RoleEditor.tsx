@@ -1,5 +1,6 @@
 import { Save, Trash2 } from 'lucide-react';
 import { Button } from '@/design-system/ui/button';
+import { Input } from '@/design-system/ui/input';
 import { MODULES, type ModuleDef, TOTAL_PERMS } from './permissions';
 import { type Role } from './mockRoles';
 import { PermissionModuleCard } from './PermissionModuleCard';
@@ -26,23 +27,22 @@ export function RoleEditor({
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Role name + description */}
-      <div className="flex items-end gap-4 border-b border-border bg-surface p-5">
+      <div className="flex items-end gap-4 border-b border-border bg-surface-2 p-5">
         <div className="flex flex-col gap-1">
           <label className="text-xs text-ink-muted">Nombre del rol</label>
-          <input
+          <Input
             value={role.name}
             onChange={(e) => onUpdate({ name: e.target.value })}
             disabled={role.isSystem}
-            className="rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300 disabled:opacity-50"
           />
         </div>
         <div className="flex-1 flex flex-col gap-1">
           <label className="text-xs text-ink-muted">Descripción</label>
-          <input
+          <Input
             value={role.description}
             onChange={(e) => onUpdate({ description: e.target.value })}
             disabled={role.isSystem}
-            className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300 disabled:opacity-50"
+            className="w-full"
           />
         </div>
         <div className="flex shrink-0 flex-col items-center rounded-md border border-border px-3 py-1.5 text-center">

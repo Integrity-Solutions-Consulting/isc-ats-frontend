@@ -13,6 +13,7 @@ import { FilterBar } from '@/design-system/molecules/FilterBar';
 import { Combobox } from '@/design-system/molecules/Combobox';
 import { Pagination } from '@/design-system/molecules/Pagination';
 import { Select } from '@/design-system/atoms/Select';
+import { Input } from '@/design-system/ui/input';
 
 interface Contact {
   id: string; firstName: string; lastName: string;
@@ -22,7 +23,7 @@ interface Company { id: number; name: string; is_active: boolean; }
 
 const CONTACTS_KEY = ['org', 'contacts'];
 const COMPANIES_KEY = ['org', 'client-companies'];
-const INLINE = 'w-full rounded border border-primary-300 bg-bg px-2 py-1 text-sm text-ink focus:outline-none';
+const INLINE = 'w-full rounded-md border border-border bg-surface px-2 py-1 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1';
 
 type EditForm = { firstName: string; lastName: string; email: string; clientCompanyId: string };
 
@@ -205,7 +206,9 @@ export function ContactosPage() {
         />
       </FilterBar>
 
-      <DataTable columns={columns} data={paginated} rowKey={(c) => c.id} emptyState={{ title: 'Sin contactos para los filtros seleccionados.' }} />
+      <DataTable columns={columns} data={paginated} rowKey={(c) => c.id}
+        rowClassName={(c) => (c.id === editingId ? 'bg-surface-2' : '')}
+        emptyState={{ title: 'Sin contactos para los filtros seleccionados.' }} />
 
       <div className="flex items-center justify-between text-sm text-ink-muted">
         <span>Mostrando {paginated.length} de <span className="font-medium text-ink">{visible.length}</span></span>
@@ -213,25 +216,25 @@ export function ContactosPage() {
       </div>
 
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-surface-2">
           <DialogHeader><DialogTitle>Nuevo contacto</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="mb-1 block text-sm font-medium text-ink">Nombre</label>
-                <input value={newForm.firstName} onChange={(e) => setNewForm((f) => ({ ...f, firstName: e.target.value }))}
-                  className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300" />
+                <Input value={newForm.firstName} onChange={(e) => setNewForm((f) => ({ ...f, firstName: e.target.value }))}
+                  className="mt-1.5" />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-ink">Apellido</label>
-                <input value={newForm.lastName} onChange={(e) => setNewForm((f) => ({ ...f, lastName: e.target.value }))}
-                  className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300" />
+                <Input value={newForm.lastName} onChange={(e) => setNewForm((f) => ({ ...f, lastName: e.target.value }))}
+                  className="mt-1.5" />
               </div>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Correo electrónico</label>
-              <input type="email" value={newForm.email} onChange={(e) => setNewForm((f) => ({ ...f, email: e.target.value }))}
-                className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300" />
+              <Input type="email" value={newForm.email} onChange={(e) => setNewForm((f) => ({ ...f, email: e.target.value }))}
+                className="mt-1.5" />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Cliente</label>

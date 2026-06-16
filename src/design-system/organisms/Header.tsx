@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Bell, ChevronDown, LogOut, Search, User } from "lucide-react";
 
 import { cn } from "@/shared/utils";
-import { Avatar } from "@/design-system/atoms/Avatar";
 
 interface HeaderProps {
   user: { name: string; initials: string };
@@ -90,7 +89,6 @@ export function Header({
             }}
             className="flex items-center gap-2 rounded-full px-2 py-1 transition-colors hover:bg-primary-50"
           >
-            <Avatar initials={user.initials} />
             <span className="hidden text-sm font-medium text-ink md:inline">
               {user.name}
             </span>

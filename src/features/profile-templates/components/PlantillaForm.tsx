@@ -4,8 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save, X } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/design-system/ui/button';
+import { Label } from '@/design-system/ui/label';
+import { TagInput } from '@/design-system/molecules/TagInput';
 import { createTemplate, updateTemplate } from '../api/profileTemplatesApi';
 import type { ProfileTemplateRecord } from '../api/mockData';
 import { ROUTES } from '@/shared/constants/routes';
@@ -18,37 +20,18 @@ const TAG_BOX_LABELS: Record<TagBox, string> = {
   certifications: 'Certificaciones',
 };
 
-function TagsBox({ label, tags, onAdd, onRemove }: {
-  label: string; tags: string[];
-  onAdd: (t: string) => void; onRemove: (t: string) => void;
+function TagsBox({ label, tags, onChange }: {
+  label: string; tags: string[]; onChange: (tags: string[]) => void;
 }) {
-  const [input, setInput] = useState('');
   return (
-    <div className="rounded-lg border border-border bg-surface p-4 shadow-sm">
-      <p className="mb-3 text-sm font-semibold text-ink">{label}</p>
-      <div className="mb-3 flex flex-wrap gap-1.5">
-        {tags.map((tag) => (
-          <span key={tag} className="flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-0.5 text-xs font-medium text-primary-700">
-            {tag}
-            <button type="button" aria-label={`Quitar ${tag}`} onClick={() => onRemove(tag)} className="text-primary-400 hover:text-primary-700">
-              <X className="size-3" />
-            </button>
-          </span>
-        ))}
-        {tags.length === 0 && <span className="text-xs text-ink-subtle">Sin etiquetas</span>}
-      </div>
-      <div className="flex gap-2">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (input.trim()) { onAdd(input.trim()); setInput(''); } } }}
-          placeholder="Agregar y presionar Enter…"
-          className="flex-1 rounded-md border border-border bg-bg px-3 py-1.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300"
-        />
-        <Button type="button" size="sm" variant="outline" onClick={() => { if (input.trim()) { onAdd(input.trim()); setInput(''); } }}>
-          Agregar
-        </Button>
-      </div>
+    <div>
+      <Label>{label}</Label>
+      <TagInput
+        className="mt-1.5"
+        value={tags}
+        onChange={onChange}
+        placeholder="Agregar y presionar Enter…"
+      />
     </div>
   );
 }
@@ -75,14 +58,6 @@ export function PlantillaForm({ mode, initialValues }: PlantillaFormProps) {
     skills: { value: skills, set: setSkills },
     certifications: { value: certifications, set: setCertifications },
   };
-
-  function addTag(box: TagBox, tag: string) {
-    tagState[box].set([...tagState[box].value, tag]);
-  }
-
-  function removeTag(box: TagBox, tag: string) {
-    tagState[box].set(tagState[box].value.filter((t) => t !== tag));
-  }
 
   async function handleSave() {
     if (!name.trim()) return;
@@ -147,8 +122,7 @@ export function PlantillaForm({ mode, initialValues }: PlantillaFormProps) {
               key={box}
               label={TAG_BOX_LABELS[box]}
               tags={tagState[box].value}
-              onAdd={(t) => addTag(box, t)}
-              onRemove={(t) => removeTag(box, t)}
+              onChange={tagState[box].set}
             />
           ))}
         </div>

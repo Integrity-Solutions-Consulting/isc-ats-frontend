@@ -22,6 +22,7 @@ import { Combobox } from '@/design-system/molecules/Combobox';
 import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
 import { Pagination } from '@/design-system/molecules/Pagination';
 import { Select } from '@/design-system/atoms/Select';
+import { Input } from '@/design-system/ui/input';
 import {
   createUser,
   listRoles,
@@ -335,7 +336,7 @@ export function UsersPage() {
 
       {/* Create user modal */}
       <Dialog open={showModal} onOpenChange={(open) => { setShowModal(open); if (!open) { setCreateError(null); setFormErrors({}); } }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-surface-2">
           <DialogHeader>
             <DialogTitle>Nuevo usuario</DialogTitle>
             <DialogDescription>
@@ -346,33 +347,33 @@ export function UsersPage() {
           <div className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Correo electrónico</label>
-              <input
+              <Input
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 placeholder="usuario@integrity.com.ec"
-                className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300"
+                className="mt-1.5"
               />
               {formErrors.email && <p className="mt-1 text-xs text-danger">{formErrors.email}</p>}
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Contraseña inicial</label>
-              <input
+              <Input
                 type="password"
                 value={form.password}
                 onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                 placeholder="Mínimo 6 caracteres"
-                className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300"
+                className="mt-1.5"
               />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Confirmar contraseña</label>
-              <input
+              <Input
                 type="password"
                 value={form.confirmPassword}
                 onChange={(e) => setForm((f) => ({ ...f, confirmPassword: e.target.value }))}
                 placeholder="Repetir contraseña"
-                className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300"
+                className="mt-1.5"
               />
               {formErrors.password && <p className="mt-1 text-xs text-danger">{formErrors.password}</p>}
             </div>

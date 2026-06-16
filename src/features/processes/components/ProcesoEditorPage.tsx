@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, Pencil, Plus, RefreshCw, Save, Trash2, X } from 'lucide-react';
 import { Button } from '@/design-system/ui/button';
 import { Select } from '@/design-system/atoms/Select';
+import { Input } from '@/design-system/ui/input';
 import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
 import { cn } from '@/shared/utils';
 import {
@@ -170,7 +171,7 @@ export function ProcesoEditorPage({ id }: Props) {
 
         <div className="flex-1">
           {editing ? (
-            <div className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-surface-2 p-3">
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-ink-muted">Cliente</label>
                 <Select value={draft.clientCompany} onChange={(e) => update('clientCompany', e.target.value)}>
@@ -187,9 +188,8 @@ export function ProcesoEditorPage({ id }: Props) {
               </div>
               <div className="flex flex-1 flex-col gap-1">
                 <label className="text-xs text-ink-muted">Nombre del proceso</label>
-                <input value={draft.name} onChange={(e) => update('name', e.target.value)}
-                  placeholder="Ej: BG · Tecnología — Estándar 5 etapas"
-                  className="h-9 w-full rounded-md border border-border bg-bg px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300 placeholder:text-ink-subtle" />
+                <Input value={draft.name} onChange={(e) => update('name', e.target.value)}
+                  placeholder="Ej: BG · Tecnología — Estándar 5 etapas" />
               </div>
             </div>
           ) : (

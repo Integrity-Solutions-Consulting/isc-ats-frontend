@@ -30,6 +30,8 @@ export interface DataTableProps<TRow> {
    * Rows get role="button", tabIndex=0, and respond to Enter/Space.
    */
   onRowClick?: (row: TRow) => void;
+  /** Optional per-row className, e.g. to highlight a row being edited. */
+  rowClassName?: (row: TRow) => string;
   /**
    * When true, renders a skeleton shimmer instead of rows.
    * Uses `skeletonRows` (default 4) and `columns.length` to size it.
@@ -78,6 +80,7 @@ export function DataTable<TRow>({
   data,
   rowKey,
   onRowClick,
+  rowClassName,
   isLoading = false,
   skeletonRows = 4,
   emptyState = { title: 'Sin resultados' },
@@ -145,6 +148,7 @@ export function DataTable<TRow>({
                     'border-b border-border last:border-0',
                     onRowClick &&
                       'cursor-pointer hover:bg-primary-50/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-300',
+                    rowClassName?.(row),
                   )}
                   {...(onRowClick
                     ? {

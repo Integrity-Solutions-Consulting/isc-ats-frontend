@@ -12,11 +12,12 @@ import { DataTable, type ColumnDef } from '@/design-system/organisms/DataTable';
 import { FilterBar } from '@/design-system/molecules/FilterBar';
 import { Pagination } from '@/design-system/molecules/Pagination';
 import { Combobox } from '@/design-system/molecules/Combobox';
+import { Input } from '@/design-system/ui/input';
 
 interface Client { id: string; name: string; is_active: boolean; }
 
 const QUERY_KEY = ['org', 'client-companies'];
-const INLINE_INPUT = 'w-full rounded border border-primary-300 bg-bg px-2 py-1 text-sm text-ink focus:outline-none';
+const INLINE_INPUT = 'w-full rounded-md border border-border bg-surface px-2 py-1 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1';
 
 async function fetchClients(): Promise<Client[]> {
   const res = await fetch('/api/org/client-companies', { cache: 'no-store' });
@@ -174,6 +175,7 @@ export function ClientesPage() {
       </FilterBar>
 
       <DataTable columns={columns} data={paginated} rowKey={(c) => c.id}
+        rowClassName={(c) => (c.id === editingId ? 'bg-surface-2' : '')}
         emptyState={{ title: 'Sin clientes para los filtros seleccionados.' }} />
 
       <div className="flex items-center justify-between text-sm text-ink-muted">
@@ -185,14 +187,11 @@ export function ClientesPage() {
       </div>
 
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-surface-2">
           <DialogHeader><DialogTitle>Nuevo cliente</DialogTitle></DialogHeader>
           <div>
             <label className="mb-1 block text-sm font-medium text-ink">Nombre comercial</label>
-            <input
-              value={newName} onChange={(e) => setNewName(e.target.value)}
-              className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300"
-            />
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} className="mt-1.5" />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowModal(false)}>Cancelar</Button>

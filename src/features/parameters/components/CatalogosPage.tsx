@@ -188,8 +188,8 @@ export function CatalogosPage() {
 
         {/* Editor */}
         <div className="flex flex-1 flex-col p-4">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <div className="flex h-8 flex-1 items-center gap-2 rounded-full border border-border bg-bg px-3 text-xs">
+          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2 p-3">
+            <div className="flex h-8 flex-1 items-center gap-2 rounded-full border border-border bg-surface px-3 text-xs focus-within:border-primary-600 focus-within:ring-2 focus-within:ring-ring/30 focus-within:ring-offset-1">
               <Search className="size-3.5 shrink-0 text-ink-subtle" />
               <input type="search" placeholder="Buscar…" value={search} onChange={(e) => setSearch(e.target.value)}
                 className="flex-1 bg-transparent text-ink outline-none placeholder:text-ink-subtle" />
@@ -197,7 +197,7 @@ export function CatalogosPage() {
             {(['all', 'active', 'inactive'] as Filter[]).map((f) => (
               <button key={f} type="button" onClick={() => setFilter(f)}
                 className={cn('rounded-full px-3 py-1 text-xs font-medium transition-colors',
-                  filter === f ? 'bg-primary-600 text-white' : 'bg-surface-2 text-ink-muted hover:bg-primary-50 hover:text-primary-700')}>
+                  filter === f ? 'bg-primary-600 text-white' : 'bg-surface text-ink-muted hover:bg-primary-50 hover:text-primary-700')}>
                 {f === 'all' ? 'Todos' : f === 'active' ? 'Activos' : 'Inactivos'}
               </button>
             ))}
@@ -243,12 +243,13 @@ export function CatalogosPage() {
                 ) : filtered.length === 0 ? (
                   <tr><td colSpan={colSpan} className="px-4 py-8 text-center text-sm text-ink-subtle">Sin valores.</td></tr>
                 ) : filtered.map((v) => (
-                  <tr key={v.id} className="border-b border-border last:border-0 hover:bg-primary-50/30">
+                  <tr key={v.id} className={cn('border-b border-border last:border-0',
+                    editingId === v.id ? 'bg-surface-2' : 'hover:bg-primary-50/30')}>
                     <td className="px-4 py-2.5">
                       {editingId === v.id ? (
                         <input autoFocus value={editingName} onChange={(e) => setEditingName(e.target.value)}
                           onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(v.id); if (e.key === 'Escape') setEditingId(null); }}
-                          className="w-full rounded border border-primary-300 bg-bg px-2 py-1 text-sm text-ink focus:outline-none" />
+                          className="w-full rounded-md border border-border bg-surface px-2 py-1 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1" />
                       ) : (
                         <span className={cn('text-sm', !v.active && 'text-ink-subtle line-through')}>{v.name}</span>
                       )}
@@ -259,7 +260,7 @@ export function CatalogosPage() {
                           <input value={editingDescription} onChange={(e) => setEditingDescription(e.target.value)}
                             onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(v.id); if (e.key === 'Escape') setEditingId(null); }}
                             placeholder="Descripción…"
-                            className="w-full rounded border border-primary-300 bg-bg px-2 py-1 text-sm text-ink focus:outline-none placeholder:text-ink-subtle" />
+                            className="w-full rounded-md border border-border bg-surface px-2 py-1 text-sm text-ink shadow-sm outline-none transition-colors placeholder:text-ink-subtle focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1" />
                         ) : (
                           <span className="text-sm text-ink-muted">{v.description || '—'}</span>
                         )}
