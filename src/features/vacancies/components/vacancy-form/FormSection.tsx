@@ -11,7 +11,7 @@ export function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-border bg-surface p-5 shadow-sm">
+    <section className="rounded-lg border border-border bg-surface-2 p-5 shadow-sm">
       <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-ink">
         <span className="grid size-6 place-items-center rounded-md bg-primary-100 text-xs font-bold text-primary-700">
           {num}

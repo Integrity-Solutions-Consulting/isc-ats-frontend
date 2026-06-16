@@ -18,6 +18,7 @@ import {
 } from '@/design-system/ui/dialog';
 import { DataTable, type ColumnDef } from '@/design-system/organisms/DataTable';
 import { FilterBar } from '@/design-system/molecules/FilterBar';
+import { Combobox } from '@/design-system/molecules/Combobox';
 import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
 import { Pagination } from '@/design-system/molecules/Pagination';
 import { Select } from '@/design-system/atoms/Select';
@@ -269,25 +270,29 @@ export function UsersPage() {
           placeholder: 'Buscar por nombre o correo…',
         }}
       >
-        <Select
+        <Combobox
+          valueKey="id"
           aria-label="Filtrar por rol"
           className="w-auto min-w-[160px]"
           value={filterRole}
-          onChange={(e) => { setFilterRole(e.target.value); setPage(0); }}
-        >
-          <option value="">Todos los roles</option>
-          {roleOptions.map((r) => <option key={r} value={r}>{r}</option>)}
-        </Select>
-        <Select
+          onChange={(value) => { setFilterRole(value); setPage(0); }}
+          options={[
+            { id: '', label: 'Todos los roles' },
+            ...roleOptions.map((r) => ({ id: r, label: r })),
+          ]}
+        />
+        <Combobox
+          valueKey="id"
           aria-label="Filtrar por estado"
           className="w-auto min-w-[150px]"
           value={filterStatus}
-          onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}
-        >
-          <option value="">Todos los estados</option>
-          <option value="active">Activo</option>
-          <option value="inactive">Inactivo</option>
-        </Select>
+          onChange={(value) => { setFilterStatus(value); setPage(0); }}
+          options={[
+            { id: '', label: 'Todos los estados' },
+            { id: 'active', label: 'Activo' },
+            { id: 'inactive', label: 'Inactivo' },
+          ]}
+        />
       </FilterBar>
 
       <DataTable

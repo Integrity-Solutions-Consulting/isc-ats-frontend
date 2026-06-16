@@ -39,8 +39,7 @@ export function LocationSection() {
             render={({ field }) => (
               <Combobox
                 id="city"
-                className="mt-1.5"
-                valueKey="id"
+                className="mt-1.5"                valueKey="id"
                 options={catalogs?.cities ?? []}
                 value={field.value}
                 onChange={field.onChange}
@@ -106,8 +105,7 @@ export function LocationSection() {
             render={({ field }) => (
               <Combobox
                 id="career"
-                className="mt-1.5"
-                valueKey="id"
+                className="mt-1.5"                valueKey="id"
                 options={catalogs?.careers ?? []}
                 value={field.value}
                 onChange={field.onChange}
@@ -132,7 +130,7 @@ export function LocationSection() {
                 const end = (watch("workSchedule") ?? "").split(" - ")[1] ?? "";
                 setValue("workSchedule", `${e.target.value} - ${end}`);
               }}
-              className="h-9 w-32 rounded-md border border-border bg-surface px-3 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+              className="h-9 w-32 rounded-md border border-border bg-surface px-3 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1"
             />
             <span className="text-sm text-ink-muted">a</span>
             <input
@@ -143,7 +141,7 @@ export function LocationSection() {
                 const start = (watch("workSchedule") ?? "").split(" - ")[0] ?? "";
                 setValue("workSchedule", `${start} - ${e.target.value}`);
               }}
-              className="h-9 w-32 rounded-md border border-border bg-surface px-3 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+              className="h-9 w-32 rounded-md border border-border bg-surface px-3 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1"
             />
           </div>
         </div>

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/design-system/ui/badge';
 import { DataTable, type ColumnDef } from '@/design-system/organisms/DataTable';
 import { FilterBar } from '@/design-system/molecules/FilterBar';
-import { Select } from '@/design-system/atoms/Select';
+import { Combobox } from '@/design-system/molecules/Combobox';
 import { Avatar } from '@/design-system/atoms/Avatar';
 import { cn } from '@/shared/utils';
 import { ROUTES } from '@/shared/constants/routes';
@@ -109,36 +109,42 @@ export function TalentPoolPage() {
           placeholder: 'Buscar candidato o carrera…',
         }}
       >
-        <Select
+        <Combobox
+          valueKey="id"
           aria-label="Filtrar por carrera"
           className="w-auto min-w-[180px]"
           value={filters.career ?? ''}
-          onChange={(e) => setFilters((f) => ({ ...f, career: e.target.value || null }))}
-        >
-          <option value="">Carrera: Todas</option>
-          {careers.map((c) => <option key={c} value={c}>{c}</option>)}
-        </Select>
+          onChange={(value) => setFilters((f) => ({ ...f, career: value || null }))}
+          options={[
+            { id: '', label: 'Carrera: Todas' },
+            ...careers.map((c) => ({ id: c, label: c })),
+          ]}
+        />
 
-        <Select
+        <Combobox
+          valueKey="id"
           aria-label="Filtrar por vacante de origen"
           className="w-auto min-w-[200px]"
           value={filters.vacancyId ?? ''}
-          onChange={(e) => setFilters((f) => ({ ...f, vacancyId: e.target.value || null }))}
-        >
-          <option value="">Vacante de origen: Todas</option>
-          {vacancies.map(([id, title]) => <option key={id} value={id}>{title}</option>)}
-        </Select>
+          onChange={(value) => setFilters((f) => ({ ...f, vacancyId: value || null }))}
+          options={[
+            { id: '', label: 'Vacante de origen: Todas' },
+            ...vacancies.map(([id, title]) => ({ id, label: title })),
+          ]}
+        />
 
-        <Select
+        <Combobox
+          valueKey="id"
           aria-label="Filtrar por estado"
           className="w-auto min-w-[150px]"
           value={filters.status}
-          onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-        >
-          <option value="">Estado: Todos</option>
-          <option value="active">Activo</option>
-          <option value="inactive">Inactivo</option>
-        </Select>
+          onChange={(value) => setFilters((f) => ({ ...f, status: value }))}
+          options={[
+            { id: '', label: 'Estado: Todos' },
+            { id: 'active', label: 'Activo' },
+            { id: 'inactive', label: 'Inactivo' },
+          ]}
+        />
       </FilterBar>
 
       <DataTable

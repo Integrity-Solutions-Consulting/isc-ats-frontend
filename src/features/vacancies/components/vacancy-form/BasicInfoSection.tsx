@@ -34,8 +34,7 @@ export function BasicInfoSection() {
             render={({ field }) => (
               <Combobox
                 id="position"
-                className="mt-1.5"
-                options={catalogs?.vacancyNames ?? []}
+                className="mt-1.5"                options={catalogs?.vacancyNames ?? []}
                 value={field.value}
                 onChange={field.onChange}
                 placeholder="Selecciona o escribe un cargo"
@@ -56,8 +55,7 @@ export function BasicInfoSection() {
             render={({ field }) => (
               <Combobox
                 id="clientCompany"
-                className="mt-1.5"
-                valueKey="id"
+                className="mt-1.5"                valueKey="id"
                 options={catalogs?.clients ?? []}
                 value={field.value}
                 onChange={field.onChange}
@@ -81,8 +79,7 @@ export function BasicInfoSection() {
             render={({ field }) => (
               <Combobox
                 id="contact"
-                className="mt-1.5"
-                valueKey="id"
+                className="mt-1.5"                valueKey="id"
                 options={contacts}
                 value={field.value}
                 onChange={field.onChange}
@@ -105,8 +102,7 @@ export function BasicInfoSection() {
             render={({ field }) => (
               <Combobox
                 id="department"
-                className="mt-1.5"
-                valueKey="id"
+                className="mt-1.5"                valueKey="id"
                 options={catalogs?.departments ?? []}
                 value={field.value}
                 onChange={field.onChange}

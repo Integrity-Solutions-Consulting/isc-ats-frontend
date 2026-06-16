@@ -171,7 +171,7 @@
   --destructive: var(--danger);
   --destructive-foreground: #FFFFFF;
   --input: var(--border);
-  --ring: var(--accent-500);
+  --ring: var(--primary-600);
   --radius: 8px;
 
   /* Sidebar — dark navy surface (Darkslate) */

@@ -48,8 +48,7 @@ export function ProfileSection() {
         <div className="mt-1.5 flex items-center gap-2">
           <Combobox
             id="profileTemplate"
-            className="flex-1"
-            valueKey="id"
+            className="flex-1"            valueKey="id"
             options={filteredTemplates.map((t) => ({ id: t.id, label: t.name }))}
             value={appliedTemplate?.id ?? ""}
             onChange={applyTemplate}

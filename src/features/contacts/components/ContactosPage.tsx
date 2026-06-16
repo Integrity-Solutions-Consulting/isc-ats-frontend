@@ -10,6 +10,7 @@ import {
 } from '@/design-system/ui/dialog';
 import { DataTable, type ColumnDef } from '@/design-system/organisms/DataTable';
 import { FilterBar } from '@/design-system/molecules/FilterBar';
+import { Combobox } from '@/design-system/molecules/Combobox';
 import { Pagination } from '@/design-system/molecules/Pagination';
 import { Select } from '@/design-system/atoms/Select';
 
@@ -179,15 +180,29 @@ export function ContactosPage() {
       </div>
 
       <FilterBar search={{ value: search, onChange: (v) => { setSearch(v); setPage(0); }, placeholder: 'Buscar por nombre o correo…' }}>
-        <Select aria-label="Filtrar por cliente" className="w-auto min-w-[180px]" value={filterClient} onChange={(e) => { setFilterClient(e.target.value); setPage(0); }}>
-          <option value="">Cliente: Todos</option>
-          {clientNames.map((name) => <option key={name} value={name}>{name}</option>)}
-        </Select>
-        <Select aria-label="Filtrar por estado" className="w-auto min-w-[150px]" value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}>
-          <option value="">Estado: Todos</option>
-          <option value="active">Activo</option>
-          <option value="inactive">Inactivo</option>
-        </Select>
+        <Combobox
+          valueKey="id"
+          aria-label="Filtrar por cliente"
+          className="w-auto min-w-[180px]"
+          value={filterClient}
+          onChange={(value) => { setFilterClient(value); setPage(0); }}
+          options={[
+            { id: '', label: 'Cliente: Todos' },
+            ...clientNames.map((name) => ({ id: name, label: name })),
+          ]}
+        />
+        <Combobox
+          valueKey="id"
+          aria-label="Filtrar por estado"
+          className="w-auto min-w-[150px]"
+          value={filterStatus}
+          onChange={(value) => { setFilterStatus(value); setPage(0); }}
+          options={[
+            { id: '', label: 'Estado: Todos' },
+            { id: 'active', label: 'Activo' },
+            { id: 'inactive', label: 'Inactivo' },
+          ]}
+        />
       </FilterBar>
 
       <DataTable columns={columns} data={paginated} rowKey={(c) => c.id} emptyState={{ title: 'Sin contactos para los filtros seleccionados.' }} />

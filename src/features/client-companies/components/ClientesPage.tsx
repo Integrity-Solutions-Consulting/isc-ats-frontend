@@ -11,7 +11,7 @@ import {
 import { DataTable, type ColumnDef } from '@/design-system/organisms/DataTable';
 import { FilterBar } from '@/design-system/molecules/FilterBar';
 import { Pagination } from '@/design-system/molecules/Pagination';
-import { Select } from '@/design-system/atoms/Select';
+import { Combobox } from '@/design-system/molecules/Combobox';
 
 interface Client { id: string; name: string; is_active: boolean; }
 
@@ -161,14 +161,16 @@ export function ClientesPage() {
           placeholder: 'Buscar por nombre…',
         }}
       >
-        <Select
+        <Combobox
+          valueKey="id"
           aria-label="Filtrar por estado" className="w-auto min-w-[150px]"
-          value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}
-        >
-          <option value="">Estado: Todos</option>
-          <option value="active">Activo</option>
-          <option value="inactive">Inactivo</option>
-        </Select>
+          value={filterStatus} onChange={(value) => { setFilterStatus(value); setPage(0); }}
+          options={[
+            { id: '', label: 'Estado: Todos' },
+            { id: 'active', label: 'Activo' },
+            { id: 'inactive', label: 'Inactivo' },
+          ]}
+        />
       </FilterBar>
 
       <DataTable columns={columns} data={paginated} rowKey={(c) => c.id}

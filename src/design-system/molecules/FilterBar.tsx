@@ -28,9 +28,10 @@ interface FilterBarProps {
 /**
  * Shared filter-bar shell used across all list pages.
  *
- * Renders the consistent container (`rounded-lg border border-border bg-surface p-3`)
+ * Renders the consistent container (`rounded-lg border border-border bg-surface-2 p-3`)
  * with an optional search `<Input>` atom on the left and any number of `<Select>`
- * atoms passed as children on the right.
+ * atoms passed as children on the right. The container uses `bg-surface-2` so it
+ * reads as a distinct zone from the white `bg-surface` inputs inside it.
  *
  * Usage:
  * ```tsx
@@ -46,7 +47,7 @@ export function FilterBar({ search, children, className }: FilterBarProps) {
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface p-3",
+        "flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface-2 p-3",
         className,
       )}
     >

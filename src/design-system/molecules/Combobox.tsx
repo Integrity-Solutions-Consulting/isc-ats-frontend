@@ -16,7 +16,10 @@ interface ComboboxProps {
   placeholder?: string;
   id?: string;
   className?: string;
+  /** Override classes on the input itself (className targets the outer wrapper). */
+  inputClassName?: string;
   "aria-invalid"?: boolean;
+  "aria-label"?: string;
   disabled?: boolean;
   /**
    * What `value`/`onChange` carry:
@@ -37,7 +40,9 @@ export function Combobox({
   placeholder,
   id,
   className,
+  inputClassName,
   "aria-invalid": ariaInvalid,
+  "aria-label": ariaLabel,
   disabled,
   valueKey = "label",
 }: ComboboxProps) {
@@ -84,8 +89,11 @@ export function Combobox({
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, [isIdMode]);
 
+  // Until the user actually edits the text, the input still shows the current
+  // selection's label — filtering against it would hide every other option.
+  // Treat "untouched" query (still equal to the selected label) as no filter.
   const filtered =
-    query.length === 0
+    query.length === 0 || query === selectedLabel
       ? options
       : options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()));
 
@@ -106,6 +114,7 @@ export function Combobox({
         aria-haspopup="listbox"
         aria-controls={listboxId}
         aria-invalid={ariaInvalid}
+        aria-label={ariaLabel}
         aria-autocomplete="list"
         onChange={(e) => {
           setQuery(e.target.value);
@@ -113,19 +122,31 @@ export function Combobox({
           if (!isIdMode) onChange(e.target.value);
           setOpen(true);
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={(e) => {
+          setOpen(true);
+          e.target.select();
+        }}
         onKeyDown={(e) => {
           if (e.key === "Escape") {
             setOpen(false);
             if (isIdMode) setQuery(selectedLabel);
+          } else if (e.key === "Enter") {
+            if (open && filtered.length > 0) {
+              e.preventDefault();
+              const top = filtered[0];
+              onChange(isIdMode ? top.id : top.label);
+              setQuery(top.label);
+            }
+            setOpen(false);
           }
         }}
         className={cn(
           "h-9 w-full rounded-md border border-border bg-surface px-3 py-1 pr-9 text-sm text-ink shadow-sm outline-none transition-colors",
           "placeholder:text-ink-subtle",
-          "focus-visible:border-primary-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+          "focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1",
           "disabled:cursor-not-allowed disabled:opacity-50",
           ariaInvalid && "border-danger focus-visible:ring-danger/50",
+          inputClassName,
         )}
       />
       <ChevronDown

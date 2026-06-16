@@ -326,7 +326,7 @@ export function MiPerfilPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* ── Availability card ──────────────────────────────────────────── */}
-        <div className="rounded-lg border border-border bg-surface p-5 shadow-sm">
+        <div className="rounded-lg border border-border bg-surface-2 p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm font-semibold text-ink">Disponibilidad para entrevistas</p>
             {!editingAvailability && !isLoading && (
@@ -444,7 +444,7 @@ export function MiPerfilPage() {
         </div>
 
         {/* ── Security card ─────────────────────────────────────────────── */}
-        <div className="rounded-lg border border-border bg-surface p-5 shadow-sm">
+        <div className="rounded-lg border border-border bg-surface-2 p-5 shadow-sm">
           <p className="mb-3 text-sm font-semibold text-ink">Seguridad</p>
 
           {!showPasswordForm ? (

@@ -35,8 +35,7 @@ export function SelectionSection() {
           render={({ field }) => (
             <Combobox
               id="process"
-              className="mt-1.5"
-              valueKey="id"
+              className="mt-1.5"              valueKey="id"
               options={catalogs?.processes ?? []}
               value={field.value}
               onChange={field.onChange}

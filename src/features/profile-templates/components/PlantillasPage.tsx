@@ -4,14 +4,14 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 import { Badge } from '@/design-system/ui/badge';
 import { ROUTES } from '@/shared/constants/routes';
 import { Button } from '@/design-system/ui/button';
-import { Input } from '@/design-system/ui/input';
 import { Pagination } from '@/design-system/molecules/Pagination';
-import { Select } from '@/design-system/atoms/Select';
+import { FilterBar } from '@/design-system/molecules/FilterBar';
+import { Combobox } from '@/design-system/molecules/Combobox';
 import { DataTable, type ColumnDef } from '@/design-system/organisms/DataTable';
 import { usePagedData } from '@/shared/hooks/usePagedData';
 import { listTemplates } from '../api/profileTemplatesApi';
@@ -70,27 +70,26 @@ export function PlantillasPage() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface p-3">
-        <div className="relative min-w-[240px] flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-subtle" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nombre…"
-            className="pl-9"
-          />
-        </div>
-        <Select
+      <FilterBar
+        search={{
+          value: search,
+          onChange: setSearch,
+          placeholder: 'Buscar por nombre…',
+        }}
+      >
+        <Combobox
+          valueKey="id"
           aria-label="Filtrar por estado"
           className="w-auto min-w-[150px]"
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-        >
-          <option value="">Estado: Todos</option>
-          <option value="active">Activo</option>
-          <option value="inactive">Inactivo</option>
-        </Select>
-      </div>
+          onChange={setFilterStatus}
+          options={[
+            { id: '', label: 'Estado: Todos' },
+            { id: 'active', label: 'Activo' },
+            { id: 'inactive', label: 'Inactivo' },
+          ]}
+        />
+      </FilterBar>
 
       <div className="flex flex-col gap-3">
         <DataTable
