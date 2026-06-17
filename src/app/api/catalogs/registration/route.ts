@@ -1,17 +1,7 @@
 import { NextResponse } from "next/server";
-import { backendGet } from "@/lib/backendFetch";
+import { cookies } from "next/headers";
 
-interface BackendParam {
-  id: number;
-  type: string;
-  code: string;
-  name: string;
-}
-
-interface BackendPage<T> {
-  items: T[];
-  total: number;
-}
+const BACKEND = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000/api/v1";
 
 export interface RegistrationCatalogOption {
   id: number;
@@ -27,40 +17,34 @@ export interface RegistrationCatalogs {
   universities: RegistrationCatalogOption[];
 }
 
-// Backend parameter type → response key. One typed fetch per catalog keeps each
-// request under the backend's 100-item page cap.
-const TYPE_TO_KEY = {
-  city: "cities",
-  province: "provinces",
-  education_level: "educationLevels",
-  career: "careers",
-  university: "universities",
-} as const;
-
 export async function GET(): Promise<NextResponse> {
   try {
-    const types = Object.keys(TYPE_TO_KEY) as (keyof typeof TYPE_TO_KEY)[];
-    const pages = await Promise.all(
-      types.map((t) =>
-        backendGet<BackendPage<BackendParam>>(`/org/parameters?type=${t}&size=100`),
-      ),
+    const store = await cookies();
+    const token = store.get("access-token")?.value;
+    if (!token) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    const res = await fetch(
+      `${BACKEND}/recruitment/candidates/registration-catalog`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      },
     );
 
-    const toOptions = (items: BackendParam[]): RegistrationCatalogOption[] =>
-      items.map((p) => ({ id: p.id, code: p.code, name: p.name }));
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return NextResponse.json(
+        { error: (err as { detail?: string }).detail ?? "Error al cargar catálogos" },
+        { status: res.status },
+      );
+    }
 
-    const catalogs: RegistrationCatalogs = {
-      cities: [],
-      provinces: [],
-      educationLevels: [],
-      careers: [],
-      universities: [],
-    };
-    types.forEach((t, i) => {
-      catalogs[TYPE_TO_KEY[t]] = toOptions(pages[i].items);
-    });
-
-    return NextResponse.json(catalogs satisfies RegistrationCatalogs);
+    const data = await res.json();
+    return NextResponse.json(data satisfies RegistrationCatalogs);
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
