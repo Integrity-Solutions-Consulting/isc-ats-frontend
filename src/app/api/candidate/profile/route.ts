@@ -212,10 +212,33 @@ export async function POST(request: Request) {
       cv_file_id: cvFileId ?? null,
     };
 
-    const created = await backendPost<Record<string, unknown>>(
-      "/recruitment/candidates",
-      payload,
-    );
+    let result: Record<string, unknown>;
+    let responseStatus = 201;
+
+    try {
+      result = await backendPost<Record<string, unknown>>(
+        "/recruitment/candidates",
+        payload,
+      );
+    } catch (postError: unknown) {
+      const msg = postError instanceof Error ? postError.message : String(postError);
+      if (!msg.includes("409")) throw postError;
+
+      // Candidate already exists — fetch their ID and update instead
+      const existing = await backendGet<{ items: Array<{ id: number }> }>(
+        `/recruitment/candidates/expanded?user_id=${userId}`,
+      );
+      const candidateId = existing.items[0]?.id;
+      if (!candidateId) throw new Error("No se encontró el perfil existente tras el conflicto");
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { user_id: _uid, ...patchPayload } = payload;
+      result = await backendPatch<Record<string, unknown>>(
+        `/recruitment/candidates/${candidateId}`,
+        patchPayload,
+      );
+      responseStatus = 200;
+    }
 
     // Re-issue session-user cookie with has_profile: true so the server is
     // the single source of truth — the client must never mutate this cookie.
@@ -223,7 +246,7 @@ export async function POST(request: Request) {
     if (sessionRaw) {
       try {
         const current = JSON.parse(sessionRaw) as SessionUserPayload;
-        const response = NextResponse.json(created, { status: 201 });
+        const response = NextResponse.json(result, { status: responseStatus });
         setSessionUserCookie(response.cookies, { ...current, has_profile: true });
         return response;
       } catch {
@@ -231,7 +254,7 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json(created, { status: 201 });
+    return NextResponse.json(result, { status: responseStatus });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: message }, { status: 500 });
