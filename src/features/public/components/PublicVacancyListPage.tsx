@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
 
 import { Input } from '@/design-system/ui/input';
-import { Select } from '@/design-system/atoms/Select';
+import { Combobox } from '@/design-system/molecules/Combobox';
 import { ROUTES } from '@/shared/constants/routes';
 import type { CandidateVacancy } from '@/features/candidate-portal/types';
 import { VacancyCard } from '@/features/candidate-portal/components/VacancyCard';
@@ -13,6 +13,20 @@ import { VacancyCard } from '@/features/candidate-portal/components/VacancyCard'
 interface PublicVacancyListPageProps {
   vacancies: CandidateVacancy[];
 }
+
+const workModeOptions = [
+  { id: '', label: 'Modalidad: Todas' },
+  { id: 'remote', label: 'Remoto' },
+  { id: 'onsite', label: 'Presencial' },
+  { id: 'hybrid', label: 'Híbrido' },
+];
+
+const cityOptions = [
+  { id: '', label: 'Ciudad: Todas' },
+  { id: 'Guayaquil', label: 'Guayaquil' },
+  { id: 'Quito', label: 'Quito' },
+  { id: 'Cuenca', label: 'Cuenca' },
+];
 
 export function PublicVacancyListPage({ vacancies }: PublicVacancyListPageProps) {
   const router = useRouter();
@@ -35,17 +49,17 @@ export function PublicVacancyListPage({ vacancies }: PublicVacancyListPageProps)
   return (
     <div className="flex flex-col gap-6">
       <div className="mx-auto max-w-2xl pt-2 text-center">
-        <h1 className="text-[28px] font-bold leading-tight text-primary-800 sm:text-[32px]">
+        <h1 className="text-[28px] font-bold leading-tight text-ink sm:text-[32px]">
           Encuentra tu próxima oportunidad
         </h1>
         <p className="mt-2 text-ink-muted">
           Explora las vacantes disponibles en{' '}
-          <span className="font-semibold text-primary-700">Integrity Solutions</span>
+          <span className="font-semibold text-primary">Integrity Solutions</span>
         </p>
       </div>
 
-      <div className="bg-surface shadow-sm rounded-lg p-4 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
+      <div className="bg-surface shadow-sm rounded-lg p-4 flex flex-col sm:flex-row gap-3 items-center">
+        <div className="relative flex-1 w-full">
           <Search
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle pointer-events-none"
@@ -58,23 +72,23 @@ export function PublicVacancyListPage({ vacancies }: PublicVacancyListPageProps)
           />
         </div>
 
-        <div className="w-full sm:w-40">
-          <Select value={workMode} onChange={(e) => setWorkMode(e.target.value)}>
-            <option value="">Modalidad</option>
-            <option value="remote">Remoto</option>
-            <option value="onsite">Presencial</option>
-            <option value="hybrid">Híbrido</option>
-          </Select>
-        </div>
+        <Combobox
+          valueKey="id"
+          aria-label="Filtrar por modalidad"
+          className="w-full sm:w-48"
+          value={workMode}
+          onChange={setWorkMode}
+          options={workModeOptions}
+        />
 
-        <div className="w-full sm:w-40">
-          <Select value={city} onChange={(e) => setCity(e.target.value)}>
-            <option value="">Ciudad</option>
-            <option value="Guayaquil">Guayaquil</option>
-            <option value="Quito">Quito</option>
-            <option value="Cuenca">Cuenca</option>
-          </Select>
-        </div>
+        <Combobox
+          valueKey="id"
+          aria-label="Filtrar por ciudad"
+          className="w-full sm:w-48"
+          value={city}
+          onChange={setCity}
+          options={cityOptions}
+        />
       </div>
 
       <p className="text-sm text-ink-muted">

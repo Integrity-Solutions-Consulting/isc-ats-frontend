@@ -1,3 +1,4 @@
+import { Input } from '@/design-system/ui/input';
 import { cn } from '@/shared/utils';
 
 // ─── Field label + value helpers ─────────────────────────────────────────────
@@ -24,12 +25,11 @@ export function FieldInput({
   onChange: (v: string) => void;
 }) {
   return (
-    <input
+    <Input
       id={id}
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full h-9 px-3 bg-white border border-primary-200 rounded-lg text-[14px] focus:outline-none focus:border-primary-700 transition-all"
     />
   );
 }

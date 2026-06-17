@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { cn } from "@/shared/utils";
 
 type AvatarSize = "sm" | "md" | "lg";
@@ -8,25 +11,45 @@ const SIZE_CLASSES: Record<AvatarSize, string> = {
   lg: "size-10 text-sm",
 };
 
+const IMG_SIZE_CLASSES: Record<AvatarSize, string> = {
+  sm: "size-8",
+  md: "size-9",
+  lg: "size-10",
+};
+
 interface AvatarProps {
-  /** Up to two uppercase initials. */
+  /** Up to two uppercase initials — shown when no src or when image fails to load. */
   initials: string;
   /**
+   * Optional image URL. When provided, renders an <img> with a fallback to
+   * initials if the image fails to load.
+   */
+  src?: string;
+  /**
    * Size variant: sm=32px, md=36px (default), lg=40px.
-   * Override individual dimensions via className if needed.
    */
   size?: AvatarSize;
   /**
-   * Additional classes. Use to supply a custom background color and text color
-   * when the default brand blue is not appropriate (e.g. candidate avatars).
-   * twMerge resolves conflicts, so passing `bg-red-400 text-white` correctly
-   * overrides the default `bg-primary-100 text-primary-700`.
+   * Additional classes. Used to supply a custom background color when falling
+   * back to initials (e.g. candidate avatars use a color derived from their id).
    */
   className?: string;
 }
 
-/** Initials avatar. The portal uses initials-in-a-circle, not uploaded photos. */
-export function Avatar({ initials, size = "md", className }: AvatarProps) {
+export function Avatar({ initials, src, size = "md", className }: AvatarProps) {
+  const [imgError, setImgError] = useState(false);
+
+  if (src && !imgError) {
+    return (
+      <img
+        src={src}
+        alt={initials}
+        onError={() => setImgError(true)}
+        className={cn("shrink-0 rounded-full object-cover", IMG_SIZE_CLASSES[size])}
+      />
+    );
+  }
+
   return (
     <span
       className={cn(

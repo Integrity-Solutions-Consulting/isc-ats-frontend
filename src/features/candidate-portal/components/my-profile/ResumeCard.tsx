@@ -78,15 +78,15 @@ export function ResumeCard({ profile }: { profile: CandidateProfile }) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-primary-200 p-6">
-      <h3 className="text-[15px] font-bold text-primary-800 mb-3">Hoja de vida</h3>
+    <div className="bg-card rounded-xl border border-border p-6">
+      <h3 className="text-[15px] font-bold text-ink mb-3">Hoja de vida</h3>
 
       {profile.cvFileId ? (
         <>
           <div className="w-full bg-surface-2 rounded-lg p-3 mb-2 flex items-center gap-3">
             <FileText className="w-6 h-6 text-danger shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-[14px] text-primary-800 font-medium truncate">
+              <p className="text-[14px] text-ink font-medium truncate">
                 {profile.cvFileName}
               </p>
               <p className="text-[11px] text-ink-subtle">
@@ -101,7 +101,7 @@ export function ResumeCard({ profile }: { profile: CandidateProfile }) {
                 type="button"
                 onClick={handleView}
                 title="Ver CV"
-                className="p-1.5 rounded-md text-ink-subtle hover:text-primary-700 hover:bg-primary-50 transition-colors"
+                className="p-1.5 rounded-md text-ink-subtle hover:text-primary hover:bg-primary/10 transition-colors"
               >
                 <Eye className="w-4 h-4" />
               </button>
@@ -109,7 +109,7 @@ export function ResumeCard({ profile }: { profile: CandidateProfile }) {
                 type="button"
                 onClick={handleDownload}
                 title="Descargar CV"
-                className="p-1.5 rounded-md text-ink-subtle hover:text-primary-700 hover:bg-primary-50 transition-colors"
+                className="p-1.5 rounded-md text-ink-subtle hover:text-primary hover:bg-primary/10 transition-colors"
               >
                 <Download className="w-4 h-4" />
               </button>
@@ -135,19 +135,19 @@ export function ResumeCard({ profile }: { profile: CandidateProfile }) {
         onDrop={onDrop}
         className={`border-2 border-dashed rounded-lg h-[110px] flex flex-col items-center justify-center transition-colors ${
           dragOver
-            ? 'border-primary-600 bg-primary-50'
-            : 'border-primary-700/40 bg-primary-700/[0.02]'
+            ? 'border-primary bg-primary/10'
+            : 'border-primary/40 bg-primary/2'
         }`}
       >
         {uploading ? (
           <>
-            <Loader2 className="w-6 h-6 text-primary-700 mb-2 animate-spin" />
-            <p className="text-[13px] text-primary-800">Subiendo CV…</p>
+            <Loader2 className="w-6 h-6 text-primary mb-2 animate-spin" />
+            <p className="text-[13px] text-ink">Subiendo CV…</p>
           </>
         ) : (
           <>
-            <Upload className="w-6 h-6 text-primary-700 mb-2" />
-            <p className="text-[13px] text-primary-800 mb-1">
+            <Upload className="w-6 h-6 text-primary mb-2" />
+            <p className="text-[13px] text-ink mb-1">
               {profile.cvFileId ? 'Reemplazar CV' : 'Subir CV'}
             </p>
             <p className="text-[13px] text-ink-subtle">
@@ -156,7 +156,7 @@ export function ResumeCard({ profile }: { profile: CandidateProfile }) {
                 type="button"
                 disabled={uploading}
                 onClick={() => inputRef.current?.click()}
-                className="text-primary-700 font-medium hover:text-primary-600 disabled:opacity-40"
+                className="text-primary font-medium hover:opacity-85 disabled:opacity-40"
               >
                 seleccionar archivo
               </button>

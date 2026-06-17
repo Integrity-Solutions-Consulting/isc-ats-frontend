@@ -16,18 +16,6 @@ interface MyApplicationsPageProps {
   applications: CandidateApplication[];
 }
 
-const STATUS_CONFIG: Record<
-  CandidateApplication['status'],
-  { label: string; className: string }
-> = {
-  reviewing: { label: 'En revisión', className: 'bg-surface-2 text-ink-muted' },
-  interview_initial: { label: 'Entrevista inicial', className: 'bg-primary-100 text-primary-700' },
-  interview_technical: { label: 'Entrevista técnica', className: 'bg-warning/15 text-warning' },
-  offer: { label: 'Oferta', className: 'bg-primary-100 text-primary-700' },
-  hired: { label: 'Contratado', className: 'bg-success/15 text-success' },
-  rejected: { label: 'No avanzaste', className: 'bg-danger/10 text-danger' },
-  cancelled: { label: 'Cancelada', className: 'bg-surface-2 text-ink-subtle' },
-};
 
 type Tab = 'all' | 'active' | 'finished';
 
@@ -84,7 +72,6 @@ function groupSlotsByDay(slots: OfferSlot[]): DayGroup[] {
 }
 
 function ApplicationCard({ app }: { app: CandidateApplication }) {
-  const statusConfig = STATUS_CONFIG[app.status];
   const [selectedSlot, setSelectedSlot] = useState<OfferSlot | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [confirmedSlot, setConfirmedSlot] = useState<{ day: string; time: string } | null>(null);
@@ -130,17 +117,7 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
 
   return (
     <div className="bg-surface border border-border rounded-lg p-5 flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-3">
-        <p className="font-semibold text-ink text-sm leading-tight">{app.vacancyTitle}</p>
-        <span
-          className={cn(
-            'shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium',
-            statusConfig.className,
-          )}
-        >
-          {statusConfig.label}
-        </span>
-      </div>
+      <p className="font-semibold text-ink text-sm leading-tight">{app.vacancyTitle}</p>
 
       {/* Pipeline — real stages from vacancy's process */}
       {stages.length > 0 && (

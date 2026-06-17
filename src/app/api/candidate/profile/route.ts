@@ -24,7 +24,9 @@ interface BackendCandidateExpanded {
   is_studying: boolean;
   is_working: boolean;
   current_company: string | null;
+  degree_title: string | null;
   cv_file_id: number | null;
+  avatar_file_id: number | null;
   is_active: boolean;
   created_at: string;
 }
@@ -85,6 +87,8 @@ export async function GET() {
       isStudying: candidate.is_studying,
       isWorking: candidate.is_working,
       currentCompany: candidate.current_company ?? undefined,
+      degreeTitle: candidate.degree_title ?? undefined,
+      avatarFileId: candidate.avatar_file_id ?? undefined,
       cvFileId,
       cvFileName,
       cvSizeKb,
@@ -114,12 +118,21 @@ export async function PATCH(request: Request) {
 
     const body = await request.json() as {
       cvFileId?: number;
+      avatarFileId?: number;
       candidateId: number;
       firstName?: string;
       lastName?: string;
       phone?: string;
       homeAddress?: string | null;
       universityId?: number | null;
+      cityId?: number | null;
+      provinceId?: number | null;
+      educationLevelId?: number | null;
+      careerId?: number | null;
+      isStudying?: boolean;
+      isWorking?: boolean;
+      currentCompany?: string | null;
+      degreeTitle?: string | null;
     };
 
     const { candidateId } = body;
@@ -127,11 +140,20 @@ export async function PATCH(request: Request) {
     // Build a snake_case payload with only the fields that were sent
     const payload: Record<string, unknown> = {};
     if (body.cvFileId !== undefined) payload.cv_file_id = body.cvFileId;
+    if (body.avatarFileId !== undefined) payload.avatar_file_id = body.avatarFileId;
     if (body.firstName !== undefined) payload.first_name = body.firstName;
     if (body.lastName !== undefined) payload.last_name = body.lastName;
     if (body.phone !== undefined) payload.phone = body.phone;
     if (body.homeAddress !== undefined) payload.home_address = body.homeAddress;
     if (body.universityId !== undefined) payload.university_id = body.universityId;
+    if (body.cityId !== undefined) payload.city_id = body.cityId;
+    if (body.provinceId !== undefined) payload.province_id = body.provinceId;
+    if (body.educationLevelId !== undefined) payload.education_level_id = body.educationLevelId;
+    if (body.careerId !== undefined) payload.career_id = body.careerId;
+    if (body.isStudying !== undefined) payload.is_studying = body.isStudying;
+    if (body.isWorking !== undefined) payload.is_working = body.isWorking;
+    if (body.currentCompany !== undefined) payload.current_company = body.currentCompany;
+    if (body.degreeTitle !== undefined) payload.degree_title = body.degreeTitle;
 
     await backendPatch(`/recruitment/candidates/${candidateId}`, payload);
     return NextResponse.json({ ok: true });

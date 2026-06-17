@@ -35,14 +35,14 @@ export function PublicHeader({ portalHref }: PublicHeaderProps) {
 
   return (
     <div className="w-full pt-5 pb-4 flex justify-center sticky top-0 z-40 px-4">
-      <div className="bg-white/90 backdrop-blur-md border border-white/95 rounded-[100px] shadow-brand-md px-4 py-[5px] flex items-center gap-4">
+      <div className="bg-card/90 backdrop-blur-md border border-border/80 rounded-[100px] shadow-brand-md px-4 py-[5px] flex items-center gap-4">
 
         {/* Brand — "header" tone: dark text legible against the frosted white pill */}
         <Brand tone="header" subtitle="Mi Camello" />
 
         {portalHref ? (
           <>
-            <div className="w-px h-8 bg-primary-800/10" />
+            <div className="w-px h-8 bg-border" />
             <Link
               href={portalHref}
               className="text-[13px] font-semibold text-white bg-primary-700 hover:bg-primary-600 rounded-[100px] px-[16px] py-[7px] transition-colors"
@@ -52,7 +52,7 @@ export function PublicHeader({ portalHref }: PublicHeaderProps) {
           </>
         ) : (
           <>
-            <div className="w-px h-8 bg-primary-800/10" />
+            <div className="w-px h-8 bg-border" />
 
             {/* Desktop: inline auth actions (secondary first, primary last) */}
             <div className="hidden items-center gap-2 sm:flex">

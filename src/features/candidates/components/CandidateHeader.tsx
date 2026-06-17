@@ -76,7 +76,12 @@ return (
 
       {/* Avatar + name */}
       <div className="flex items-center gap-3 flex-1">
-        <Avatar size="lg" initials={candidate.initials} className={cn('text-white', candidate.avatarColor)} />
+        <Avatar
+          size="lg"
+          initials={candidate.initials}
+          src={candidate.avatarFileId ? `/api/candidate/cv/${candidate.avatarFileId}?view=1` : undefined}
+          className={cn('text-white', candidate.avatarColor)}
+        />
         <div>
           <p className="text-xl font-bold text-ink">{candidate.fullName}</p>
           {!isTalentPool && (

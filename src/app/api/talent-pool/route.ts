@@ -20,6 +20,7 @@ interface BackendCandidateExpanded {
   email: string;
   phone: string | null;
   career: string | null;
+  avatar_file_id: number | null;
   is_active: boolean;
 }
 interface BackendVacancyListItem {
@@ -84,6 +85,7 @@ export async function GET() {
           candidateName: `${firstName} ${lastName}`.trim(),
           candidateInitials: initials,
           avatarColor: AVATAR_COLORS[candidate.id % AVATAR_COLORS.length],
+          candidateAvatarFileId: candidate.avatar_file_id ?? undefined,
           career: candidate.career ?? "Sin carrera especificada",
           phone: candidate.phone ?? "Sin teléfono",
           email: candidate.email,

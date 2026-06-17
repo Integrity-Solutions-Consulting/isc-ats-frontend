@@ -4,6 +4,7 @@ export interface TalentPoolEntry {
   candidateName: string;
   candidateInitials: string;
   avatarColor: string;
+  candidateAvatarFileId?: number;
   career: string;
   phone: string;
   email: string;

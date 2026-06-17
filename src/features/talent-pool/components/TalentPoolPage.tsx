@@ -51,7 +51,12 @@ export function TalentPoolPage() {
       header: 'Candidato',
       render: (e) => (
         <div className="flex items-center gap-2.5">
-          <Avatar size="sm" initials={e.candidateInitials} className={cn('text-white', e.avatarColor)} />
+          <Avatar
+              size="sm"
+              initials={e.candidateInitials}
+              src={e.candidateAvatarFileId ? `/api/candidate/cv/${e.candidateAvatarFileId}?view=1` : undefined}
+              className={cn('text-white', e.avatarColor)}
+            />
           <span className="font-medium text-ink">{e.candidateName}</span>
         </div>
       ),

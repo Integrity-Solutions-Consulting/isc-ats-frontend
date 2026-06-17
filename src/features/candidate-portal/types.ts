@@ -97,6 +97,8 @@ export interface CandidateProfile {
   isStudying: boolean;
   isWorking: boolean;
   currentCompany?: string;
+  degreeTitle?: string;
+  avatarFileId?: number;
   cvFileId?: number;
   cvFileName: string;
   cvSizeKb: number;

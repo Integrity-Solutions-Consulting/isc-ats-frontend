@@ -23,6 +23,7 @@ export interface PipelineCard {
   candidateName: string;
   initials: string;
   avatarColor: string;   // Tailwind bg class e.g. 'bg-primary-600'
+  avatarFileId?: number;
   matchPercent: number | null;
   matchStatus: MatchStatus;
   stageStatus: CandidateStageStatus;

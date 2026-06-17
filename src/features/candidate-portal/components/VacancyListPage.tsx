@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
 
 import { Input } from '@/design-system/ui/input';
-import { Select } from '@/design-system/atoms/Select';
+import { Combobox } from '@/design-system/molecules/Combobox';
 import { ROUTES } from '@/shared/constants/routes';
 import type { CandidateVacancy } from '../types';
 import { VacancyCard } from './VacancyCard';
@@ -13,6 +13,20 @@ import { VacancyCard } from './VacancyCard';
 interface VacancyListPageProps {
   vacancies: CandidateVacancy[];
 }
+
+const workModeOptions = [
+  { id: '', label: 'Modalidad: Todas' },
+  { id: 'remote', label: 'Remoto' },
+  { id: 'onsite', label: 'Presencial' },
+  { id: 'hybrid', label: 'Híbrido' },
+];
+
+const cityOptions = [
+  { id: '', label: 'Ciudad: Todas' },
+  { id: 'Guayaquil', label: 'Guayaquil' },
+  { id: 'Quito', label: 'Quito' },
+  { id: 'Cuenca', label: 'Cuenca' },
+];
 
 export function VacancyListPage({ vacancies }: VacancyListPageProps) {
   const router = useRouter();
@@ -38,8 +52,8 @@ export function VacancyListPage({ vacancies }: VacancyListPageProps) {
         Vacantes
       </h1>
 
-      <div className="bg-surface shadow-sm rounded-lg p-4 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
+      <div className="bg-surface shadow-sm rounded-lg p-4 flex flex-col sm:flex-row gap-3 items-center">
+        <div className="relative flex-1 w-full">
           <Search
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle pointer-events-none"
@@ -52,25 +66,25 @@ export function VacancyListPage({ vacancies }: VacancyListPageProps) {
           />
         </div>
 
-        <div className="w-full sm:w-40">
-          <Select value={workMode} onChange={(e) => setWorkMode(e.target.value)}>
-            <option value="">Modalidad</option>
-            <option value="remote">Remoto</option>
-            <option value="onsite">Presencial</option>
-            <option value="hybrid">Híbrido</option>
-          </Select>
-        </div>
+        <Combobox
+          valueKey="id"
+          aria-label="Filtrar por modalidad"
+          className="w-full sm:w-48"
+          value={workMode}
+          onChange={setWorkMode}
+          options={workModeOptions}
+        />
 
-        <div className="w-full sm:w-40">
-          <Select value={city} onChange={(e) => setCity(e.target.value)}>
-            <option value="">Ciudad</option>
-            <option value="Guayaquil">Guayaquil</option>
-            <option value="Quito">Quito</option>
-            <option value="Cuenca">Cuenca</option>
-          </Select>
-        </div>
+        <Combobox
+          valueKey="id"
+          aria-label="Filtrar por ciudad"
+          className="w-full sm:w-48"
+          value={city}
+          onChange={setCity}
+          options={cityOptions}
+        />
 
-        <button className="shrink-0 bg-primary-700 text-white text-[13px] font-semibold rounded-[100px] px-[18px] py-2 hover:bg-primary-600 transition-colors">
+        <button className="shrink-0 bg-primary-700 text-white text-[13px] font-semibold rounded-[100px] px-[18px] py-2 hover:bg-primary-600 transition-colors w-full sm:w-auto">
           Buscar
         </button>
       </div>
@@ -86,17 +100,12 @@ export function VacancyListPage({ vacancies }: VacancyListPageProps) {
             key={vacancy.id}
             vacancy={vacancy}
             onClick={() => handleCardClick(vacancy.id)}
+            applied={vacancy.applicationStatus === 'applied'}
             footer={
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[12px] text-ink-muted">
                   Publicada hace {vacancy.publishedDaysAgo} día{vacancy.publishedDaysAgo !== 1 ? 's' : ''}
                 </span>
-
-                {vacancy.applicationStatus === 'applied' && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-primary-50 text-primary-400 rounded-full text-[12px]">
-                    ✓ Ya postulaste
-                  </div>
-                )}
 
                 {vacancy.applicationStatus === 'closing_soon' && vacancy.closingDaysLeft !== null && (
                   <span className="text-[11px] text-warning font-medium">

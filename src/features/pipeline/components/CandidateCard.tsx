@@ -87,7 +87,12 @@ export function CandidateCard({ card, isDragging = false, onView }: CandidateCar
 
       {/* Header: avatar + name + match */}
       <div className="flex items-start gap-2.5 pr-6">
-        <Avatar size="sm" initials={card.initials} className={cn('text-white', card.avatarColor)} />
+        <Avatar
+          size="sm"
+          initials={card.initials}
+          src={card.avatarFileId ? `/api/candidate/cv/${card.avatarFileId}?view=1` : undefined}
+          className={cn('text-white', card.avatarColor)}
+        />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-ink">{card.candidateName}</p>
           <MatchBadge score={card.matchStatus === 'analyzing' ? null : card.matchPercent} />

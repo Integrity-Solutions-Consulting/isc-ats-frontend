@@ -36,7 +36,7 @@ function ConditionRow({ icon: Icon, label, value }: { icon: React.ElementType; l
       <Icon size={16} className="text-ink-subtle shrink-0 mt-0.5" />
       <div>
         <p className="text-[12px] text-ink-subtle">{label}</p>
-        <p className="text-[13px] text-primary-800 font-medium">{value}</p>
+        <p className="text-[13px] text-ink font-medium">{value}</p>
       </div>
     </div>
   );
@@ -44,7 +44,7 @@ function ConditionRow({ icon: Icon, label, value }: { icon: React.ElementType; l
 
 function TagPill({ label }: { label: string }) {
   return (
-    <span className="px-2 py-1 bg-surface-2 text-primary-800 text-[12px] rounded-md">
+    <span className="px-2 py-1 bg-surface-2 text-ink text-[12px] rounded-md">
       {label}
     </span>
   );
@@ -75,7 +75,7 @@ export function VacancyDetailPage({ vacancy }: VacancyDetailPageProps) {
       <div className="flex flex-col gap-5">
         <Link
           href={ROUTES.candidato.vacantes}
-          className="flex items-center gap-1.5 text-[13px] text-primary-700 hover:underline transition-colors w-fit"
+          className="flex items-center gap-1.5 text-[13px] text-primary hover:underline transition-colors w-fit"
         >
           <ArrowLeft size={16} />
           Vacantes
@@ -86,15 +86,15 @@ export function VacancyDetailPage({ vacancy }: VacancyDetailPageProps) {
           <div className="flex-1 flex flex-col gap-4">
 
             {/* Header card */}
-            <div className="bg-white rounded-xl border border-primary-200 p-5 sm:p-7">
-              <h1 className="text-[22px] font-bold text-primary-800 mb-5">{vacancy.title}</h1>
+            <div className="bg-card rounded-xl border border-border p-5 sm:p-7">
+              <h1 className="text-[22px] font-bold text-ink mb-5">{vacancy.title}</h1>
 
               {/* Description */}
               <div className="mb-6">
                 <h3 className="text-[11px] text-ink-subtle uppercase font-semibold tracking-wide mb-3">
                   Descripción del puesto
                 </h3>
-                <p className="text-[14px] text-primary-800 leading-relaxed">{vacancy.description}</p>
+                <p className="text-[14px] text-ink leading-relaxed">{vacancy.description}</p>
               </div>
 
               {/* Technical requirements */}
@@ -159,20 +159,20 @@ export function VacancyDetailPage({ vacancy }: VacancyDetailPageProps) {
 
           {/* Right sidebar — stacks below content on mobile, sticky aside on desktop */}
           <div className="w-full shrink-0 lg:w-[35%] lg:sticky lg:top-6">
-            <div className="bg-white rounded-xl border border-primary-200 p-6">
+            <div className="bg-card rounded-xl border border-border p-6">
               {applied ? (
                 <div className="text-center flex flex-col items-center gap-3">
                   <div className="w-10 h-10 bg-success rounded-full flex items-center justify-center">
                     <CheckCircle2 size={22} className="text-white" strokeWidth={3} />
                   </div>
-                  <h3 className="text-[15px] font-bold text-primary-800">Ya postulaste a esta vacante</h3>
+                  <h3 className="text-[15px] font-bold text-ink">Ya postulaste a esta vacante</h3>
                   <p className="text-[13px] text-ink-subtle">Tu postulación está siendo revisada.</p>
                   <span className="px-3 py-1 bg-warning/15 text-warning text-[12px] font-medium rounded-full">
                     En revisión
                   </span>
                   <Link
                     href={ROUTES.candidato.misPostulaciones}
-                    className="w-full mt-1 h-11 bg-white border border-primary-700 text-primary-700 font-semibold text-[14px] rounded-lg hover:bg-primary-50 transition-colors flex items-center justify-center gap-2"
+                    className="w-full mt-1 h-11 bg-card border border-primary text-primary font-semibold text-[14px] rounded-lg hover:bg-surface-2 transition-colors flex items-center justify-center gap-2"
                   >
                     Ver mi postulación
                     <ChevronRight size={16} />
@@ -180,19 +180,19 @@ export function VacancyDetailPage({ vacancy }: VacancyDetailPageProps) {
                 </div>
               ) : (
                 <>
-                  <h3 className="text-[16px] font-bold text-primary-800 mb-1">Postular a esta vacante</h3>
+                  <h3 className="text-[16px] font-bold text-ink mb-1">Postular a esta vacante</h3>
                   <p className="text-[13px] text-ink-subtle mb-5">Completa el campo y envía tu postulación</p>
 
-                  <div className="bg-primary-50 rounded-lg p-3 flex items-start gap-3 mb-5">
-                    <User size={18} className="text-primary-700 shrink-0 mt-0.5" />
+                  <div className="bg-primary/8 rounded-lg p-3 flex items-start gap-3 mb-5">
+                    <User size={18} className="text-primary shrink-0 mt-0.5" />
                     <p className="text-[13px] text-ink-muted">
                       Tu CV y perfil serán enviados automáticamente
                     </p>
                   </div>
 
                   <div className="mb-6">
-                    <label className="block text-[13px] font-semibold text-primary-800 mb-2 uppercase tracking-wide">
-                      Pretensión salarial <span className="text-primary-700">*</span>
+                    <label className="block text-[13px] font-semibold text-ink mb-2 uppercase tracking-wide">
+                      Pretensión salarial <span className="text-primary">*</span>
                     </label>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-subtle text-[14px] pointer-events-none">
@@ -204,7 +204,7 @@ export function VacancyDetailPage({ vacancy }: VacancyDetailPageProps) {
                         value={salary}
                         onChange={(e) => setSalary(e.target.value.replace(/\D/g, ''))}
                         placeholder="0"
-                        className="w-full h-12 pl-8 pr-24 bg-white border-[1.5px] border-primary-200 rounded-lg text-[14px] text-primary-800 placeholder:text-ink-subtle focus:outline-none focus:border-primary-700 transition-all"
+                        className="w-full h-12 pl-8 pr-24 bg-surface-2 border-[1.5px] border-border rounded-lg text-[14px] text-ink placeholder:text-ink-subtle focus:outline-none focus:border-primary transition-all"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-subtle text-[14px] pointer-events-none">
                         USD / mes
@@ -218,7 +218,7 @@ export function VacancyDetailPage({ vacancy }: VacancyDetailPageProps) {
                   <button
                     onClick={handleApply}
                     disabled={!salary.trim() || submitting}
-                    className="w-full h-[52px] bg-primary-700 text-white font-bold text-[15px] rounded-lg hover:bg-primary-600 active:scale-[0.99] transition-all mb-4 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-full h-[52px] bg-primary text-white font-bold text-[15px] rounded-lg hover:opacity-90 active:scale-[0.99] transition-all mb-4 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {submitting ? 'Enviando…' : 'Postular ahora →'}
                   </button>
@@ -234,7 +234,7 @@ export function VacancyDetailPage({ vacancy }: VacancyDetailPageProps) {
                     Tu información está protegida
                   </div>
 
-                  <div className="w-full h-px bg-primary-200 mb-4" />
+                  <div className="w-full h-px bg-border mb-4" />
 
                   <p className="text-[12px] text-ink-subtle">
                     Publicada hace {vacancy.publishedDaysAgo} día{vacancy.publishedDaysAgo !== 1 ? 's' : ''}
@@ -245,7 +245,6 @@ export function VacancyDetailPage({ vacancy }: VacancyDetailPageProps) {
           </div>
         </div>
       </div>
-
     </>
   );
 }

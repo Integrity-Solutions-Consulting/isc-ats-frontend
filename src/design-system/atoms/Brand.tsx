@@ -44,25 +44,18 @@ export function Brand({ className, tone = "light", compact = false, subtitle = "
     );
   }
 
-  // Frosted white pill header — primary-800 headline + ink-muted tagline for legibility.
+  // Frosted header — renders the full white/cyan wordmark logo on dark backgrounds.
   if (tone === "header") {
     return (
-      <div className={cn("flex items-center gap-3", className)}>
+      <div className={cn("flex items-center", className)}>
         <Image
-          src="/brand/logo_integrity_icon.svg"
+          src="/brand/LogoBlanco.svg"
           alt="Integrity Solutions"
-          width={30}
-          height={30}
+          width={140}
+          height={45}
+          className="h-[30px] w-auto select-none"
           priority
         />
-        <span className="leading-tight">
-          <span className="block text-sm font-bold text-primary-800">
-            Integrity Solutions
-          </span>
-          {!compact && (
-            <span className="block text-xs text-ink-muted">{subtitle}</span>
-          )}
-        </span>
       </div>
     );
   }
@@ -79,3 +72,4 @@ export function Brand({ className, tone = "light", compact = false, subtitle = "
     </div>
   );
 }
+

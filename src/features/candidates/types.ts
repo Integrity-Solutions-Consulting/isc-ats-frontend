@@ -36,6 +36,7 @@ export interface Candidate {
   fullName: string;
   initials: string;
   avatarColor: string;
+  avatarFileId?: number;
   nationalId: string;
   dateOfBirth: string; // ISO date
   email: string;

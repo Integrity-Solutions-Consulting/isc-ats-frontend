@@ -28,6 +28,7 @@ function mapCandidate(c: BackendCandidate): Candidate {
     fullName: `${c.first_name} ${c.last_name}`,
     initials,
     avatarColor: AVATAR_COLORS[c.id % AVATAR_COLORS.length],
+    avatarFileId: c.avatar_file_id ?? undefined,
     nationalId: c.cedula ?? "",
     dateOfBirth: c.birth_date ?? "",
     email: c.email,
