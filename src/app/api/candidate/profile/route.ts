@@ -224,13 +224,30 @@ export async function POST(request: Request) {
       const msg = postError instanceof Error ? postError.message : String(postError);
       if (!msg.includes("409")) throw postError;
 
-      // Candidate already exists — fetch their ID and update instead
+      // Two possible 409 scenarios:
+      // A) This user already has a candidate (e.g. incomplete previous run) → PATCH
+      // B) A different user owns this cedula → friendly validation error, no PATCH
       const existing = await backendGet<{ items: Array<{ id: number }> }>(
         `/recruitment/candidates/expanded?user_id=${userId}`,
       );
       const candidateId = existing.items[0]?.id;
-      if (!candidateId) throw new Error("No se encontró el perfil existente tras el conflicto");
 
+      if (!candidateId) {
+        // Scenario B: data conflict with another user's record
+        let friendly = "Los datos ingresados ya están registrados. Verifica la información.";
+        try {
+          const jsonStart = msg.indexOf("{");
+          if (jsonStart !== -1) {
+            const detail = (JSON.parse(msg.slice(jsonStart)) as { detail?: string }).detail ?? "";
+            if (detail.toLowerCase().includes("cedula")) {
+              friendly = "Esta cédula ya está registrada en el sistema.";
+            }
+          }
+        } catch { /* ignore parse errors */ }
+        return NextResponse.json({ error: friendly }, { status: 422 });
+      }
+
+      // Scenario A: same user re-submitting → update the existing record
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { user_id: _uid, ...patchPayload } = payload;
       result = await backendPatch<Record<string, unknown>>(
