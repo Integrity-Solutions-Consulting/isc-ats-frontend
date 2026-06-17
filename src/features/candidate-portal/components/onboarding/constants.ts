@@ -1,7 +1,7 @@
-export const STEPS = ['Datos personales', 'Educación', 'Hoja de vida'];
+export const STEPS = ['Hoja de vida', 'Datos personales', 'Educación'];
 
 export const STEP_TITLES = [
+  { label: 'Hoja de vida', sub: 'Subí tu CV para agilizar el registro' },
   { label: 'Cuéntanos sobre ti', sub: 'Esta información es necesaria para postular a las vacantes' },
   { label: 'Tu educación y situación actual', sub: 'Completá los datos sobre tu formación y situación laboral' },
-  { label: 'Sube tu hoja de vida', sub: 'Necesitamos tu CV para que puedas postular a las vacantes' },
 ];

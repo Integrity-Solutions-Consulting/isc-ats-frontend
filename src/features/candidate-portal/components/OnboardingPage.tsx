@@ -3,17 +3,20 @@
 import { useState } from 'react';
 import { ROUTES } from '@/shared/constants/routes';
 import { ProgressIndicator } from './onboarding/ProgressIndicator';
+import { Step0CvUpload, type CvPrefillData } from './onboarding/Step0CvUpload';
 import { Step1PersonalData } from './onboarding/Step1PersonalData';
 import { Step2Education } from './onboarding/Step2Education';
-import { Step3Resume } from './onboarding/Step3Resume';
 import { STEPS, STEP_TITLES } from './onboarding/constants';
-import type { Step1Values, Step2Values, Step2FormValues, Step3Data } from './onboarding/schemas';
+import type { Step1Values, Step2Values, Step2FormValues } from './onboarding/schemas';
 
 export function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  const [uploadPhase, setUploadPhase] = useState(false); // true while uploading the CV file
   const [error, setError] = useState<string | null>(null);
+
+  // CV pre-fill state set in Step 0
+  const [cvFileId, setCvFileId] = useState<number | null>(null);
+  const [prefillData, setPrefillData] = useState<CvPrefillData>({});
 
   // Persist values across steps so back/forward navigation preserves data
   const [step1Values, setStep1Values] = useState<Step1Values>({
@@ -26,52 +29,27 @@ export function OnboardingPage() {
     isWorking: null,
     currentCompany: '',
   });
-  const [step3, setStep3] = useState<Step3Data>({ file: null });
+
+  const handleStep0Complete = (data: CvPrefillData, fileId: number) => {
+    setPrefillData(data);
+    setCvFileId(fileId);
+    setStep(1);
+  };
 
   const handleStep1Next = (data: Step1Values) => {
     setStep1Values(data);
-    setStep(1);
+    setStep(2);
   };
 
   const handleStep2Next = (data: Step2Values) => {
     setStep2Values(data as Step2FormValues);
-    setStep(2);
+    handleFinish(data as Step2FormValues);
   };
 
-  /** Upload file to MinIO through the BFF, return the stored file id. */
-  const uploadCv = async (file: File): Promise<number> => {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const res = await fetch('/api/candidate/upload', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || 'Error al subir el CV');
-    }
-
-    const data = await res.json();
-    return data.id as number;
-  };
-
-  const handleFinish = async () => {
+  const handleFinish = async (step2: Step2FormValues = step2Values) => {
     setSubmitting(true);
     setError(null);
     try {
-      // --- Phase 1: upload CV (optional — user may skip) ---
-      let cvFileId: number | undefined;
-      if (step3.file) {
-        setUploadPhase(true);
-        cvFileId = await uploadCv(step3.file);
-        setUploadPhase(false);
-      }
-
-      // --- Phase 2: save profile ---
-      // Step 2 selects now hold catalog parameter ids (as strings); send them as
-      // numeric ids so the backend stores FKs directly — no name→id mapping needed.
       const toId = (v?: string) => (v ? Number(v) : undefined);
       const body = {
         firstName: step1Values.firstName,
@@ -80,16 +58,16 @@ export function OnboardingPage() {
         birthDate: step1Values.birthDate,
         phone: step1Values.phone,
         homeAddress: step1Values.homeAddress || undefined,
-        educationLevelId: toId(step2Values.educationLevel),
-        cityId: toId(step2Values.city),
-        provinceId: toId(step2Values.province),
-        universityId: toId(step2Values.university),
+        educationLevelId: toId(step2.educationLevel),
+        cityId: toId(step2.city),
+        provinceId: toId(step2.province),
+        universityId: toId(step2.university),
         // Career: prefer the completed degree, fall back to the one being studied.
-        careerId: toId(step2Values.completedCareer) ?? toId(step2Values.career),
-        isStudying: step2Values.isStudying,
-        isWorking: step2Values.isWorking,
-        currentCompany: step2Values.currentCompany || undefined,
-        cvFileId,
+        careerId: toId(step2.completedCareer) ?? toId(step2.career),
+        isStudying: step2.isStudying,
+        isWorking: step2.isWorking,
+        currentCompany: step2.currentCompany || undefined,
+        cvFileId: cvFileId ?? undefined,
       };
 
       const res = await fetch('/api/candidate/profile', {
@@ -100,7 +78,7 @@ export function OnboardingPage() {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Error al guardar el perfil');
+        throw new Error((errData as { error?: string }).error ?? 'Error al guardar el perfil');
       }
 
       // Robust redirect: the server re-issues session-user with has_profile: true
@@ -110,7 +88,6 @@ export function OnboardingPage() {
       const message = err instanceof Error ? err.message : 'Ocurrió un error inesperado al guardar tus datos.';
       setError(message);
       setSubmitting(false);
-      setUploadPhase(false);
     }
   };
 
@@ -131,24 +108,25 @@ export function OnboardingPage() {
         <p className="mb-6 text-sm text-ink-muted">{STEP_TITLES[step].sub}</p>
 
         {step === 0 && (
-          <Step1PersonalData defaultValues={step1Values} onNext={handleStep1Next} />
+          <Step0CvUpload
+            onComplete={handleStep0Complete}
+            onSkip={() => setStep(1)}
+          />
         )}
         {step === 1 && (
-          <Step2Education
-            defaultValues={step2Values}
-            onNext={handleStep2Next}
-            onBack={() => setStep(0)}
+          <Step1PersonalData
+            defaultValues={step1Values}
+            onNext={handleStep1Next}
+            prefill={prefillData}
           />
         )}
         {step === 2 && (
-          <Step3Resume
-            data={step3}
-            onChange={setStep3}
-            onNext={handleFinish}
+          <Step2Education
+            defaultValues={step2Values}
+            onNext={handleStep2Next}
             onBack={() => setStep(1)}
-            onSkip={handleFinish}
+            prefill={prefillData}
             isSubmitting={submitting}
-            isUploading={uploadPhase}
           />
         )}
       </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/design-system/ui/button';
 import { Input } from '@/design-system/ui/input';
 import { Label } from '@/design-system/ui/label';
@@ -10,6 +11,7 @@ import { Select } from '@/design-system/atoms/Select';
 import { cn } from '@/shared/utils';
 import { step2Schema, type Step2Values, type Step2FormValues } from './schemas';
 import { FieldError } from './FieldError';
+import type { CvPrefillData } from './Step0CvUpload';
 
 interface CatalogOption {
   id: number;
@@ -63,10 +65,12 @@ function ToggleCards({ value, onChange, options, error }: {
   );
 }
 
-export function Step2Education({ defaultValues, onNext, onBack }: {
+export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmitting }: {
   defaultValues: Step2FormValues;
   onNext: (data: Step2Values) => void;
   onBack: () => void;
+  prefill?: CvPrefillData;
+  isSubmitting?: boolean;
 }) {
   const [catalogs, setCatalogs] = useState<Catalogs>(EMPTY_CATALOGS);
 
@@ -95,7 +99,17 @@ export function Step2Education({ defaultValues, onNext, onBack }: {
     formState: { errors },
   } = useForm<Step2FormValues, unknown, Step2Values>({
     resolver: zodResolver(step2Schema),
-    defaultValues,
+    defaultValues: {
+      educationLevel: defaultValues.educationLevel || (prefill?.educationLevelId ? String(prefill.educationLevelId) : ''),
+      completedCareer: defaultValues.completedCareer || (prefill?.careerId ? String(prefill.careerId) : ''),
+      university: defaultValues.university || (prefill?.universityId ? String(prefill.universityId) : ''),
+      city: defaultValues.city || (prefill?.cityId ? String(prefill.cityId) : ''),
+      province: defaultValues.province || (prefill?.provinceId ? String(prefill.provinceId) : ''),
+      isStudying: defaultValues.isStudying,
+      career: defaultValues.career,
+      isWorking: defaultValues.isWorking,
+      currentCompany: defaultValues.currentCompany,
+    },
   });
 
   const isStudying = watch('isStudying');
@@ -210,8 +224,13 @@ export function Step2Education({ defaultValues, onNext, onBack }: {
       </div>
 
       <div className="flex gap-2">
-        <Button type="button" variant="outline" className="w-2/5" onClick={onBack}>← Atrás</Button>
-        <Button type="submit" className="w-3/5">Continuar →</Button>
+        <Button type="button" variant="outline" className="w-2/5" onClick={onBack} disabled={isSubmitting}>
+          ← Atrás
+        </Button>
+        <Button type="submit" className="w-3/5 flex items-center justify-center gap-2" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+          {isSubmitting ? 'Guardando...' : 'Finalizar registro →'}
+        </Button>
       </div>
     </form>
   );

@@ -7,10 +7,12 @@ import { Label } from '@/design-system/ui/label';
 import { Input } from '@/design-system/ui/input';
 import { step1Schema, type Step1Values } from './schemas';
 import { FieldError } from './FieldError';
+import type { CvPrefillData } from './Step0CvUpload';
 
-export function Step1PersonalData({ defaultValues, onNext }: {
+export function Step1PersonalData({ defaultValues, onNext, prefill }: {
   defaultValues: Step1Values;
   onNext: (data: Step1Values) => void;
+  prefill?: CvPrefillData;
 }) {
   const {
     register,
@@ -18,7 +20,14 @@ export function Step1PersonalData({ defaultValues, onNext }: {
     formState: { errors },
   } = useForm<Step1Values>({
     resolver: zodResolver(step1Schema),
-    defaultValues,
+    defaultValues: {
+      firstName: defaultValues.firstName || prefill?.firstName || '',
+      lastName: defaultValues.lastName || prefill?.lastName || '',
+      idNumber: defaultValues.idNumber,
+      birthDate: defaultValues.birthDate,
+      phone: defaultValues.phone || prefill?.phone || '',
+      homeAddress: defaultValues.homeAddress,
+    },
   });
 
   return (
