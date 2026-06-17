@@ -35,12 +35,12 @@ export function Step1PersonalData({ defaultValues, onNext, prefill }: {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="s1-firstName">Nombres *</Label>
-          <Input id="s1-firstName" placeholder="Juan" {...register('firstName')} />
+          <Input id="s1-firstName" placeholder="Ingresa tus nombres" {...register('firstName')} />
           <FieldError message={errors.firstName?.message} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="s1-lastName">Apellidos *</Label>
-          <Input id="s1-lastName" placeholder="Pérez" {...register('lastName')} />
+          <Input id="s1-lastName" placeholder="Ingresa tus apellidos" {...register('lastName')} />
           <FieldError message={errors.lastName?.message} />
         </div>
       </div>

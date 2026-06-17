@@ -168,14 +168,6 @@ export function Step0CvUpload({
         )}
       </Button>
 
-      <button
-        type="button"
-        onClick={onSkip}
-        disabled={loading}
-        className="w-full text-center text-xs text-ink-subtle hover:text-ink transition-colors disabled:opacity-40"
-      >
-        Saltar por ahora
-      </button>
     </div>
   );
 }
