@@ -14,8 +14,9 @@ export function OnboardingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // CV pre-fill state set in Step 0
-  const [cvFileId, setCvFileId] = useState<number | null>(null);
+  // CV pre-fill state set in Step 0. The PDF is held in memory and only
+  // uploaded once the candidate finishes registration (data minimisation).
+  const [cvFile, setCvFile] = useState<File | null>(null);
   const [prefillData, setPrefillData] = useState<CvPrefillData>({});
 
   // Persist values across steps so back/forward navigation preserves data
@@ -30,9 +31,9 @@ export function OnboardingPage() {
     currentCompany: '',
   });
 
-  const handleStep0Complete = (data: CvPrefillData, fileId: number) => {
+  const handleStep0Complete = (data: CvPrefillData, file: File) => {
     setPrefillData(data);
-    setCvFileId(fileId);
+    setCvFile(file);
     setStep(1);
   };
 
@@ -51,6 +52,8 @@ export function OnboardingPage() {
     setError(null);
     try {
       const toId = (v?: string) => (v ? Number(v) : undefined);
+      // The CV is intentionally absent here: the candidate must be created
+      // first. We only persist the PDF afterwards, once registration exists.
       const body = {
         firstName: step1Values.firstName,
         lastName: step1Values.lastName,
@@ -67,7 +70,6 @@ export function OnboardingPage() {
         isStudying: step2.isStudying,
         isWorking: step2.isWorking,
         currentCompany: step2.currentCompany || undefined,
-        cvFileId: cvFileId ?? undefined,
       };
 
       const res = await fetch('/api/candidate/profile', {
@@ -79,6 +81,31 @@ export function OnboardingPage() {
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error((errData as { error?: string }).error ?? 'Error al guardar el perfil');
+      }
+
+      // Now that the candidate exists (and has consented), persist the CV and
+      // link it. If this fails the candidate is already registered — they can
+      // add the CV later from "Mi perfil", so we don't block the redirect.
+      if (cvFile) {
+        try {
+          const created = (await res.json()) as { id?: number };
+          const candidateId = created.id;
+          if (candidateId) {
+            const fd = new FormData();
+            fd.append('file', cvFile);
+            const uploadRes = await fetch('/api/candidate/upload', { method: 'POST', body: fd });
+            if (uploadRes.ok) {
+              const uploaded = (await uploadRes.json()) as { id: number };
+              await fetch('/api/candidate/profile', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ candidateId, cvFileId: uploaded.id }),
+              });
+            }
+          }
+        } catch {
+          // Non-blocking: registration succeeded; the CV can be uploaded later.
+        }
       }
 
       // Robust redirect: the server re-issues session-user with has_profile: true

@@ -23,10 +23,10 @@ export function Step1PersonalData({ defaultValues, onNext, prefill }: {
     defaultValues: {
       firstName: defaultValues.firstName || prefill?.firstName || '',
       lastName: defaultValues.lastName || prefill?.lastName || '',
-      idNumber: defaultValues.idNumber,
-      birthDate: defaultValues.birthDate,
+      idNumber: defaultValues.idNumber || prefill?.idNumber || '',
+      birthDate: defaultValues.birthDate || prefill?.birthDate || '',
       phone: defaultValues.phone || prefill?.phone || '',
-      homeAddress: defaultValues.homeAddress,
+      homeAddress: defaultValues.homeAddress || prefill?.homeAddress || '',
     },
   });
 

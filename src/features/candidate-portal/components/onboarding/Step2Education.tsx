@@ -108,7 +108,7 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
       isStudying: defaultValues.isStudying,
       career: defaultValues.career,
       isWorking: defaultValues.isWorking,
-      currentCompany: defaultValues.currentCompany,
+      currentCompany: defaultValues.currentCompany || prefill?.currentCompany || '',
     },
   });
 

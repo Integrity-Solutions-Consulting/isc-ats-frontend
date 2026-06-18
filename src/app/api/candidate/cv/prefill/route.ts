@@ -11,16 +11,20 @@ export async function POST(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const { fileId } = (await request.json()) as { fileId: number };
+    // Forward the PDF as multipart so the backend can extract data in memory.
+    // The CV is NOT persisted here — it is only stored when the candidate
+    // finishes registration.
+    const formData = await request.formData();
 
     const backendRes = await fetch(
-      `${BACKEND}/recruitment/candidates/cv/prefill?file_id=${fileId}`,
+      `${BACKEND}/recruitment/candidates/cv/prefill`,
       {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          // Do NOT set Content-Type — fetch sets it with the multipart boundary
         },
+        body: formData,
       },
     );
 

@@ -7,7 +7,11 @@ import { Button } from '@/design-system/ui/button';
 export interface CvPrefillData {
   firstName?: string | null;
   lastName?: string | null;
+  idNumber?: string | null;
+  birthDate?: string | null;
   phone?: string | null;
+  homeAddress?: string | null;
+  currentCompany?: string | null;
   cityId?: number | null;
   provinceId?: number | null;
   educationLevelId?: number | null;
@@ -19,7 +23,7 @@ export function Step0CvUpload({
   onComplete,
   onSkip,
 }: {
-  onComplete: (prefillData: CvPrefillData, cvFileId: number) => void;
+  onComplete: (prefillData: CvPrefillData, cvFile: File) => void;
   onSkip: () => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
@@ -42,31 +46,16 @@ export function Step0CvUpload({
     setLoading(true);
     setError(null);
 
-    let cvFileId: number | undefined;
-
     try {
-      // Step 1: upload the PDF to storage
+      // Extract prefill data in memory. The CV is NOT stored here — it is only
+      // persisted when the candidate finishes registration (data minimisation).
+      // The File object is kept in state and handed upward for later upload.
       const formData = new FormData();
       formData.append('file', file);
 
-      const uploadRes = await fetch('/api/candidate/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        const errData = await uploadRes.json().catch(() => ({}));
-        throw new Error((errData as { error?: string }).error ?? 'Error al subir el CV');
-      }
-
-      const uploadData = (await uploadRes.json()) as { id: number };
-      cvFileId = uploadData.id;
-
-      // Step 2: extract prefill data with AI
       const prefillRes = await fetch('/api/candidate/cv/prefill', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileId: cvFileId }),
+        body: formData,
       });
 
       const prefillData: CvPrefillData = prefillRes.ok
@@ -74,13 +63,12 @@ export function Step0CvUpload({
         : {};
 
       setLoading(false);
-      onComplete(prefillData, cvFileId);
+      onComplete(prefillData, file);
     } catch {
       setLoading(false);
       setError('No pudimos analizar tu hoja de vida. Podés continuar sin pre-llenado.');
-      if (cvFileId !== undefined) {
-        onComplete({}, cvFileId);
-      }
+      // Keep going with the file so it still gets stored when registration ends.
+      onComplete({}, file);
     }
   };
 
