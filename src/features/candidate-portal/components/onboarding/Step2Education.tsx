@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -91,26 +91,38 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
       });
   }, []);
 
+  const initialValues = useMemo<Step2FormValues>(() => ({
+    educationLevel: defaultValues.educationLevel || (prefill?.educationLevelId ? String(prefill.educationLevelId) : ''),
+    completedCareer: defaultValues.completedCareer || (prefill?.careerId ? String(prefill.careerId) : ''),
+    university: defaultValues.university || (prefill?.universityId ? String(prefill.universityId) : ''),
+    city: defaultValues.city || (prefill?.cityId ? String(prefill.cityId) : ''),
+    province: defaultValues.province || (prefill?.provinceId ? String(prefill.provinceId) : ''),
+    isStudying: defaultValues.isStudying,
+    career: defaultValues.career,
+    isWorking: defaultValues.isWorking,
+    currentCompany: defaultValues.currentCompany || prefill?.currentCompany || '',
+  }), [defaultValues, prefill]);
+
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<Step2FormValues, unknown, Step2Values>({
     resolver: zodResolver(step2Schema),
-    defaultValues: {
-      educationLevel: defaultValues.educationLevel || (prefill?.educationLevelId ? String(prefill.educationLevelId) : ''),
-      completedCareer: defaultValues.completedCareer || (prefill?.careerId ? String(prefill.careerId) : ''),
-      university: defaultValues.university || (prefill?.universityId ? String(prefill.universityId) : ''),
-      city: defaultValues.city || (prefill?.cityId ? String(prefill.cityId) : ''),
-      province: defaultValues.province || (prefill?.provinceId ? String(prefill.provinceId) : ''),
-      isStudying: defaultValues.isStudying,
-      career: defaultValues.career,
-      isWorking: defaultValues.isWorking,
-      currentCompany: defaultValues.currentCompany || prefill?.currentCompany || '',
-    },
+    defaultValues: initialValues,
   });
+
+  // Native <select>s can't show a pre-selected id until their <option>s exist.
+  // Catalogs load async, so re-apply the defaults (incl. CV prefill) once the
+  // options are in the DOM — otherwise the prefilled ids silently don't stick.
+  useEffect(() => {
+    if (catalogs.cities.length || catalogs.educationLevels.length || catalogs.universities.length) {
+      reset(initialValues);
+    }
+  }, [catalogs, reset, initialValues]);
 
   const isStudying = watch('isStudying');
   const isWorking = watch('isWorking');
