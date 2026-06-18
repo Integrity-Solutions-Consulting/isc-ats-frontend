@@ -9,6 +9,7 @@ import { Combobox } from '@/design-system/molecules/Combobox';
 import { ROUTES } from '@/shared/constants/routes';
 import type { CandidateVacancy } from '@/features/candidate-portal/types';
 import { VacancyCard } from '@/features/candidate-portal/components/VacancyCard';
+import { MascotWidget } from './MascotWidget';
 
 interface PublicVacancyListPageProps {
   vacancies: CandidateVacancy[];
@@ -116,6 +117,9 @@ export function PublicVacancyListPage({ vacancies }: PublicVacancyListPageProps)
           <p className="text-ink-muted">No se encontraron vacantes con esos filtros.</p>
         </div>
       )}
+
+      {/* Robot Mascot floating helper */}
+      <MascotWidget />
     </div>
   );
 }
