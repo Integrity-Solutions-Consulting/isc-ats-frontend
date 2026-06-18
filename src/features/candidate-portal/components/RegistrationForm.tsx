@@ -80,7 +80,7 @@ export function RegistrationForm() {
 
   return (
     <div className="w-full max-w-sm">
-      <div className="mb-8">
+      <div className="mb-5">
         <h1 className="text-3xl font-bold text-ink">Crea tu cuenta</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Únete y encuentra tu próxima oportunidad
@@ -94,9 +94,9 @@ export function RegistrationForm() {
       )}
 
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
         {/* Email */}
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <Label htmlFor="reg-email">Correo electrónico</Label>
           <div className="relative">
             <Input
@@ -113,7 +113,7 @@ export function RegistrationForm() {
         </div>
 
         {/* Password */}
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <Label htmlFor="reg-password">Contraseña</Label>
           <div className="relative">
             <Input
@@ -156,7 +156,7 @@ export function RegistrationForm() {
         </div>
 
         {/* Confirm password */}
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <Label htmlFor="reg-confirm">Confirmar contraseña</Label>
           <div className="relative">
             <Input
@@ -183,7 +183,7 @@ export function RegistrationForm() {
         </div>
 
         {/* Terms */}
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <label className="flex cursor-pointer items-start gap-2.5 text-sm text-ink-muted">
             <input
               type="checkbox"
