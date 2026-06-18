@@ -11,9 +11,9 @@ export interface RegistrationCatalogOption {
 
 export interface RegistrationCatalogs {
   cities: RegistrationCatalogOption[];
-  provinces: RegistrationCatalogOption[];
   educationLevels: RegistrationCatalogOption[];
   careers: RegistrationCatalogOption[];
+  titles: RegistrationCatalogOption[];
   universities: RegistrationCatalogOption[];
 }
 

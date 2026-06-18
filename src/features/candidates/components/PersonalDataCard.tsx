@@ -67,7 +67,7 @@ export function PersonalDataCard({ candidate }: PersonalDataCardProps) {
         )}
         <Row label="Correo electrónico" value={candidate.email} />
         <Row label="Teléfono" value={candidate.phone} />
-        <Row label="Ciudad / Provincia" value={`${candidate.city}, ${candidate.province}`} />
+        <Row label="Ciudad" value={candidate.city} />
         <Row label="Nivel de instrucción" value={candidate.educationLevel} />
         <Row label="Título" value={candidate.degree} />
         <Row label="Estudia actualmente" value={candidate.currentlyStudying ? 'Sí' : 'No'} />

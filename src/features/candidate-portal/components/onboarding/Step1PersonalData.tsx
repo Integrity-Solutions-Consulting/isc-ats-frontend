@@ -51,7 +51,9 @@ export function Step1PersonalData({ defaultValues, onNext, prefill }: {
           <FieldError message={errors.idNumber?.message} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="s1-birthDate">Fecha de nacimiento *</Label>
+          <Label htmlFor="s1-birthDate">
+            Fecha de nacimiento <span className="text-ink-subtle">(opcional)</span>
+          </Label>
           <Input id="s1-birthDate" type="date" {...register('birthDate')} />
           <FieldError message={errors.birthDate?.message} />
         </div>

@@ -13,9 +13,9 @@ export interface CvPrefillData {
   homeAddress?: string | null;
   currentCompany?: string | null;
   cityId?: number | null;
-  provinceId?: number | null;
   educationLevelId?: number | null;
   careerId?: number | null;
+  titleId?: number | null;
   universityId?: number | null;
 }
 

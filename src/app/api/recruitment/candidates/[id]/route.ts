@@ -8,7 +8,7 @@ interface BackendCandidate {
   id: number; user_id: number; email: string;
   first_name: string; last_name: string;
   cedula: string | null; birth_date: string | null; phone: string | null;
-  city: string | null; province: string | null;
+  city: string | null;
   education_level: string | null; career: string | null;
   is_studying: boolean; is_working: boolean; current_company: string | null;
   cv_file_id: number | null; avatar_file_id: number | null;
@@ -34,7 +34,6 @@ function mapCandidate(c: BackendCandidate): Candidate {
     email: c.email,
     phone: c.phone ?? "",
     city: c.city ?? "",
-    province: c.province ?? "",
     educationLevel: c.education_level ?? "",
     degree: c.career ?? "",
     currentlyStudying: c.is_studying,

@@ -16,9 +16,9 @@ interface BackendCandidateExpanded {
   birth_date: string | null;
   phone: string | null;
   city: string | null;
-  province: string | null;
   education_level: string | null;
   career: string | null;
+  title: string | null;
   university: string | null;
   home_address: string | null;
   is_studying: boolean;
@@ -79,9 +79,9 @@ export async function GET() {
       idNumber: candidate.cedula ?? "",
       birthDate: candidate.birth_date ?? "",
       city: candidate.city ?? "",
-      province: candidate.province ?? "",
       educationLevel: candidate.education_level ?? "",
       career: candidate.career ?? "",
+      title: candidate.title ?? "",
       university: candidate.university ?? "",
       homeAddress: candidate.home_address ?? "",
       isStudying: candidate.is_studying,
@@ -126,9 +126,9 @@ export async function PATCH(request: Request) {
       homeAddress?: string | null;
       universityId?: number | null;
       cityId?: number | null;
-      provinceId?: number | null;
       educationLevelId?: number | null;
       careerId?: number | null;
+      titleId?: number | null;
       isStudying?: boolean;
       isWorking?: boolean;
       currentCompany?: string | null;
@@ -147,9 +147,9 @@ export async function PATCH(request: Request) {
     if (body.homeAddress !== undefined) payload.home_address = body.homeAddress;
     if (body.universityId !== undefined) payload.university_id = body.universityId;
     if (body.cityId !== undefined) payload.city_id = body.cityId;
-    if (body.provinceId !== undefined) payload.province_id = body.provinceId;
     if (body.educationLevelId !== undefined) payload.education_level_id = body.educationLevelId;
     if (body.careerId !== undefined) payload.career_id = body.careerId;
+    if (body.titleId !== undefined) payload.title_id = body.titleId;
     if (body.isStudying !== undefined) payload.is_studying = body.isStudying;
     if (body.isWorking !== undefined) payload.is_working = body.isWorking;
     if (body.currentCompany !== undefined) payload.current_company = body.currentCompany;
@@ -182,9 +182,9 @@ export async function POST(request: Request) {
       homeAddress,
       educationLevelId,
       careerId,
+      titleId,
       universityId,
       cityId,
-      provinceId,
       isStudying,
       isWorking,
       currentCompany,
@@ -202,9 +202,9 @@ export async function POST(request: Request) {
       phone: phone || null,
       home_address: homeAddress || null,
       city_id: cityId ?? null,
-      province_id: provinceId ?? null,
       education_level_id: educationLevelId ?? null,
       career_id: careerId ?? null,
+      title_id: titleId ?? null,
       university_id: universityId ?? null,
       is_studying: !!isStudying,
       is_working: !!isWorking,

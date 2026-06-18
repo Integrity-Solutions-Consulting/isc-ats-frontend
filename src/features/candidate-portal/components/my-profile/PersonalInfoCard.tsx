@@ -17,17 +17,17 @@ interface CatalogOption {
 
 interface Catalogs {
   cities: CatalogOption[];
-  provinces: CatalogOption[];
   educationLevels: CatalogOption[];
   careers: CatalogOption[];
+  titles: CatalogOption[];
   universities: CatalogOption[];
 }
 
 const EMPTY_CATALOGS: Catalogs = {
   cities: [],
-  provinces: [],
   educationLevels: [],
   careers: [],
+  titles: [],
   universities: [],
 };
 
@@ -46,14 +46,13 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
     homeAddress: profile.homeAddress,
     // ID fields start empty — user re-selects if they want to change; placeholder shows current value
     cityId: '',
-    provinceId: '',
     educationLevelId: '',
     careerId: '',
+    titleId: '',
     universityId: '',
     isStudying: profile.isStudying,
     isWorking: profile.isWorking,
     currentCompany: profile.currentCompany ?? '',
-    degreeTitle: profile.degreeTitle ?? '',
   });
 
   useEffect(() => {
@@ -98,14 +97,13 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
       phone: profile.phone,
       homeAddress: profile.homeAddress,
       cityId: '',
-      provinceId: '',
       educationLevelId: '',
       careerId: '',
+      titleId: '',
       universityId: '',
       isStudying: profile.isStudying,
       isWorking: profile.isWorking,
       currentCompany: profile.currentCompany ?? '',
-      degreeTitle: profile.degreeTitle ?? '',
     });
     setSaveError(null);
     setEditing(false);
@@ -124,13 +122,12 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
         isStudying: form.isStudying,
         isWorking: form.isWorking,
         currentCompany: form.isWorking ? (form.currentCompany || null) : null,
-        degreeTitle: form.degreeTitle || null,
       };
       if (form.universityId) patchBody.universityId = Number(form.universityId);
       if (form.cityId) patchBody.cityId = Number(form.cityId);
-      if (form.provinceId) patchBody.provinceId = Number(form.provinceId);
       if (form.educationLevelId) patchBody.educationLevelId = Number(form.educationLevelId);
       if (form.careerId) patchBody.careerId = Number(form.careerId);
+      if (form.titleId) patchBody.titleId = Number(form.titleId);
 
       const res = await fetch('/api/candidate/profile', {
         method: 'PATCH',
@@ -281,42 +278,22 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
           </div>
         </div>
 
-        {/* Row 4: Ciudad y Provincia — combined in view mode, split selects in edit mode */}
-        {editing ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pb-2.5 border-b border-surface-2">
-            <div>
-              <FieldLabel htmlFor="edit-city">Ciudad</FieldLabel>
-              <Combobox
-                id="edit-city"
-                valueKey="id"
-                placeholder={profile.city || 'Selecciona tu ciudad'}
-                value={form.cityId}
-                onChange={(val) => setForm((f) => ({ ...f, cityId: val }))}
-                options={catalogs.cities.map((c) => ({ id: String(c.id), label: c.name }))}
-              />
-            </div>
-            <div>
-              <FieldLabel htmlFor="edit-province">Provincia</FieldLabel>
-              <Combobox
-                id="edit-province"
-                valueKey="id"
-                placeholder={profile.province || 'Selecciona tu provincia'}
-                value={form.provinceId}
-                onChange={(val) => setForm((f) => ({ ...f, provinceId: val }))}
-                options={catalogs.provinces.map((p) => ({ id: String(p.id), label: p.name }))}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="pb-2.5 border-b border-surface-2">
-            <FieldLabel>Ciudad y provincia</FieldLabel>
-            <FieldValue>
-              {profile.city && profile.province
-                ? `${profile.city}, ${profile.province}`
-                : profile.city || profile.province || '—'}
-            </FieldValue>
-          </div>
-        )}
+        {/* Row 4: Ciudad */}
+        <div className="pb-2.5 border-b border-surface-2">
+          <FieldLabel htmlFor={editing ? 'edit-city' : undefined}>Ciudad</FieldLabel>
+          {editing ? (
+            <Combobox
+              id="edit-city"
+              valueKey="id"
+              placeholder={profile.city || 'Selecciona tu ciudad'}
+              value={form.cityId}
+              onChange={(val) => setForm((f) => ({ ...f, cityId: val }))}
+              options={catalogs.cities.map((c) => ({ id: String(c.id), label: c.name }))}
+            />
+          ) : (
+            <FieldValue>{profile.city || '—'}</FieldValue>
+          )}
+        </div>
 
         {/* Row 4b: Dirección domiciliaria */}
         <div className="pb-2.5 border-b border-surface-2">
@@ -373,17 +350,20 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
             </div>
           </div>
 
-          {/* Row 5c: Título obtenido */}
+          {/* Row 5c: Título */}
           <div className="pb-2.5 border-b border-surface-2">
-            <FieldLabel htmlFor={editing ? 'edit-degreeTitle' : undefined}>Título obtenido</FieldLabel>
+            <FieldLabel htmlFor={editing ? 'edit-title' : undefined}>Título</FieldLabel>
             {editing ? (
-              <FieldInput
-                id="edit-degreeTitle"
-                value={form.degreeTitle}
-                onChange={(v) => setForm((f) => ({ ...f, degreeTitle: v }))}
+              <Combobox
+                id="edit-title"
+                valueKey="id"
+                placeholder={profile.title || 'Selecciona tu título'}
+                value={form.titleId}
+                onChange={(val) => setForm((f) => ({ ...f, titleId: val }))}
+                options={catalogs.titles.map((t) => ({ id: String(t.id), label: t.name }))}
               />
             ) : (
-              <FieldValue>{profile.degreeTitle || '—'}</FieldValue>
+              <FieldValue>{profile.title || '—'}</FieldValue>
             )}
           </div>
 

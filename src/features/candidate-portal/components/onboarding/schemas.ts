@@ -30,8 +30,10 @@ export const step1Schema = z.object({
     ),
   birthDate: z
     .string()
-    .min(1, 'Ingresa tu fecha de nacimiento')
-    .refine(minAge(18), { message: 'Debes tener al menos 18 años para registrarte.' }),
+    .optional()
+    .refine((v) => !v || minAge(18)(v), {
+      message: 'Debes tener al menos 18 años para registrarte.',
+    }),
   phone: z
     .string()
     .min(1, 'Ingresa tu número de celular')
@@ -51,13 +53,12 @@ const booleanRequired = (msg: string) =>
 
 export const step2Schema = z.object({
   educationLevel: z.string().min(1, 'Selecciona tu nivel de educación'),
+  // career (study field) and title (degree) are separate parameter ids as strings
   completedCareer: z.string().optional(),
-  // university is stored as the numeric parameter id serialised as string
+  title: z.string().optional(),
   university: z.string().optional(),
   city: z.string().min(1, 'Selecciona tu ciudad'),
-  province: z.string().min(1, 'Selecciona tu provincia'),
   isStudying: booleanRequired('Indica si estudias actualmente'),
-  career: z.string().optional(),
   isWorking: booleanRequired('Indica si trabajas actualmente'),
   currentCompany: z.string().optional(),
 });

@@ -88,9 +88,9 @@ export interface CandidateProfile {
   idNumber: string;
   birthDate: string;
   city: string;
-  province: string;
   educationLevel: string;
   career: string;
+  title: string;
   /** Resolved name of the university (from org.parameters type=university). */
   university: string;
   homeAddress: string;

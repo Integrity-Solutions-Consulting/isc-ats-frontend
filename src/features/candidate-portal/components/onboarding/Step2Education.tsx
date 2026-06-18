@@ -21,30 +21,30 @@ interface CatalogOption {
 
 interface Catalogs {
   cities: CatalogOption[];
-  provinces: CatalogOption[];
   educationLevels: CatalogOption[];
   careers: CatalogOption[];
+  titles: CatalogOption[];
   universities: CatalogOption[];
 }
 
 const EMPTY_CATALOGS: Catalogs = {
   cities: [],
-  provinces: [],
   educationLevels: [],
   careers: [],
+  titles: [],
   universities: [],
 };
 
-function ToggleCards({ value, onChange, options, error }: {
+function ToggleCards({ value, onChange, error }: {
   value: boolean | null;
   onChange: (v: boolean) => void;
-  options: [string, string];
   error?: string;
 }) {
+  const options: [boolean, string][] = [[true, 'Sí'], [false, 'No']];
   return (
     <div>
       <div className="grid grid-cols-2 gap-2">
-        {([true, false] as const).map((v, i) => (
+        {options.map(([v, label]) => (
           <button
             key={String(v)}
             type="button"
@@ -56,7 +56,7 @@ function ToggleCards({ value, onChange, options, error }: {
                 : 'border-border bg-surface text-ink-muted hover:border-primary-300',
             )}
           >
-            {options[i]}
+            {label}
           </button>
         ))}
       </div>
@@ -80,9 +80,9 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
       .then((data: Partial<Catalogs>) => {
         setCatalogs({
           cities: data.cities ?? [],
-          provinces: data.provinces ?? [],
           educationLevels: data.educationLevels ?? [],
           careers: data.careers ?? [],
+          titles: data.titles ?? [],
           universities: data.universities ?? [],
         });
       })
@@ -94,11 +94,10 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
   const initialValues = useMemo<Step2FormValues>(() => ({
     educationLevel: defaultValues.educationLevel || (prefill?.educationLevelId ? String(prefill.educationLevelId) : ''),
     completedCareer: defaultValues.completedCareer || (prefill?.careerId ? String(prefill.careerId) : ''),
+    title: defaultValues.title || (prefill?.titleId ? String(prefill.titleId) : ''),
     university: defaultValues.university || (prefill?.universityId ? String(prefill.universityId) : ''),
     city: defaultValues.city || (prefill?.cityId ? String(prefill.cityId) : ''),
-    province: defaultValues.province || (prefill?.provinceId ? String(prefill.provinceId) : ''),
     isStudying: defaultValues.isStudying,
-    career: defaultValues.career,
     isWorking: defaultValues.isWorking,
     currentCompany: defaultValues.currentCompany || prefill?.currentCompany || '',
   }), [defaultValues, prefill]);
@@ -136,7 +135,7 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
     <form onSubmit={onSubmit} noValidate className="space-y-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="s2-educationLevel">Último nivel de educación finalizado *</Label>
+          <Label htmlFor="s2-educationLevel">Educación *</Label>
           <Select id="s2-educationLevel" {...register('educationLevel')}>
             <option value="">Selecciona un nivel</option>
             {catalogs.educationLevels.map((o) => (
@@ -146,11 +145,37 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
           <FieldError message={errors.educationLevel?.message} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="s2-completedCareer">Carrera / Título obtenido</Label>
+          <Label htmlFor="s2-city">Ciudad *</Label>
+          <Select id="s2-city" {...register('city')}>
+            <option value="">Selecciona</option>
+            {catalogs.cities.map((c) => (
+              <option key={c.id} value={String(c.id)}>{c.name}</option>
+            ))}
+          </Select>
+          <FieldError message={errors.city?.message} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="s2-completedCareer">
+            Carrera <span className="text-ink-subtle">(opcional)</span>
+          </Label>
           <Select id="s2-completedCareer" {...register('completedCareer')}>
             <option value="">Selecciona</option>
             {catalogs.careers.map((c) => (
               <option key={c.id} value={String(c.id)}>{c.name}</option>
+            ))}
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="s2-title">
+            Título <span className="text-ink-subtle">(opcional)</span>
+          </Label>
+          <Select id="s2-title" {...register('title')}>
+            <option value="">Selecciona</option>
+            {catalogs.titles.map((t) => (
+              <option key={t.id} value={String(t.id)}>{t.name}</option>
             ))}
           </Select>
         </div>
@@ -168,48 +193,13 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
         </Select>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="s2-city">Ciudad *</Label>
-          <Select id="s2-city" {...register('city')}>
-            <option value="">Selecciona</option>
-            {catalogs.cities.map((c) => (
-              <option key={c.id} value={String(c.id)}>{c.name}</option>
-            ))}
-          </Select>
-          <FieldError message={errors.city?.message} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="s2-province">Provincia *</Label>
-          <Select id="s2-province" {...register('province')}>
-            <option value="">Selecciona</option>
-            {catalogs.provinces.map((p) => (
-              <option key={p.id} value={String(p.id)}>{p.name}</option>
-            ))}
-          </Select>
-          <FieldError message={errors.province?.message} />
-        </div>
-      </div>
-
       <div className="space-y-2">
         <Label>¿Estudias actualmente? *</Label>
         <ToggleCards
           value={isStudying ?? null}
           onChange={handleIsStudying}
-          options={['Sí, actualmente', 'No por ahora']}
           error={errors.isStudying?.message}
         />
-        {isStudying && (
-          <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-            <Label htmlFor="s2-career">Carrera que estudias</Label>
-            <Select id="s2-career" {...register('career')}>
-              <option value="">Selecciona</option>
-              {catalogs.careers.map((c) => (
-                <option key={c.id} value={String(c.id)}>{c.name}</option>
-              ))}
-            </Select>
-          </div>
-        )}
       </div>
 
       <div className="space-y-2">
@@ -217,7 +207,6 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
         <ToggleCards
           value={isWorking ?? null}
           onChange={handleIsWorking}
-          options={['Sí, actualmente', 'No por ahora']}
           error={errors.isWorking?.message}
         />
         {isWorking && (

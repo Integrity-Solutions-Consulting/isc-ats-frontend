@@ -24,9 +24,8 @@ export function OnboardingPage() {
     firstName: '', lastName: '', idNumber: '', birthDate: '', phone: '', homeAddress: '',
   });
   const [step2Values, setStep2Values] = useState<Step2FormValues>({
-    educationLevel: '', completedCareer: '', university: '', city: '', province: '',
+    educationLevel: '', completedCareer: '', title: '', university: '', city: '',
     isStudying: null,
-    career: '',
     isWorking: null,
     currentCompany: '',
   });
@@ -63,10 +62,9 @@ export function OnboardingPage() {
         homeAddress: step1Values.homeAddress || undefined,
         educationLevelId: toId(step2.educationLevel),
         cityId: toId(step2.city),
-        provinceId: toId(step2.province),
         universityId: toId(step2.university),
-        // Career: prefer the completed degree, fall back to the one being studied.
-        careerId: toId(step2.completedCareer) ?? toId(step2.career),
+        careerId: toId(step2.completedCareer),
+        titleId: toId(step2.title),
         isStudying: step2.isStudying,
         isWorking: step2.isWorking,
         currentCompany: step2.currentCompany || undefined,

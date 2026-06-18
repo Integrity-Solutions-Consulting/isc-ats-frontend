@@ -42,7 +42,6 @@ export interface Candidate {
   email: string;
   phone: string;
   city: string;
-  province: string;
   educationLevel: string;
   degree: string;
   currentlyStudying: boolean;
