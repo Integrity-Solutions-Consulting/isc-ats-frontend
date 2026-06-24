@@ -68,6 +68,7 @@ export function Combobox({
   }
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const justFocusedRef = useRef(false);
   // Latest selected label, read inside the outside-click handler to restore the
   // input when the user clicks away after typing a non-matching query (id mode).
   const selectedLabelRef = useRef(selectedLabel);
@@ -82,6 +83,7 @@ export function Combobox({
     function onMouseDown(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
+        justFocusedRef.current = false;
         if (isIdMode) setQuery(selectedLabelRef.current);
       }
     }
@@ -124,11 +126,20 @@ export function Combobox({
         }}
         onFocus={(e) => {
           setOpen(true);
+          justFocusedRef.current = true;
           e.target.select();
+        }}
+        onClick={() => {
+          if (justFocusedRef.current) {
+            justFocusedRef.current = false;
+          } else {
+            setOpen((prev) => !prev);
+          }
         }}
         onKeyDown={(e) => {
           if (e.key === "Escape") {
             setOpen(false);
+            justFocusedRef.current = false;
             if (isIdMode) setQuery(selectedLabel);
           } else if (e.key === "Enter") {
             if (open && filtered.length > 0) {
@@ -138,6 +149,7 @@ export function Combobox({
               setQuery(top.label);
             }
             setOpen(false);
+            justFocusedRef.current = false;
           }
         }}
         className={cn(

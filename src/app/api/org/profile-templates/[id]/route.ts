@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { backendGet, backendPatch } from "@/lib/backendFetch";
+import { backendGet, backendPatch, backendErrorResponse } from "@/lib/backendFetch";
 import {
   buildItemsByCategory, replaceItems, CATEGORY_KEYS,
   type BackendPage, type BackendParam, type BackendTemplate, type BackendTemplateItem, type CategoryKey,
@@ -81,6 +81,6 @@ export async function DELETE(
     await backendPatch(`/org/profile-templates/${Number(id)}`, { is_active: false });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    return backendErrorResponse(error);
   }
 }

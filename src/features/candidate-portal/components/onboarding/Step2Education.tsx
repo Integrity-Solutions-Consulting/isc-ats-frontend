@@ -111,6 +111,7 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
     formState: { errors },
   } = useForm<Step2FormValues, unknown, Step2Values>({
     resolver: zodResolver(step2Schema),
+    mode: 'onTouched',
     defaultValues: initialValues,
   });
 
@@ -145,33 +146,19 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
           <FieldError message={errors.educationLevel?.message} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="s2-city">Ciudad *</Label>
-          <Select id="s2-city" {...register('city')}>
-            <option value="">Selecciona</option>
-            {catalogs.cities.map((c) => (
-              <option key={c.id} value={String(c.id)}>{c.name}</option>
+          <Label htmlFor="s2-university">Universidad</Label>
+          <Select id="s2-university" {...register('university')}>
+            <option value="">Selecciona tu universidad</option>
+            {catalogs.universities.map((u) => (
+              <option key={u.id} value={String(u.id)}>{u.name}</option>
             ))}
           </Select>
-          <FieldError message={errors.city?.message} />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="s2-completedCareer">
-            Carrera <span className="text-ink-subtle">(opcional)</span>
-          </Label>
-          <Select id="s2-completedCareer" {...register('completedCareer')}>
-            <option value="">Selecciona</option>
-            {catalogs.careers.map((c) => (
-              <option key={c.id} value={String(c.id)}>{c.name}</option>
-            ))}
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="s2-title">
-            Título <span className="text-ink-subtle">(opcional)</span>
-          </Label>
+          <Label htmlFor="s2-title">Título</Label>
           <Select id="s2-title" {...register('title')}>
             <option value="">Selecciona</option>
             {catalogs.titles.map((t) => (
@@ -179,18 +166,26 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
             ))}
           </Select>
         </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="s2-completedCareer">Carrera</Label>
+          <Select id="s2-completedCareer" {...register('completedCareer')}>
+            <option value="">Selecciona</option>
+            {catalogs.careers.map((c) => (
+              <option key={c.id} value={String(c.id)}>{c.name}</option>
+            ))}
+          </Select>
+        </div>
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="s2-university">
-          Universidad <span className="text-ink-subtle">(opcional)</span>
-        </Label>
-        <Select id="s2-university" {...register('university')}>
-          <option value="">Selecciona tu universidad</option>
-          {catalogs.universities.map((u) => (
-            <option key={u.id} value={String(u.id)}>{u.name}</option>
+        <Label htmlFor="s2-city">Ciudad *</Label>
+        <Select id="s2-city" {...register('city')}>
+          <option value="">Selecciona</option>
+          {catalogs.cities.map((c) => (
+            <option key={c.id} value={String(c.id)}>{c.name}</option>
           ))}
         </Select>
+        <FieldError message={errors.city?.message} />
       </div>
 
       <div className="space-y-2">
@@ -211,9 +206,7 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
         />
         {isWorking && (
           <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-            <Label htmlFor="s2-currentCompany">
-              Empresa donde trabajas <span className="text-ink-subtle">(opcional)</span>
-            </Label>
+            <Label htmlFor="s2-currentCompany">Empresa donde trabajas</Label>
             <Input
               id="s2-currentCompany"
               placeholder="Nombre de la empresa"

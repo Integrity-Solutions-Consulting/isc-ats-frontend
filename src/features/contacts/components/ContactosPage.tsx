@@ -14,6 +14,8 @@ import { Combobox } from '@/design-system/molecules/Combobox';
 import { Pagination } from '@/design-system/molecules/Pagination';
 import { Select } from '@/design-system/atoms/Select';
 import { Input } from '@/design-system/ui/input';
+import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
+import { validateEmail, validateRequiredText } from '@/shared/validation';
 
 interface Contact {
   id: string; firstName: string; lastName: string;
@@ -73,10 +75,12 @@ export function ContactosPage() {
   const [editForm, setEditForm] = useState<EditForm>({ firstName: '', lastName: '', email: '', clientCompanyId: '' });
   const [showModal, setShowModal] = useState(false);
   const [newForm, setNewForm] = useState<EditForm>({ firstName: '', lastName: '', email: '', clientCompanyId: firstCompanyId });
+  const [newTouched, setNewTouched] = useState<{ firstName?: boolean; email?: boolean }>({});
   const [search, setSearch] = useState('');
   const [filterClient, setFilterClient] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [page, setPage] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null);
   const PAGE_SIZE = 10;
 
   const startEdit = (c: Contact) => {
@@ -86,15 +90,34 @@ export function ContactosPage() {
   const cancelEdit = () => setEditingId(null);
   const saveEdit = () => {
     if (!editingId) return;
+    // Inline-edit validation: keep the row open if name/email are invalid.
+    if (!editForm.firstName.trim() || validateEmail(editForm.email)) return;
     updateMut.mutate({ id: editingId, ...editForm });
     setEditingId(null);
   };
 
+  // Live validation for the create modal — errors surface per field once touched.
+  const newErrors = {
+    firstName: validateRequiredText(newForm.firstName, 'El nombre', 80),
+    email: validateEmail(newForm.email),
+  };
+  const showNewError = (field: 'firstName' | 'email') =>
+    newTouched[field] ? newErrors[field] : undefined;
+  const newFormValid = !newErrors.firstName && !newErrors.email;
+
+  const openCreate = () => {
+    setNewForm({ firstName: '', lastName: '', email: '', clientCompanyId: firstCompanyId });
+    setNewTouched({});
+    setShowModal(true);
+  };
+
   const handleCreate = () => {
-    if (!newForm.firstName || !newForm.email) return;
+    setNewTouched({ firstName: true, email: true });
+    if (!newFormValid) return;
     createMut.mutate(newForm, {
       onSuccess: () => {
         setNewForm({ firstName: '', lastName: '', email: '', clientCompanyId: firstCompanyId });
+        setNewTouched({});
         setShowModal(false);
       },
     });
@@ -159,7 +182,7 @@ export function ContactosPage() {
           ) : (
             <>
               <Button variant="ghost" size="icon" aria-label="Editar" className="size-8" onClick={() => startEdit(c)}><Pencil className="size-4" /></Button>
-              <Button variant="ghost" size="icon" aria-label="Eliminar" className="size-8 text-danger hover:bg-danger/10 hover:text-danger" onClick={() => deleteMut.mutate(c.id)}>
+              <Button variant="ghost" size="icon" aria-label="Eliminar" className="size-8 text-danger hover:bg-danger/10 hover:text-danger" onClick={() => setDeleteTarget(c)}>
                 <Trash2 className="size-4" />
               </Button>
             </>
@@ -177,7 +200,7 @@ export function ContactosPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-ink">Contactos</h1>
-        <Button onClick={() => setShowModal(true)}><Plus className="mr-1.5 size-4" />Nuevo contacto</Button>
+        <Button onClick={openCreate}><Plus className="mr-1.5 size-4" />Nuevo contacto</Button>
       </div>
 
       <FilterBar search={{ value: search, onChange: (v) => { setSearch(v); setPage(0); }, placeholder: 'Buscar por nombre o correo…' }}>
@@ -223,7 +246,10 @@ export function ContactosPage() {
               <div>
                 <label className="mb-1 block text-sm font-medium text-ink">Nombre</label>
                 <Input value={newForm.firstName} onChange={(e) => setNewForm((f) => ({ ...f, firstName: e.target.value }))}
+                  onBlur={() => setNewTouched((t) => ({ ...t, firstName: true }))}
+                  aria-invalid={!!showNewError('firstName')}
                   className="mt-1.5" />
+                {showNewError('firstName') && <p className="mt-1 text-xs text-danger">{showNewError('firstName')}</p>}
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-ink">Apellido</label>
@@ -234,7 +260,10 @@ export function ContactosPage() {
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Correo electrónico</label>
               <Input type="email" value={newForm.email} onChange={(e) => setNewForm((f) => ({ ...f, email: e.target.value }))}
+                onBlur={() => setNewTouched((t) => ({ ...t, email: true }))}
+                aria-invalid={!!showNewError('email')}
                 className="mt-1.5" />
+              {showNewError('email') && <p className="mt-1 text-xs text-danger">{showNewError('email')}</p>}
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Cliente</label>
@@ -245,12 +274,26 @@ export function ContactosPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowModal(false)}>Cancelar</Button>
-            <Button onClick={handleCreate} disabled={!newForm.firstName || !newForm.email || createMut.isPending}>
+            <Button onClick={handleCreate} disabled={!newFormValid || createMut.isPending}>
               {createMut.isPending ? <Loader2 className="size-4 animate-spin" /> : 'Crear contacto'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="¿Eliminar contacto?"
+        description={
+          deleteTarget
+            ? `El contacto ${deleteTarget.firstName} ${deleteTarget.lastName} se desactivará y dejará de estar disponible.`
+            : undefined
+        }
+        confirmLabel="Eliminar"
+        variant="danger"
+        onConfirm={() => { if (deleteTarget) { deleteMut.mutate(deleteTarget.id); setDeleteTarget(null); } }}
+      />
     </div>
   );
 }

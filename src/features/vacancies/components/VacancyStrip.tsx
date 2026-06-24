@@ -72,8 +72,12 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
       queryClient.invalidateQueries({ queryKey: vacancyKeys.all });
       router.refresh();
     },
-    onError: () => {
-      setActionError('No fue posible actualizar el estado de la vacante. Intentá de nuevo.');
+    onError: (error) => {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : 'No fue posible actualizar el estado de la vacante. Intentá de nuevo.',
+      );
     },
   });
 
@@ -83,8 +87,12 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
       queryClient.invalidateQueries({ queryKey: vacancyKeys.all });
       router.push(ROUTES.vacantes);
     },
-    onError: () => {
-      setActionError('No fue posible eliminar la vacante. Intentá de nuevo.');
+    onError: (error) => {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : 'No fue posible eliminar la vacante. Intentá de nuevo.',
+      );
     },
   });
 
@@ -96,12 +104,17 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
       queryClient.invalidateQueries({ queryKey: vacancyKeys.detail(vacancy.id) });
       router.refresh();
     },
-    onError: () => {
-      setActionError('No fue posible reactivar la vacante. Intentá de nuevo.');
+    onError: (error) => {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : 'No fue posible reactivar la vacante. Intentá de nuevo.',
+      );
     },
   });
 
-  const isClosed = vacancy.status === 'closed';
+  // 'closed' and 'cancelled' are both terminal — neither can be re-closed.
+  const isTerminal = vacancy.status === 'closed' || vacancy.status === 'cancelled';
 
   // Derive live stats from the shared pipeline query so the header updates as
   // cards are moved on the board (Cubiertas, Rechazados, Match). Falls back to
@@ -118,8 +131,9 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
       }
     : stats;
 
-  // Closing a vacancy whose openings are filled is frictionless; if it is still
-  // incomplete, warn first (but still allow it — a vacancy may be cancelled).
+  // Closing a vacancy whose openings are filled marks it 'closed' directly. If
+  // coverage is still incomplete the backend rejects 'closed' (409) — the only
+  // valid way to wrap it up is to cancel it, so we offer that instead.
   const coverageComplete =
     liveStats.openings > 0 && liveStats.filledCount >= liveStats.openings;
   const handleCloseClick = () => {
@@ -170,7 +184,7 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
                 Editar
               </Button>
 
-              {!isClosed && (
+              {!isTerminal && (
                 <Button variant="destructive" size="sm" disabled={isPending} onClick={handleCloseClick}>
                   Cerrar
                 </Button>
@@ -226,11 +240,11 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
       <ConfirmDialog
         open={confirmCloseOpen}
         onOpenChange={setConfirmCloseOpen}
-        title="¿Cerrar vacante?"
-        description={`Cubiertas ${liveStats.filledCount}/${liveStats.openings}: aún no se cubrieron todos los recursos. ¿Cerrar la vacante de todas formas?`}
-        confirmLabel="Cerrar igual"
+        title="¿Cancelar vacante?"
+        description={`Cubiertas ${liveStats.filledCount}/${liveStats.openings}: aún no se cubrieron todos los recursos, así que no se puede cerrar. ¿Cancelar la vacante? Quedará como "Cancelada" y conservará su historial.`}
+        confirmLabel="Cancelar vacante"
         variant="danger"
-        onConfirm={() => changeStatus({ newStatus: 'closed' })}
+        onConfirm={() => changeStatus({ newStatus: 'cancelled' })}
       />
     </div>
   );

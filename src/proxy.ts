@@ -20,6 +20,12 @@ function parseSession(raw: string | undefined): SessionInfo {
   }
 }
 
+// SECURITY NOTE: this middleware is a UX router, NOT a trust boundary. The
+// `session-user` cookie is readable/forgeable by the client, so a tampered
+// portal value can only change which UI a user is *routed* to — never what data
+// they receive. Every protected resource is enforced server-side by the access
+// token (httpOnly) against the backend's RBAC. Do not move real authorization
+// decisions here.
 export function proxy(request: NextRequest) {
   const token = request.cookies.get("access-token");
   const { pathname } = request.nextUrl;

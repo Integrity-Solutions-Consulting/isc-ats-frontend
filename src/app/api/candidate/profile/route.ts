@@ -24,7 +24,6 @@ interface BackendCandidateExpanded {
   is_studying: boolean;
   is_working: boolean;
   current_company: string | null;
-  degree_title: string | null;
   cv_file_id: number | null;
   avatar_file_id: number | null;
   is_active: boolean;
@@ -87,7 +86,6 @@ export async function GET() {
       isStudying: candidate.is_studying,
       isWorking: candidate.is_working,
       currentCompany: candidate.current_company ?? undefined,
-      degreeTitle: candidate.degree_title ?? undefined,
       avatarFileId: candidate.avatar_file_id ?? undefined,
       cvFileId,
       cvFileName,
@@ -132,7 +130,6 @@ export async function PATCH(request: Request) {
       isStudying?: boolean;
       isWorking?: boolean;
       currentCompany?: string | null;
-      degreeTitle?: string | null;
     };
 
     const { candidateId } = body;
@@ -153,7 +150,6 @@ export async function PATCH(request: Request) {
     if (body.isStudying !== undefined) payload.is_studying = body.isStudying;
     if (body.isWorking !== undefined) payload.is_working = body.isWorking;
     if (body.currentCompany !== undefined) payload.current_company = body.currentCompany;
-    if (body.degreeTitle !== undefined) payload.degree_title = body.degreeTitle;
 
     await backendPatch(`/recruitment/candidates/${candidateId}`, payload);
     return NextResponse.json({ ok: true });

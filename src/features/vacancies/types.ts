@@ -1,4 +1,4 @@
-export type VacancyStatus = "active" | "draft" | "closed";
+export type VacancyStatus = "active" | "draft" | "closed" | "cancelled";
 // WorkMode and SeniorityLevel are backed by editable catalogs (org.parameters
 // types work_mode / resource_level), so they are open strings — staff can add
 // new codes from Configuración → Catálogos without breaking the form or types.

@@ -33,6 +33,10 @@
   /* Neutrales */
   --bg:         #F5F5F5; /* White Smoke */
   --surface:    #FFFFFF;
+  /* Dark navy used by the public/candidate Integrity theme. Lives at :root so
+   * <html> can reference it for the iOS overscroll background (see @layer base).
+   * The themed wrapper inherits it via --bg below. */
+  --public-bg:  #060B24;
   --surface-2:  #F1F3F6;
   --border:     #E2E5EB;
   --ink:        #1A2332;
@@ -68,7 +72,7 @@
   --primary-900: #00567B;
 
   /* Fondos oscuros de Integrity */
-  --bg:          #060B24; /* Fondo de la página principal */
+  --bg:          var(--public-bg); /* Fondo de la página principal (#060B24) */
   --surface:     #0D153A; /* Tarjetas en un azul marino un poco más claro */
   --surface-2:   #152054; /* Inputs / hover */
   --border:      rgba(255, 255, 255, 0.15); /* Bordes sutiles semi-transparentes */
@@ -241,11 +245,34 @@
 
   html {
     font-family: var(--font-sans);
+    /* Stop iOS from inflating text when rotating to landscape. */
+    -webkit-text-size-adjust: 100%;
+    /* iOS rubber-band overscroll paints the <html> background, not <body>'s.
+     * Default (staff) theme is light — mirror it so the bounce matches. */
+    background-color: var(--color-bg);
+  }
+
+  /* Public/candidate pages scope the dark Integrity theme to an inner wrapper,
+   * so overscroll would flash the light bg above/below the page. Push the dark
+   * bg up onto <html> whenever that theme is mounted, killing the white flash. */
+  html:has(.integrity-public-theme) {
+    background-color: var(--public-bg);
   }
 
   body {
     background: var(--color-bg);
     color: var(--color-ink);
+  }
+
+  /* iOS Safari auto-zooms the viewport when focusing a control whose font-size
+   * is < 16px. Inputs/selects render at 14px (text-sm); bump them to 16px on
+   * small screens so focusing a field never triggers the zoom jump. */
+  @media (max-width: 640px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
   }
 
   .tabular {

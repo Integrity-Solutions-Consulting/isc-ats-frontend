@@ -14,10 +14,11 @@ function minAge(minYears: number) {
 }
 
 export const step1Schema = z.object({
-  firstName: z.string().min(1, 'Ingresa tu nombre'),
-  lastName: z.string().min(1, 'Ingresa tus apellidos'),
+  firstName: z.string().trim().min(1, 'Ingresa tu nombre').max(80, 'Máximo 80 caracteres'),
+  lastName: z.string().trim().min(1, 'Ingresa tus apellidos').max(80, 'Máximo 80 caracteres'),
   idNumber: z
     .string()
+    .trim()
     .min(1, 'Ingresa tu cédula o pasaporte')
     .refine(
       (v) => {
@@ -40,7 +41,7 @@ export const step1Schema = z.object({
     .refine(validatePhoneEC, {
       message: 'Ingresa un número válido (ej: 0991234567 o +593991234567)',
     }),
-  homeAddress: z.string().optional(),
+  homeAddress: z.string().trim().max(200, 'Máximo 200 caracteres').optional(),
 });
 
 // isStudying / isWorking are stored as boolean | undefined until the toggle is pressed.
@@ -60,7 +61,7 @@ export const step2Schema = z.object({
   city: z.string().min(1, 'Selecciona tu ciudad'),
   isStudying: booleanRequired('Indica si estudias actualmente'),
   isWorking: booleanRequired('Indica si trabajas actualmente'),
-  currentCompany: z.string().optional(),
+  currentCompany: z.string().trim().max(120, 'Máximo 120 caracteres').optional(),
 });
 
 export type Step1Values = z.infer<typeof step1Schema>;

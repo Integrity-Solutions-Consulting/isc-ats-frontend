@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, X } from 'lucide-react';
 import { Button } from '@/design-system/ui/button';
 import { Badge } from '@/design-system/ui/badge';
+import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
 
 interface Department { id: string; name: string; is_active: boolean; }
 
@@ -85,7 +86,20 @@ export function DepartamentosPage() {
     onSuccess: () => { void qc.invalidateQueries({ queryKey: QUERY_KEY }); },
   });
 
+  const reactivateMut = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/org/departments/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: true }),
+      });
+      if (!res.ok) throw new Error('Error reactivating department');
+    },
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: QUERY_KEY }); },
+  });
+
   const [drawer, setDrawer] = useState<Department | null | 'new'>(null);
+  const [confirmTarget, setConfirmTarget] = useState<Department | null>(null);
 
   const handleSave = (name: string) => {
     if (!name.trim()) return;
@@ -132,8 +146,8 @@ export function DepartamentosPage() {
                     <Button variant="outline" size="sm" onClick={() => setDrawer(d)}>Editar</Button>
                     <Button
                       variant="outline" size="sm"
-                      onClick={() => deleteMut.mutate(d.id)}
-                      disabled={deleteMut.isPending}
+                      onClick={() => d.is_active ? setConfirmTarget(d) : reactivateMut.mutate(d.id)}
+                      disabled={deleteMut.isPending || reactivateMut.isPending}
                     >
                       {d.is_active ? 'Desactivar' : 'Activar'}
                     </Button>
@@ -153,6 +167,20 @@ export function DepartamentosPage() {
           isPending={createMut.isPending || updateMut.isPending}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmTarget !== null}
+        onOpenChange={(open) => { if (!open) setConfirmTarget(null); }}
+        title="¿Desactivar departamento?"
+        description={
+          confirmTarget
+            ? `El departamento ${confirmTarget.name} se desactivará y dejará de estar disponible.`
+            : undefined
+        }
+        confirmLabel="Desactivar"
+        variant="danger"
+        onConfirm={() => { if (confirmTarget) { deleteMut.mutate(confirmTarget.id); setConfirmTarget(null); } }}
+      />
     </div>
   );
 }

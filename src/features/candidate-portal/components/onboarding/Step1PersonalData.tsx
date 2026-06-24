@@ -20,6 +20,7 @@ export function Step1PersonalData({ defaultValues, onNext, prefill }: {
     formState: { errors },
   } = useForm<Step1Values>({
     resolver: zodResolver(step1Schema),
+    mode: 'onTouched',
     defaultValues: {
       firstName: defaultValues.firstName || prefill?.firstName || '',
       lastName: defaultValues.lastName || prefill?.lastName || '',
@@ -51,22 +52,25 @@ export function Step1PersonalData({ defaultValues, onNext, prefill }: {
           <FieldError message={errors.idNumber?.message} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="s1-birthDate">
-            Fecha de nacimiento <span className="text-ink-subtle">(opcional)</span>
-          </Label>
+          <Label htmlFor="s1-birthDate">Fecha de nacimiento</Label>
           <Input id="s1-birthDate" type="date" {...register('birthDate')} />
           <FieldError message={errors.birthDate?.message} />
         </div>
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="s1-phone">Número de celular *</Label>
-        <Input id="s1-phone" placeholder="0991234567" {...register('phone')} />
+        <Input
+          id="s1-phone"
+          type="tel"
+          inputMode="tel"
+          maxLength={13}
+          placeholder="0991234567"
+          {...register('phone')}
+        />
         <FieldError message={errors.phone?.message} />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="s1-homeAddress">
-          Dirección domiciliaria <span className="text-ink-subtle">(opcional)</span>
-        </Label>
+        <Label htmlFor="s1-homeAddress">Dirección domiciliaria</Label>
         <Input
           id="s1-homeAddress"
           placeholder="Av. Amazonas N12-34, Quito"

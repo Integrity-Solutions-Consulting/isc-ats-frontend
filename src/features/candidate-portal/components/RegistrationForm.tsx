@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowRight, Eye, EyeOff, Loader2, Mail } from 'lucide-react';
+import { ArrowRight, Check, Circle, Eye, EyeOff, Loader2, Mail } from 'lucide-react';
 import Link from 'next/link';
 
 import { Button } from '@/design-system/ui/button';
@@ -13,11 +13,15 @@ import { Input } from '@/design-system/ui/input';
 import { Label } from '@/design-system/ui/label';
 import { cn } from '@/shared/utils';
 import { ROUTES } from '@/shared/constants/routes';
+import { PASSWORD_MIN_LENGTH, passwordPolicyError } from '@/shared/utils/ecuadorValidators';
 
 const schema = z
   .object({
-    email: z.string().min(1, 'Ingresa tu correo').email('Correo no válido'),
-    password: z.string().min(6, 'Mínimo 6 caracteres'),
+    email: z.string().trim().min(1, 'Ingresa tu correo').email('Correo no válido'),
+    password: z.string().superRefine((value, ctx) => {
+      const error = passwordPolicyError(value);
+      if (error) ctx.addIssue({ code: z.ZodIssueCode.custom, message: error });
+    }),
     confirmPassword: z.string().min(1, 'Confirma tu contraseña'),
     terms: z.literal(true, { message: 'Debes aceptar los términos' }),
   })
@@ -28,16 +32,16 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>;
 
-function passwordStrength(pw: string): { level: 0 | 1 | 2 | 3 | 4; label: string } {
-  if (!pw) return { level: 0, label: '' };
-  if (pw.length < 6) return { level: 1, label: 'Débil' };
-  if (pw.length < 9) return { level: 2, label: 'Regular' };
-  if (pw.length < 12 || !/[^a-zA-Z0-9]/.test(pw)) return { level: 3, label: 'Buena' };
-  return { level: 4, label: 'Fuerte' };
-}
-
-const STRENGTH_COLORS = ['bg-surface-2', 'bg-danger', 'bg-warning', 'bg-primary-400', 'bg-success'];
-const STRENGTH_TEXT = ['', 'text-danger', 'text-warning', 'text-primary-600', 'text-success'];
+// Live requirements checklist — mirrors the policy in ecuadorValidators.ts.
+// Each rule ticks green as the user types, so the form tells them exactly what
+// is still missing instead of a vague strength meter.
+const PASSWORD_REQUIREMENTS: { label: string; test: (pw: string) => boolean }[] = [
+  { label: `Al menos ${PASSWORD_MIN_LENGTH} caracteres`, test: (pw) => pw.length >= PASSWORD_MIN_LENGTH },
+  { label: 'Una letra minúscula', test: (pw) => /[a-z]/.test(pw) },
+  { label: 'Una letra mayúscula', test: (pw) => /[A-Z]/.test(pw) },
+  { label: 'Un número', test: (pw) => /\d/.test(pw) },
+  { label: 'Un carácter especial', test: (pw) => /[^a-zA-Z0-9]/.test(pw) },
+];
 
 export function RegistrationForm() {
   const router = useRouter();
@@ -50,11 +54,10 @@ export function RegistrationForm() {
     handleSubmit,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({ resolver: zodResolver(schema), mode: 'onTouched' });
 
   const passwordValue = watch('password', '');
   const confirmValue = watch('confirmPassword', '');
-  const strength = passwordStrength(passwordValue);
   const confirmMatch = confirmValue.length > 0 && confirmValue === passwordValue;
 
   async function onSubmit(data: FormValues) {
@@ -133,26 +136,30 @@ export function RegistrationForm() {
               {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>
           </div>
-          {/* Strength bar */}
+          {/* Live requirements checklist — replaces the strength bar */}
           {passwordValue.length > 0 && (
-            <div className="space-y-1">
-              <div className="flex gap-1">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
+            <ul className="space-y-1 pt-0.5">
+              {PASSWORD_REQUIREMENTS.map((req) => {
+                const met = req.test(passwordValue);
+                return (
+                  <li
+                    key={req.label}
                     className={cn(
-                      'h-1.5 flex-1 rounded-full transition-colors',
-                      i <= strength.level ? STRENGTH_COLORS[strength.level] : 'bg-surface-2',
+                      'flex items-center gap-1.5 text-xs transition-colors',
+                      met ? 'text-success' : 'text-ink-subtle',
                     )}
-                  />
-                ))}
-              </div>
-              <p className={cn('text-xs font-medium', STRENGTH_TEXT[strength.level])}>
-                {strength.label}
-              </p>
-            </div>
+                  >
+                    {met ? (
+                      <Check className="size-3.5 shrink-0" />
+                    ) : (
+                      <Circle className="size-3.5 shrink-0" />
+                    )}
+                    {req.label}
+                  </li>
+                );
+              })}
+            </ul>
           )}
-          {errors.password && <p className="text-xs text-danger">{errors.password.message}</p>}
         </div>
 
         {/* Confirm password */}

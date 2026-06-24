@@ -9,6 +9,7 @@ export const STATUS_LABEL: Record<VacancyStatus, string> = {
   active: "Publicada",
   draft: "Borrador",
   closed: "Cerrada",
+  cancelled: "Cancelada",
 };
 
 export const STATUS_BADGE_VARIANT: Record<
@@ -18,6 +19,7 @@ export const STATUS_BADGE_VARIANT: Record<
   active: "success",
   draft: "neutral",
   closed: "neutral",
+  cancelled: "warning",
 };
 
 export const WORK_MODE_LABEL: Record<WorkMode, string> = {

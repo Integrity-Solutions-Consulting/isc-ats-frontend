@@ -12,6 +12,7 @@ import { DataTable, type ColumnDef } from '@/design-system/organisms/DataTable';
 import { FilterBar } from '@/design-system/molecules/FilterBar';
 import { Pagination } from '@/design-system/molecules/Pagination';
 import { Combobox } from '@/design-system/molecules/Combobox';
+import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
 import { Input } from '@/design-system/ui/input';
 
 interface Client { id: string; name: string; is_active: boolean; }
@@ -66,13 +67,15 @@ export function ClientesPage() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [page, setPage] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
   const PAGE_SIZE = 10;
 
   const startEdit = (c: Client) => { setEditingId(c.id); setEditName(c.name); };
   const cancelEdit = () => setEditingId(null);
   const saveEdit = () => {
     if (!editingId) return;
-    updateMut.mutate({ id: editingId, name: editName });
+    if (!editName.trim()) return; // keep editing if the name was cleared
+    updateMut.mutate({ id: editingId, name: editName.trim() });
     setEditingId(null);
   };
 
@@ -127,7 +130,7 @@ export function ClientesPage() {
               <Button
                 variant="ghost" size="icon" aria-label="Eliminar"
                 className="size-8 text-danger hover:bg-danger/10 hover:text-danger"
-                onClick={() => deleteMut.mutate(c.id)}
+                onClick={() => setDeleteTarget(c)}
               >
                 <Trash2 className="size-4" />
               </Button>
@@ -201,6 +204,20 @@ export function ClientesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="¿Desactivar cliente?"
+        description={
+          deleteTarget
+            ? `El cliente ${deleteTarget.name} se desactivará y dejará de estar disponible para nuevas vacantes.`
+            : undefined
+        }
+        confirmLabel="Desactivar"
+        variant="danger"
+        onConfirm={() => { if (deleteTarget) { deleteMut.mutate(deleteTarget.id); setDeleteTarget(null); } }}
+      />
     </div>
   );
 }

@@ -39,3 +39,22 @@ export function validatePhoneEC(value: string): boolean {
   //       or +5939XXXXXXXX (country code +593 then 9XXXXXXXX)
   return /^09\d{8}$/.test(value) || /^\+5939\d{8}$/.test(value);
 }
+
+export const PASSWORD_MIN_LENGTH = 8;
+
+/**
+ * Mirror of the backend password policy (app/shared/validators.py).
+ * Returns a Spanish (Ecuador) error message for a weak password, or null when it
+ * meets the policy: at least PASSWORD_MIN_LENGTH chars with one lowercase, one
+ * uppercase, one digit and one special character.
+ */
+export function passwordPolicyError(value: string): string | null {
+  if (value.length < PASSWORD_MIN_LENGTH) {
+    return `La contraseña debe tener al menos ${PASSWORD_MIN_LENGTH} caracteres`;
+  }
+  if (!/[a-z]/.test(value)) return 'La contraseña debe incluir al menos una letra minúscula';
+  if (!/[A-Z]/.test(value)) return 'La contraseña debe incluir al menos una letra mayúscula';
+  if (!/\d/.test(value)) return 'La contraseña debe incluir al menos un número';
+  if (!/[^a-zA-Z0-9]/.test(value)) return 'La contraseña debe incluir al menos un carácter especial';
+  return null;
+}

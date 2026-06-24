@@ -25,6 +25,7 @@ export function LoginForm() {
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
+    mode: "onTouched",
     defaultValues: { email: "", password: "", remember: false },
   });
 
@@ -34,12 +35,24 @@ export function LoginForm() {
   const returnTo = searchParams.get("returnTo");
 
   /**
+   * Only same-origin relative paths are safe redirect targets. Rejects absolute
+   * URLs ("https://evil.com"), protocol-relative ("//evil.com") and backslash
+   * tricks ("/\\evil.com") that browsers resolve as external navigations.
+   */
+  function isSafeInternalPath(to: string): boolean {
+    return /^\/(?![/\\])/.test(to);
+  }
+
+  /**
    * Map a post-login returnTo URL to the correct destination.
    * Candidates who came from /empleos/{id} should land in the portal detail
-   * for that same vacancy, not back on the public page.
-   * All other returnTo values pass through unchanged.
+   * for that same vacancy, not back on the public page. Unsafe or off-origin
+   * values fall back to the portal home (open-redirect protection).
    */
   function resolveReturnTo(to: string, role: string): string {
+    if (!isSafeInternalPath(to)) {
+      return ROUTES.candidato.vacantes;
+    }
     if (role === "candidate") {
       const publicVacancy = to.match(/^\/empleos\/([^/?#]+)(\/.*)?$/);
       if (publicVacancy) {

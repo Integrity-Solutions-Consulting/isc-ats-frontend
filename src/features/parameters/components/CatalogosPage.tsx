@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Pencil, Trash2, X, Check, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/design-system/ui/button';
 import { Badge } from '@/design-system/ui/badge';
+import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
 import { cn } from '@/shared/utils';
 
 type CatalogType = { key: string; label: string; endpoint: 'parameters' | 'departments'; hasDescription?: boolean; hiddenCodes?: string[] };
@@ -62,6 +63,7 @@ export function CatalogosPage() {
   const [newValue, setNewValue] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [showAdd, setShowAdd] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<CatalogValue | null>(null);
 
   const currentType = CATALOG_TYPES.find((t) => t.key === selectedType)!;
   const queryKey = ['org', 'catalog', selectedType];
@@ -94,7 +96,10 @@ export function CatalogosPage() {
         ? `/api/org/departments/${id}`
         : `/api/org/parameters/${id}`;
       const res = await fetch(url, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Error deleting');
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { detail?: string; error?: string };
+        throw new Error(data.detail || data.error || 'No se pudo eliminar el valor.');
+      }
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey });
@@ -161,10 +166,12 @@ export function CatalogosPage() {
     setSearch('');
     setEditingId(null);
     setShowAdd(false);
+    deleteMut.reset();
   };
 
   const saveEdit = (id: string) => {
-    updateMut.mutate({ id, name: editingName, description: editingDescription });
+    if (!editingName.trim()) return; // keep editing if the name was cleared
+    updateMut.mutate({ id, name: editingName.trim(), description: editingDescription.trim() });
     setEditingId(null);
   };
 
@@ -223,6 +230,12 @@ export function CatalogosPage() {
                 <X className="size-3.5" />
               </Button>
             </div>
+          )}
+
+          {deleteMut.isError && (
+            <p className="mb-2 rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
+              {(deleteMut.error as Error).message}
+            </p>
           )}
 
           <div className="overflow-hidden rounded-md border border-border">
@@ -288,7 +301,7 @@ export function CatalogosPage() {
                               <Pencil className="size-3.5" />
                             </Button>
                             <Button variant="ghost" size="icon" aria-label="Eliminar" className="size-7 text-danger hover:bg-danger/10"
-                              onClick={() => deleteMut.mutate(v.id)}>
+                              onClick={() => setDeleteTarget(v)}>
                               <Trash2 className="size-3.5" />
                             </Button>
                           </>
@@ -302,6 +315,20 @@ export function CatalogosPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="¿Eliminar valor?"
+        description={
+          deleteTarget
+            ? `"${deleteTarget.name}" se desactivará. Si está en uso por algún registro activo, no se podrá eliminar.`
+            : undefined
+        }
+        confirmLabel="Eliminar"
+        variant="danger"
+        onConfirm={() => { if (deleteTarget) { deleteMut.mutate(deleteTarget.id); setDeleteTarget(null); } }}
+      />
     </div>
   );
 }

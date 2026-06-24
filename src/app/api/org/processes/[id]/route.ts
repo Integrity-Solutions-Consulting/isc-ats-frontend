@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { backendGet, backendPatch, backendDelete } from "@/lib/backendFetch";
+import { backendGet, backendPatch, backendDelete, backendErrorResponse } from "@/lib/backendFetch";
 import {
   buildMappedStages, syncStages,
   type BackendProcess, type BackendStage, type BackendCompany,
@@ -100,6 +100,6 @@ export async function DELETE(
     await backendDelete(`/org/processes/${id}`);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Error desconocido" }, { status: 500 });
+    return backendErrorResponse(error);
   }
 }

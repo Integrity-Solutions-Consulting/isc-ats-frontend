@@ -31,6 +31,7 @@ import {
   type CreateUserPayload,
 } from '../api/usersApi';
 import type { PortalUser } from '../types';
+import { validateEmail } from '@/shared/validation';
 
 const STATUS_LABEL: Record<PortalUser['status'], string> = {
   active: 'Activo',
@@ -82,7 +83,11 @@ export function UsersPage() {
   // Create user modal state
   const [createError, setCreateError] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [formErrors, setFormErrors] = useState<{ email?: string; password?: string; role?: string }>({});
+  const [touched, setTouched] = useState<{
+    email?: boolean;
+    password?: boolean;
+    role?: boolean;
+  }>({});
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateUserPayload) => createUser(payload),
@@ -91,7 +96,7 @@ export function UsersPage() {
       qc.invalidateQueries({ queryKey: ['users'] });
       setShowModal(false);
       setForm(EMPTY_FORM);
-      setFormErrors({});
+      setTouched({});
     },
     onError: (err: Error) => {
       setCreateError(err.message ?? 'No fue posible crear el usuario. Verificá los datos e intentá de nuevo.');
@@ -233,18 +238,20 @@ export function UsersPage() {
     },
   ];
 
-  function validateForm() {
-    const errors: typeof formErrors = {};
-    if (!form.email) errors.email = 'El correo es requerido.';
-    if (!form.password || form.password.length < 6) errors.password = 'La contraseña debe tener al menos 6 caracteres.';
-    else if (form.password !== form.confirmPassword) errors.password = 'Las contraseñas no coinciden.';
-    if (!form.role_id) errors.role = 'Seleccioná un rol.';
-    return errors;
-  }
+  // Computed each render so feedback can be shown live (per-field, once touched)
+  // instead of only after pressing "Crear usuario".
+  const errors: { email?: string; password?: string; role?: string } = {};
+  const emailError = validateEmail(form.email);
+  if (emailError) errors.email = emailError;
+  if (!form.password || form.password.length < 6) errors.password = 'La contraseña debe tener al menos 6 caracteres.';
+  else if (form.password !== form.confirmPassword) errors.password = 'Las contraseñas no coinciden.';
+  if (!form.role_id) errors.role = 'Seleccioná un rol.';
+
+  const showError = (field: 'email' | 'password' | 'role') =>
+    touched[field] ? errors[field] : undefined;
 
   function handleSubmit() {
-    const errors = validateForm();
-    setFormErrors(errors);
+    setTouched({ email: true, password: true, role: true });
     if (Object.keys(errors).length > 0) return;
     const { confirmPassword: _cp, ...payload } = form;
     createMutation.mutate(payload);
@@ -254,7 +261,7 @@ export function UsersPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-ink">Usuarios</h1>
-        <Button onClick={() => { setShowModal(true); setCreateError(null); setFormErrors({}); setForm(EMPTY_FORM); }}>
+        <Button onClick={() => { setShowModal(true); setCreateError(null); setTouched({}); setForm(EMPTY_FORM); }}>
           <Plus className="mr-1.5 size-4" />
           Nuevo usuario
         </Button>
@@ -335,7 +342,7 @@ export function UsersPage() {
       />
 
       {/* Create user modal */}
-      <Dialog open={showModal} onOpenChange={(open) => { setShowModal(open); if (!open) { setCreateError(null); setFormErrors({}); } }}>
+      <Dialog open={showModal} onOpenChange={(open) => { setShowModal(open); if (!open) { setCreateError(null); setTouched({}); } }}>
         <DialogContent className="sm:max-w-md bg-surface-2">
           <DialogHeader>
             <DialogTitle>Nuevo usuario</DialogTitle>
@@ -351,10 +358,12 @@ export function UsersPage() {
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+                aria-invalid={!!showError('email')}
                 placeholder="usuario@integrity.com.ec"
                 className="mt-1.5"
               />
-              {formErrors.email && <p className="mt-1 text-xs text-danger">{formErrors.email}</p>}
+              {showError('email') && <p className="mt-1 text-xs text-danger">{showError('email')}</p>}
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Contraseña inicial</label>
@@ -362,6 +371,7 @@ export function UsersPage() {
                 type="password"
                 value={form.password}
                 onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                onBlur={() => setTouched((t) => ({ ...t, password: true }))}
                 placeholder="Mínimo 6 caracteres"
                 className="mt-1.5"
               />
@@ -372,16 +382,18 @@ export function UsersPage() {
                 type="password"
                 value={form.confirmPassword}
                 onChange={(e) => setForm((f) => ({ ...f, confirmPassword: e.target.value }))}
+                onBlur={() => setTouched((t) => ({ ...t, password: true }))}
                 placeholder="Repetir contraseña"
                 className="mt-1.5"
               />
-              {formErrors.password && <p className="mt-1 text-xs text-danger">{formErrors.password}</p>}
+              {showError('password') && <p className="mt-1 text-xs text-danger">{showError('password')}</p>}
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Rol</label>
               <Select
                 value={form.role_id || ''}
                 onChange={(e) => setForm((f) => ({ ...f, role_id: Number(e.target.value) }))}
+                onBlur={() => setTouched((t) => ({ ...t, role: true }))}
               >
                 <option value="">Seleccionar rol…</option>
                 {/* Staff-only: the candidate role is portal-candidate, never assignable here. */}
@@ -389,7 +401,7 @@ export function UsersPage() {
                   .filter((r) => !/candidat/i.test(r.name))
                   .map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
               </Select>
-              {formErrors.role && <p className="mt-1 text-xs text-danger">{formErrors.role}</p>}
+              {showError('role') && <p className="mt-1 text-xs text-danger">{showError('role')}</p>}
             </div>
             <div className="flex items-center gap-2">
               <input

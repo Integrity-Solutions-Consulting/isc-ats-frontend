@@ -77,7 +77,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               alt="Talent and Collaboration"
               fill
               priority={i === 0}
-              className="object-cover"
+              className="object-contain"
             />
           </div>
         ))}

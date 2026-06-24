@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Copy, Pencil, RefreshCw, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/design-system/ui/button';
+import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
 import {
   createTemplate,
   deleteTemplate,
@@ -32,6 +33,7 @@ export function PlantillaDetailPage({ id }: PlantillaDetailPageProps) {
   const queryClient = useQueryClient();
   const setPageTitle = useBreadcrumbStore((s) => s.setPageTitle);
   const [templateError, setTemplateError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const { data: template, isLoading } = useQuery({
     queryKey: ['profile-templates', id],
@@ -137,7 +139,7 @@ export function PlantillaDetailPage({ id }: PlantillaDetailPageProps) {
               <Button
                 variant="outline" size="sm"
                 className="text-danger hover:bg-danger/10 hover:text-danger"
-                onClick={() => deleteMutation.mutate()}
+                onClick={() => setConfirmDelete(true)}
                 disabled={deleteMutation.isPending}
               >
                 <Trash2 className="mr-1.5 size-4" />
@@ -177,6 +179,16 @@ export function PlantillaDetailPage({ id }: PlantillaDetailPageProps) {
           </div>
         ))}
       </div>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="¿Eliminar plantilla?"
+        description={`La plantilla ${template.name} se desactivará. Podrás reactivarla más tarde si la necesitas.`}
+        confirmLabel="Eliminar"
+        variant="danger"
+        onConfirm={() => { setConfirmDelete(false); deleteMutation.mutate(); }}
+      />
     </div>
   );
 }

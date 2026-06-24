@@ -40,6 +40,7 @@ export function VacancyForm({
 
   const methods = useForm<VacancyFormValues>({
     resolver: zodResolver(vacancyFormSchema),
+    mode: "onTouched",
     defaultValues: initialValues ?? EMPTY_VACANCY_FORM,
   });
   const { handleSubmit, getValues, setError } = methods;

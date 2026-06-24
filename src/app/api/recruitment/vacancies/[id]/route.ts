@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { backendGet, backendPatch, backendDelete } from "@/lib/backendFetch";
+import { backendGet, backendPatch, backendDelete, backendErrorResponse } from "@/lib/backendFetch";
 import {
   mapVacancy, buildCatalogMaps, resolveReferences,
   type BackendVacancyItem, type BackendPage, type BackendParam,
@@ -74,7 +74,7 @@ export async function PATCH(
     const updated = await backendPatch<BackendVacancyItem>(`/recruitment/vacancies/${id}`, payload);
     return NextResponse.json(mapVacancy(updated));
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Error" }, { status: 500 });
+    return backendErrorResponse(error);
   }
 }
 
@@ -87,6 +87,6 @@ export async function DELETE(
     await backendDelete(`/recruitment/vacancies/${id}`);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Error" }, { status: 500 });
+    return backendErrorResponse(error);
   }
 }
