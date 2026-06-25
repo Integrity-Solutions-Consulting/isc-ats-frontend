@@ -58,6 +58,7 @@ export interface CandidateApplication {
   appliedAt: string;
   lastUpdate: string;
   status:
+    | 'applied'
     | 'reviewing'
     | 'interview_initial'
     | 'interview_technical'

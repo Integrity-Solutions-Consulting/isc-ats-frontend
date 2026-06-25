@@ -41,7 +41,7 @@ describe('deriveCandidateStatus', () => {
   });
 
   it('returns "reviewing" when active and current stage is not final', () => {
-    const stages = [makeStage({ id: 5, is_final_positive: false })];
+    const stages = [makeStage({ id: 5, is_final_positive: false, is_initial: false })];
     expect(deriveCandidateStatus(1, 5, stages, statusMap)).toBe('reviewing');
   });
 
@@ -51,7 +51,24 @@ describe('deriveCandidateStatus', () => {
   });
 
   it('returns "reviewing" when status_id not in map (defaults to active path)', () => {
-    const stages = [makeStage({ id: 7 })];
+    const stages = [makeStage({ id: 7, is_initial: false })];
     expect(deriveCandidateStatus(99, 7, stages, statusMap)).toBe('reviewing');
+  });
+
+  // W-2: initial stage (Postulantes) must derive to 'applied', not 'reviewing'
+  it('returns "applied" when active and current stage is_initial===true', () => {
+    const stages = [makeStage({ id: 3, is_initial: true, is_final_positive: false })];
+    expect(deriveCandidateStatus(1, 3, stages, statusMap)).toBe('applied');
+  });
+
+  it('returns "applied" when active, status_id not in map, and current stage is_initial===true', () => {
+    const stages = [makeStage({ id: 8, is_initial: true, is_final_positive: false })];
+    expect(deriveCandidateStatus(99, 8, stages, statusMap)).toBe('applied');
+  });
+
+  it('returns "hired" (not "applied") when stage is both is_initial and is_final_positive', () => {
+    // is_final_positive takes precedence
+    const stages = [makeStage({ id: 11, is_initial: true, is_final_positive: true })];
+    expect(deriveCandidateStatus(1, 11, stages, statusMap)).toBe('hired');
   });
 });

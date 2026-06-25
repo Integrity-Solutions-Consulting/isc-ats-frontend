@@ -9,6 +9,7 @@ import { es } from 'date-fns/locale';
 import { Button } from '@/design-system/ui/button';
 import { cn } from '@/shared/utils';
 import type { CandidateApplication, OfferSlot } from '../types';
+import { STAGE_LABELS } from '../constants/stageLabels';
 import { confirmInterviewOffer } from '../api/candidateApi';
 import { ROUTES } from '@/shared/constants/routes';
 
@@ -168,7 +169,7 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
                 ✕
               </div>
               <span className="text-[9px] text-danger text-center leading-tight w-16 hidden sm:block">
-                No seleccionado
+                {STAGE_LABELS.rejected}
               </span>
             </div>
           )}
