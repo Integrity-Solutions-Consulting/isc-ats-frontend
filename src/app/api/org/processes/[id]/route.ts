@@ -49,7 +49,7 @@ export async function PATCH(
   try {
     const body = await request.json() as {
       name: string; clientCompany: string; department: string; isActive: boolean;
-      stages: Array<{ id: string; name: string; type: "normal" | "final" | "rejected" }>;
+      stages: Array<{ id: string; name: string; code?: string; type: "normal" | "final" | "rejected" }>;
     };
 
     const [companiesData, deptsData, stageParams] = await Promise.all([

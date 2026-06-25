@@ -1,6 +1,8 @@
 export interface ProcessStage {
   id: string;
   name: string;
+  /** Catalog code from the stage parameter — used for by-code matching in syncStages. */
+  code?: string;
   type: 'normal' | 'final' | 'rejected';
 }
 

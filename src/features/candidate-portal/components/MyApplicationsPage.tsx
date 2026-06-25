@@ -110,8 +110,11 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
   };
 
   // Derive current stage index from the vacancy's own process stages.
+  // When rejected, we detach the stepper (currentStageIndex = -1) and append a
+  // standalone "No seleccionado" trailing node with no connecting line.
   const stages = app.stages ?? [];
-  const currentStageIndex = app.currentStageId != null
+  const isRejected = app.status === 'rejected';
+  const currentStageIndex = (!isRejected && app.currentStageId != null)
     ? stages.findIndex((s) => s.id === app.currentStageId)
     : -1;
 
@@ -121,10 +124,10 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
 
       {/* Pipeline — real stages from vacancy's process */}
       {stages.length > 0 && (
-        <div className="flex items-center">
+        <div className="flex items-center flex-wrap gap-y-2">
           {stages.map((stage, idx) => {
-            const isPast = idx < currentStageIndex;
-            const isCurrent = idx === currentStageIndex;
+            const isPast = !isRejected && idx < currentStageIndex;
+            const isCurrent = !isRejected && idx === currentStageIndex;
             const isLast = idx === stages.length - 1;
 
             return (
@@ -150,13 +153,25 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
                   <div
                     className={cn(
                       'h-0.5 flex-1 mx-0.5',
-                      idx < currentStageIndex ? 'bg-primary-200' : 'bg-surface-2',
+                      !isRejected && idx < currentStageIndex ? 'bg-primary-200' : 'bg-surface-2',
                     )}
                   />
                 )}
               </div>
             );
           })}
+
+          {/* Detached rejected node — no connecting line to the prior stages */}
+          {isRejected && (
+            <div className="flex flex-col items-center gap-1 ml-3">
+              <div className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 bg-danger/20 text-danger">
+                ✕
+              </div>
+              <span className="text-[9px] text-danger text-center leading-tight w-16 hidden sm:block">
+                No seleccionado
+              </span>
+            </div>
+          )}
         </div>
       )}
 

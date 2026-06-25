@@ -47,6 +47,7 @@ export interface VacancyStage {
   id: number;
   name: string;
   order: number;
+  is_initial: boolean;
   is_final_positive: boolean;
 }
 

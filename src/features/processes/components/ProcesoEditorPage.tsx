@@ -18,8 +18,9 @@ import {
   type ProcessStage,
 } from '../api/processesApi';
 
-const FIXED_FINAL: Omit<ProcessStage, 'id'> = { name: 'Oferta · Contratación', type: 'final' };
-const FIXED_REJECTED: Omit<ProcessStage, 'id'> = { name: 'Rechazados', type: 'rejected' };
+const FIXED_INITIAL: Omit<ProcessStage, 'id'> = { name: 'Postulantes', code: 'applicants', type: 'normal' };
+const FIXED_FINAL: Omit<ProcessStage, 'id'> = { name: 'Contratación', code: 'offer', type: 'final' };
+const FIXED_REJECTED: Omit<ProcessStage, 'id'> = { name: 'Rechazados', code: 'rejected', type: 'rejected' };
 import { useBreadcrumbStore } from '@/shared/stores/breadcrumbStore';
 import { ROUTES } from '@/shared/constants/routes';
 
@@ -54,11 +55,13 @@ export function ProcesoEditorPage({ id }: Props) {
     queryFn: () => fetch('/api/org/parameters?type=stage', { cache: 'no-store' }).then((r) => r.json()),
   });
 
-  // Fixed stages are always appended at save time and shown non-removable.
-  // Filter out 'offer' code so it doesn't appear in the palette.
+  // Fixed stages (Postulantes / Contratación) are always shown non-removable as
+  // first and last slots. Filter them out of the palette so users only see
+  // the custom middle stages.
+  const FIXED_CODES = new Set(['applicants', 'offer']);
   const paletteStages: Omit<ProcessStage, 'id'>[] = stageParams
-    .filter((p) => p.code !== 'offer')
-    .map((p) => ({ name: p.name, type: 'normal' as const }));
+    .filter((p) => !FIXED_CODES.has(p.code))
+    .map((p) => ({ name: p.name, code: p.code, type: 'normal' as const }));
 
   const [saved, setSaved] = useState<Process | null>(null);
   const [draft, setDraft] = useState<Process>(() => ({
@@ -79,7 +82,9 @@ export function ProcesoEditorPage({ id }: Props) {
     if (!id) return;
     getProcess(id).then((p) => {
       if (p) {
-        const normalOnly = { ...p, stages: p.stages.filter((s) => s.type === 'normal') };
+        // Keep only editable middle stages — exclude fixed backbone codes and the rejected virtual node
+        const FIXED_CODES = new Set(['applicants', 'offer', 'rejected']);
+        const normalOnly = { ...p, stages: p.stages.filter((s) => s.type === 'normal' && !FIXED_CODES.has(s.code ?? '')) };
         setSaved(normalOnly);
         setDraft(normalOnly);
         setPageTitle(p.name);
@@ -112,6 +117,7 @@ export function ProcesoEditorPage({ id }: Props) {
     const withFixed: Process = {
       ...draft,
       stages: [
+        { id: 'fixed-initial', ...FIXED_INITIAL },
         ...draft.stages,
         { id: 'fixed-final', ...FIXED_FINAL },
         { id: 'fixed-rejected', ...FIXED_REJECTED },
@@ -142,6 +148,7 @@ export function ProcesoEditorPage({ id }: Props) {
       ...saved,
       isActive: true,
       stages: [
+        { id: 'fixed-initial', ...FIXED_INITIAL },
         ...saved.stages,
         { id: 'fixed-final', ...FIXED_FINAL },
         { id: 'fixed-rejected', ...FIXED_REJECTED },
@@ -266,25 +273,35 @@ export function ProcesoEditorPage({ id }: Props) {
             Secuencia del proceso
           </p>
 
-          {display.stages.length === 0 ? (
-            <div className="flex min-h-[160px] items-center justify-center rounded-lg border border-dashed border-border">
-              <p className="text-sm text-ink-subtle">
-                {editing
-                  ? 'Hacé clic en una etapa del panel izquierdo para agregarla.'
-                  : 'Este proceso no tiene etapas configuradas.'}
-              </p>
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Fixed initial stage — always first, never removable */}
+            <div className="relative flex min-w-[140px] flex-col gap-1 rounded-lg border p-3 shadow-sm border-border bg-surface-2">
+              <span className="absolute -left-3 -top-3 flex size-6 items-center justify-center rounded-full border border-border bg-primary-100 text-xs font-bold text-primary-700">
+                1
+              </span>
+              <p className="text-sm font-medium text-ink">{FIXED_INITIAL.name}</p>
             </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-3">
-              {display.stages.map((stage, i) => (
+
+            {/* Custom middle stages */}
+            {display.stages.length === 0 ? (
+              <div className="flex items-center gap-3">
+                <ArrowRight className="size-4 shrink-0 text-ink-subtle" />
+                {editing && (
+                  <div className="flex min-h-[52px] min-w-[140px] items-center justify-center rounded-lg border border-dashed border-border">
+                    <p className="text-xs text-ink-subtle px-2 text-center">Añadí etapas desde el panel</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              display.stages.map((stage, i) => (
                 <div key={stage.id} className="flex items-center gap-3">
-                  {i > 0 && <ArrowRight className="size-4 shrink-0 text-ink-subtle" />}
+                  <ArrowRight className="size-4 shrink-0 text-ink-subtle" />
                   <div className={cn(
                     'group relative flex min-w-[140px] flex-col gap-1 rounded-lg border p-3 shadow-sm',
                     stageCardStyle(stage.type),
                   )}>
                     <span className="absolute -left-3 -top-3 flex size-6 items-center justify-center rounded-full border border-border bg-primary-100 text-xs font-bold text-primary-700">
-                      {i + 1}
+                      {i + 2}
                     </span>
                     <p className={cn('text-sm font-medium text-ink', editing && 'pr-4')}>
                       {stage.name}
@@ -297,22 +314,19 @@ export function ProcesoEditorPage({ id }: Props) {
                     )}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
 
-          {/* Fixed stages — always present, never removable */}
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            {display.stages.length > 0 && <ArrowRight className="size-4 shrink-0 text-ink-subtle" />}
+            {/* Fixed trailing stages — Contratación and Rechazados, always present */}
             {[FIXED_FINAL, FIXED_REJECTED].map((stage, i) => (
               <div key={stage.name} className="flex items-center gap-3">
-                {(display.stages.length > 0 || i > 0) && i > 0 && <ArrowRight className="size-4 shrink-0 text-ink-subtle" />}
+                <ArrowRight className="size-4 shrink-0 text-ink-subtle" />
                 <div className={cn(
                   'relative flex min-w-[140px] flex-col gap-1 rounded-lg border p-3 shadow-sm',
                   stageCardStyle(stage.type),
                 )}>
                   <span className="absolute -left-3 -top-3 flex size-6 items-center justify-center rounded-full border border-border bg-primary-100 text-xs font-bold text-primary-700">
-                    {display.stages.length + i + 1}
+                    {display.stages.length + i + 2}
                   </span>
                   <p className="text-sm font-medium text-ink">{stage.name}</p>
                 </div>
@@ -321,7 +335,7 @@ export function ProcesoEditorPage({ id }: Props) {
           </div>
 
           <p className="mt-4 text-xs text-ink-subtle">
-            {display.stages.length} etapa{display.stages.length !== 1 ? 's' : ''} en la secuencia · Oferta y Rechazados siempre presentes
+            {display.stages.length} etapa{display.stages.length !== 1 ? 's' : ''} intermedia{display.stages.length !== 1 ? 's' : ''} · Postulantes y Contratación siempre presentes
           </p>
         </div>
       </div>

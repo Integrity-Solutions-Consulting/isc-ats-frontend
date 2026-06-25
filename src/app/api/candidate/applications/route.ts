@@ -8,6 +8,7 @@ import type {
   InterviewOffer,
   VacancyStage,
 } from "@/features/candidate-portal/types";
+import { deriveCandidateStatus } from "./deriveCandidateStatus";
 
 interface BackendPage<T> { items: T[]; total: number; }
 
@@ -99,6 +100,11 @@ export async function GET() {
     );
     if (!appsData.items.length) return NextResponse.json([]);
 
+    // Fetch application_status catalog to resolve status codes (reuse same pattern as POST)
+    interface BackendParamPage { items: { id: number; code: string }[]; }
+    const appStatuses = await backendGet<BackendParamPage>("/org/parameters?type=application_status&size=10");
+    const statusCodeById = new Map<number, string>(appStatuses.items.map((s) => [s.id, s.code]));
+
     // Batch-fetch unique vacancy names (no client data)
     const vacancyIds = [...new Set(appsData.items.map((a) => a.vacancy_id))];
     const vacanciesData = await backendGet<BackendPage<BackendVacancyItem>>(
@@ -159,7 +165,7 @@ export async function GET() {
         vacancyTitle: vacancy?.vacancy_name ?? `Vacante #${app.vacancy_id}`,
         appliedAt: app.applied_at.slice(0, 10),
         lastUpdate,
-        status: "reviewing" as const,
+        status: deriveCandidateStatus(app.status_id, app.current_stage_id, stages, statusCodeById),
         stages,
         currentStageId: app.current_stage_id,
         salaryExpectation: 0,
