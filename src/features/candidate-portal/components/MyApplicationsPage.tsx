@@ -9,7 +9,7 @@ import { es } from 'date-fns/locale';
 import { Button } from '@/design-system/ui/button';
 import { cn } from '@/shared/utils';
 import type { CandidateApplication, OfferSlot } from '../types';
-import { STAGE_LABELS } from '../constants/stageLabels';
+import { STAGE_LABELS, candidateStageLabel } from '../constants/stageLabels';
 import { confirmInterviewOffer } from '../api/candidateApi';
 import { ROUTES } from '@/shared/constants/routes';
 
@@ -147,7 +147,7 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
                     {stage.order}
                   </div>
                   <span className="text-[9px] text-ink-subtle text-center leading-tight w-12 hidden sm:block">
-                    {stage.name}
+                    {candidateStageLabel(stage)}
                   </span>
                 </div>
                 {!isLast && (
