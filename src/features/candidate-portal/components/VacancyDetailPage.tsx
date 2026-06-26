@@ -192,7 +192,7 @@ export function VacancyDetailPage({ vacancy }: VacancyDetailPageProps) {
 
                   <div className="mb-6">
                     <label className="block text-[13px] font-semibold text-ink mb-2 uppercase tracking-wide">
-                      Pretensión salarial <span className="text-primary">*</span>
+                      Aspiración salarial <span className="text-primary">*</span>
                     </label>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-subtle text-[14px] pointer-events-none">

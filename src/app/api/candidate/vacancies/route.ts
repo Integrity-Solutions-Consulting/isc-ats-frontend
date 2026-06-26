@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { backendGet } from "@/lib/backendFetch";
 import type { CandidateVacancy } from "@/features/candidate-portal/types";
+import { getAppliedVacancyIds } from "./getAppliedVacancyIds";
 
 interface BackendPage<T> { items: T[]; total: number; }
 
@@ -43,7 +44,7 @@ const LEVEL_LABEL: Record<string, string> = {
   especialista: "Especialista",
 };
 
-function mapVacancy(v: BackendVacancyItem): CandidateVacancy {
+function mapVacancy(v: BackendVacancyItem, appliedIds: Set<number>): CandidateVacancy {
   const reqs = v.profile_requirements ?? {};
   // Cards show only "conocimientos" (knowledge items) as tags
   const allSkills = (reqs.knowledge ?? []).slice(0, 8);
@@ -102,21 +103,24 @@ function mapVacancy(v: BackendVacancyItem): CandidateVacancy {
     },
     publishedDaysAgo: daysAgo,
     closingDaysLeft: null,
-    applicationStatus: "none",
+    applicationStatus: appliedIds.has(v.id) ? "applied" : "none",
   };
 }
 
 export async function GET() {
   try {
-    const vacanciesData = await backendGet<BackendPage<BackendVacancyItem>>(
-      "/recruitment/vacancies/expanded?size=100",
-    );
+    const [vacanciesData, appliedIds] = await Promise.all([
+      backendGet<BackendPage<BackendVacancyItem>>(
+        "/recruitment/vacancies/expanded?size=100",
+      ),
+      getAppliedVacancyIds(),
+    ]);
 
     const active = vacanciesData.items.filter(
       (v) => v.is_active && v.vacancy_status === "active",
     );
 
-    return NextResponse.json(active.map(mapVacancy));
+    return NextResponse.json(active.map((v) => mapVacancy(v, appliedIds)));
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }

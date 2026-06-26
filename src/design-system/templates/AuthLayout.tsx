@@ -64,8 +64,11 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         <p className="text-xs text-ink-muted">© 2026 Integrity Solutions</p>
       </div>
 
-      {/* Brand panel with Photo Carousel */}
-      <aside className="relative hidden overflow-hidden bg-[#060B24] lg:block">
+      {/* Brand panel with Photo Carousel.
+          self-start + fixed viewport height keep the panel decoupled from the
+          form column's height: when the password checklist grows the left
+          column, the carousel no longer re-centers (object-contain) and stays put. */}
+      <aside className="relative hidden overflow-hidden bg-[#060B24] lg:block lg:sticky lg:top-0 lg:h-dvh lg:self-start">
         {CAROUSEL_IMAGES.map((src, i) => (
           <div
             key={src}

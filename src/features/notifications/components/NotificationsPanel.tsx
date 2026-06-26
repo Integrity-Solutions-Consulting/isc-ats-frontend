@@ -104,9 +104,13 @@ export function NotificationsPanel({ onClose }: Props) {
         ))}
       </div>
 
-      {/* Footer */}
+      {/* Footer — counts only unread, so it clears as the user reads. */}
       <div className="border-t border-border px-4 py-2.5 text-center">
-        <p className="text-xs text-ink-subtle">{notifications.length} notificación{notifications.length !== 1 ? 'es' : ''} en total</p>
+        <p className="text-xs text-ink-subtle">
+          {unread === 0
+            ? 'No tienes notificaciones sin leer'
+            : `${unread} notificación${unread !== 1 ? 'es' : ''} sin leer`}
+        </p>
       </div>
     </div>
   );

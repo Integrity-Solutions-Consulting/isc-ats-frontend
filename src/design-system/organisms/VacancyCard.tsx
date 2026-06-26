@@ -43,7 +43,7 @@ export function VacancyCard({ vacancy, onClick, footer, applied = false }: Vacan
       {applied && (
         <div className="absolute top-3.5 right-3.5 flex items-center gap-1 bg-success text-white text-[11px] font-semibold px-2.5 py-1 rounded-full leading-none">
           <Check size={10} strokeWidth={3} />
-          Ya postulaste
+          Postulando
         </div>
       )}
       <h3 className={cn('text-[16px] font-bold text-ink line-clamp-2 leading-snug', applied && 'pr-28')}>

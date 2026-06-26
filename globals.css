@@ -279,6 +279,17 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* The Integrity public/candidate theme is dark. Native date/time pickers
+   * default to color-scheme: light, which paints the calendar indicator black —
+   * nearly invisible on the dark navy inputs. Opt those controls into the dark
+   * scheme so the browser renders a light indicator and a dark picker popup. */
+  .integrity-public-theme input[type="date"],
+  .integrity-public-theme input[type="datetime-local"],
+  .integrity-public-theme input[type="time"],
+  .integrity-public-theme input[type="month"] {
+    color-scheme: dark;
+  }
+
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,

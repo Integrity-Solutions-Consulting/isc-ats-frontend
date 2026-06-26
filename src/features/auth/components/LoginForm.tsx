@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -14,6 +14,11 @@ import { login } from "../api/authApi";
 import { loginSchema, type LoginInput } from "../types";
 import { ROUTES } from "@/shared/constants/routes";
 
+// "Remember me" persists only the email — never the password. On the next visit
+// the email is prefilled and the checkbox stays on, so the user just types the
+// password. Clearing the checkbox on login forgets it.
+const REMEMBERED_EMAIL_KEY = "isc.remembered_email";
+
 export function LoginForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
@@ -22,12 +27,22 @@ export function LoginForm() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     mode: "onTouched",
     defaultValues: { email: "", password: "", remember: false },
   });
+
+  // localStorage is client-only; read it after mount to avoid hydration mismatch.
+  useEffect(() => {
+    const remembered = localStorage.getItem(REMEMBERED_EMAIL_KEY);
+    if (remembered) {
+      setValue("email", remembered);
+      setValue("remember", true);
+    }
+  }, [setValue]);
 
   const searchParams = useSearchParams();
   const verified = searchParams.get("verified") === "true";
@@ -64,6 +79,11 @@ export function LoginForm() {
 
   async function onSubmit(values: LoginInput) {
     setAuthError(null);
+    if (values.remember) {
+      localStorage.setItem(REMEMBERED_EMAIL_KEY, values.email);
+    } else {
+      localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+    }
     try {
       const session = await login(values);
       if (session.user.role === "candidate") {

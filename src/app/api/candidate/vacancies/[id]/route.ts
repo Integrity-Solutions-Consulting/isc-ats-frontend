@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { backendGet } from "@/lib/backendFetch";
+import { getAppliedVacancyIds } from "../getAppliedVacancyIds";
 
 interface BackendPage<T> { items: T[]; total: number; }
 interface BackendVacancyItem {
@@ -33,7 +34,7 @@ const LEVEL_LABEL: Record<string, string> = {
   junior: "Junior", semi_senior: "Semi Senior", senior: "Senior", especialista: "Especialista",
 };
 
-function mapVacancy(v: BackendVacancyItem) {
+function mapVacancy(v: BackendVacancyItem, appliedIds: Set<number>) {
   const reqs = v.profile_requirements ?? {};
   // Cards show only "conocimientos" (knowledge items) as tags
   const allSkills = (reqs.knowledge ?? []).slice(0, 8);
@@ -69,7 +70,7 @@ function mapVacancy(v: BackendVacancyItem) {
     },
     publishedDaysAgo: daysAgo,
     closingDaysLeft: null,
-    applicationStatus: "none" as const,
+    applicationStatus: appliedIds.has(v.id) ? ("applied" as const) : ("none" as const),
   };
 }
 
@@ -79,12 +80,15 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
-    const data = await backendGet<BackendPage<BackendVacancyItem>>(
-      `/recruitment/vacancies/expanded?size=100`,
-    );
+    const [data, appliedIds] = await Promise.all([
+      backendGet<BackendPage<BackendVacancyItem>>(
+        `/recruitment/vacancies/expanded?size=100`,
+      ),
+      getAppliedVacancyIds(),
+    ]);
     const item = data.items.find((v) => String(v.id) === id);
     if (!item) return NextResponse.json(null, { status: 404 });
-    return NextResponse.json(mapVacancy(item));
+    return NextResponse.json(mapVacancy(item, appliedIds));
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }

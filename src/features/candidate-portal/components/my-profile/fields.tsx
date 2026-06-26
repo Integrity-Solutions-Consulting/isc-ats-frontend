@@ -12,7 +12,7 @@ export function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: 
 }
 
 export function FieldValue({ children }: { children: React.ReactNode }) {
-  return <p className="text-[14px] text-primary-800">{children}</p>;
+  return <p className="text-[14px] text-ink">{children}</p>;
 }
 
 export function FieldInput({

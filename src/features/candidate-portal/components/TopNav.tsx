@@ -230,10 +230,12 @@ export function TopNav() {
                   ))}
                 </div>
 
-                {/* Footer */}
+                {/* Footer — counts only unread, so it clears as the user reads. */}
                 <div className="border-t border-border px-4 py-2.5 text-center">
                   <p className="text-[12px] text-primary">
-                    {notifications.length} notificaci{notifications.length !== 1 ? 'ones' : 'ón'} en total
+                    {unreadCount === 0
+                      ? 'No tienes notificaciones sin leer'
+                      : `${unreadCount} notificaci${unreadCount !== 1 ? 'ones' : 'ón'} sin leer`}
                   </p>
                 </div>
               </div>

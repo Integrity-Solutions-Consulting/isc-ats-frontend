@@ -28,6 +28,9 @@ export function useNotifications(): UseQueryResult<Notification[]> {
   return useQuery({
     queryKey: notificationKeys.list(),
     queryFn: listNotifications,
+    // Newest first. createdAt is an ISO-8601 string, so a lexicographic
+    // descending sort matches chronological order.
+    select: (data) => [...data].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
   });
 }
 

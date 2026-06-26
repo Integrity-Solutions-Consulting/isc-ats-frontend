@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { Button } from '@/design-system/ui/button';
 import { Input } from '@/design-system/ui/input';
 import { Label } from '@/design-system/ui/label';
-import { Select } from '@/design-system/atoms/Select';
+import { Combobox } from '@/design-system/molecules/Combobox';
 import { cn } from '@/shared/utils';
 import { step2Schema, type Step2Values, type Step2FormValues } from './schemas';
 import { FieldError } from './FieldError';
@@ -130,6 +130,14 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
   const handleIsStudying = (v: boolean) => setValue('isStudying', v, { shouldValidate: true });
   const handleIsWorking = (v: boolean) => setValue('isWorking', v, { shouldValidate: true });
 
+  // Searchable comboboxes (valueKey="id") replace the native selects so the
+  // registration matches the rest of the system. RHF holds the id string; we
+  // bridge it through watch/setValue since Combobox is value/onChange-driven.
+  const toOptions = (items: CatalogOption[]) =>
+    items.map((o) => ({ id: String(o.id), label: o.name }));
+  const setField = (field: keyof Step2FormValues, v: string) =>
+    setValue(field, v, { shouldValidate: true });
+
   const onSubmit = handleSubmit(onNext);
 
   return (
@@ -137,54 +145,66 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="s2-educationLevel">Educación *</Label>
-          <Select id="s2-educationLevel" {...register('educationLevel')}>
-            <option value="">Selecciona un nivel</option>
-            {catalogs.educationLevels.map((o) => (
-              <option key={o.id} value={String(o.id)}>{o.name}</option>
-            ))}
-          </Select>
+          <Combobox
+            id="s2-educationLevel"
+            valueKey="id"
+            placeholder="Selecciona un nivel"
+            aria-invalid={!!errors.educationLevel}
+            value={watch('educationLevel') ?? ''}
+            onChange={(v) => setField('educationLevel', v)}
+            options={toOptions(catalogs.educationLevels)}
+          />
           <FieldError message={errors.educationLevel?.message} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="s2-university">Universidad</Label>
-          <Select id="s2-university" {...register('university')}>
-            <option value="">Selecciona tu universidad</option>
-            {catalogs.universities.map((u) => (
-              <option key={u.id} value={String(u.id)}>{u.name}</option>
-            ))}
-          </Select>
+          <Combobox
+            id="s2-university"
+            valueKey="id"
+            placeholder="Selecciona tu universidad"
+            value={watch('university') ?? ''}
+            onChange={(v) => setField('university', v)}
+            options={toOptions(catalogs.universities)}
+          />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="s2-title">Título</Label>
-          <Select id="s2-title" {...register('title')}>
-            <option value="">Selecciona</option>
-            {catalogs.titles.map((t) => (
-              <option key={t.id} value={String(t.id)}>{t.name}</option>
-            ))}
-          </Select>
+          <Combobox
+            id="s2-title"
+            valueKey="id"
+            placeholder="Selecciona"
+            value={watch('title') ?? ''}
+            onChange={(v) => setField('title', v)}
+            options={toOptions(catalogs.titles)}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="s2-completedCareer">Carrera</Label>
-          <Select id="s2-completedCareer" {...register('completedCareer')}>
-            <option value="">Selecciona</option>
-            {catalogs.careers.map((c) => (
-              <option key={c.id} value={String(c.id)}>{c.name}</option>
-            ))}
-          </Select>
+          <Combobox
+            id="s2-completedCareer"
+            valueKey="id"
+            placeholder="Selecciona"
+            value={watch('completedCareer') ?? ''}
+            onChange={(v) => setField('completedCareer', v)}
+            options={toOptions(catalogs.careers)}
+          />
         </div>
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="s2-city">Ciudad *</Label>
-        <Select id="s2-city" {...register('city')}>
-          <option value="">Selecciona</option>
-          {catalogs.cities.map((c) => (
-            <option key={c.id} value={String(c.id)}>{c.name}</option>
-          ))}
-        </Select>
+        <Combobox
+          id="s2-city"
+          valueKey="id"
+          placeholder="Selecciona"
+          aria-invalid={!!errors.city}
+          value={watch('city') ?? ''}
+          onChange={(v) => setField('city', v)}
+          options={toOptions(catalogs.cities)}
+        />
         <FieldError message={errors.city?.message} />
       </div>
 
