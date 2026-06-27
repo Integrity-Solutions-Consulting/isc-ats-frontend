@@ -7,7 +7,7 @@ import { Button } from '@/design-system/ui/button';
 import { TogglePill } from '@/design-system/molecules/TogglePill';
 import { useMovePipelineCard, usePipeline } from '../hooks/usePipeline';
 import type { PipelineCard } from '../types';
-import { CandidateCard } from './CandidateCard';
+import { CandidateCardOverlay } from './CandidateCard';
 import { PipelineColumn } from './PipelineColumn';
 
 type MatchFilter = 'all' | 'high' | 'medium';
@@ -124,7 +124,7 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
         </div>
 
         <DragOverlay>
-          {activeCard ? <CandidateCard card={activeCard} isDragging /> : null}
+          {activeCard ? <CandidateCardOverlay card={activeCard} /> : null}
         </DragOverlay>
       </DndContext>
     </div>

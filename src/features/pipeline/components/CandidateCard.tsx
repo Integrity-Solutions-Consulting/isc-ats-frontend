@@ -1,7 +1,6 @@
 'use client';
 
 import { useDraggable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
 import { formatDistanceToNow, isToday, isYesterday, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Eye } from 'lucide-react';
@@ -40,40 +39,20 @@ function formatDate(isoDate: string): string {
   return formatDistanceToNow(date, { addSuffix: true, locale: es });
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Card visuals ─────────────────────────────────────────────────────────────
 
-interface CandidateCardProps {
-  card: PipelineCard;
-  isDragging?: boolean;
-  onView?: () => void;
-}
+const CARD_CLASS =
+  'relative cursor-grab select-none rounded-md border border-border bg-surface p-3 shadow-sm transition-colors active:cursor-grabbing';
 
-export function CandidateCard({ card, isDragging = false, onView }: CandidateCardProps) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: card.id,
-  });
-
-  const style = transform
-    ? { transform: CSS.Translate.toString(transform) }
-    : undefined;
-
+/** Presentational card body — no drag wiring. Shared by the draggable source and the overlay. */
+function CardBody({ card, onView }: { card: PipelineCard; onView?: () => void }) {
   const handleViewClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onView?.();
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      className={cn(
-        'relative cursor-grab select-none rounded-md border border-border bg-surface p-3 shadow-sm transition-all',
-        'active:cursor-grabbing',
-        isDragging && 'rotate-2 shadow-lg bg-primary-50/80',
-      )}
-    >
+    <>
       {/* Eye button — stops drag propagation, navigates to candidate profile */}
       <button
         type="button"
@@ -109,6 +88,45 @@ export function CandidateCard({ card, isDragging = false, onView }: CandidateCar
         <span>{formatSalary(card.salaryExpectation)}</span>
         <span>{formatDate(card.updatedAt)}</span>
       </div>
+    </>
+  );
+}
+
+// ─── Components ───────────────────────────────────────────────────────────────
+
+interface CandidateCardProps {
+  card: PipelineCard;
+  onView?: () => void;
+}
+
+/**
+ * Draggable source card. The DragOverlay owns the moving visual, so this node
+ * never applies a transform — it stays put and dims into a ghost while dragging.
+ * Applying a transform here too would render a second moving copy (visible once
+ * the board auto-scrolls horizontally).
+ */
+export function CandidateCard({ card, onView }: CandidateCardProps) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: card.id,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={cn(CARD_CLASS, isDragging && 'opacity-40')}
+    >
+      <CardBody card={card} onView={onView} />
+    </div>
+  );
+}
+
+/** Presentational clone rendered inside DragOverlay — follows the cursor, no drag hooks. */
+export function CandidateCardOverlay({ card }: { card: PipelineCard }) {
+  return (
+    <div className={CARD_CLASS}>
+      <CardBody card={card} />
     </div>
   );
 }
