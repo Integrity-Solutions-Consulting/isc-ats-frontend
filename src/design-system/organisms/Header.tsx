@@ -35,7 +35,7 @@ export function Header({
   breadcrumb,
   notificationsSlot,
   onBellClick,
-  hasUnread = true,
+  hasUnread = false,
   className,
 }: HeaderProps) {
   const [showMenu, setShowMenu] = useState(false);

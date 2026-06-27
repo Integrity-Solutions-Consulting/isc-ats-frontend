@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { Header } from '@/design-system/organisms/Header';
 import { NotificationsPanel } from '@/features/notifications/components/NotificationsPanel';
+import { useNotifications } from '@/features/notifications/hooks/useNotifications';
 import { logout } from '@/features/auth/api/authApi';
 import { ROUTES } from '@/shared/constants/routes';
 import { PortalBreadcrumb } from './PortalBreadcrumb';
@@ -16,6 +17,8 @@ interface Props {
 export function HeaderWithNotifications({ user }: Props) {
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
+  const { data: notifications } = useNotifications();
+  const hasUnread = (notifications ?? []).some((n) => !n.read);
 
   const handleLogout = async () => {
     await logout();
@@ -28,6 +31,7 @@ export function HeaderWithNotifications({ user }: Props) {
       profileHref={ROUTES.miPerfil}
       onLogout={handleLogout}
       breadcrumb={<PortalBreadcrumb />}
+      hasUnread={hasUnread}
       onBellClick={() => setShowNotifications((v) => !v)}
       notificationsSlot={
         showNotifications ? (
