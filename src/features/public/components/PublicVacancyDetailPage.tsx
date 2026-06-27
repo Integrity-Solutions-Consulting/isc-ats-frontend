@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/shared/constants/routes';
+import { formatTimeAgoEs } from '@/shared/utils';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -261,7 +262,7 @@ export function PublicVacancyDetailPage({ vacancy, isAuthenticated }: PublicVaca
                   <div className="w-full h-px bg-primary-200 mb-4" />
 
                   <p className="text-[12px] text-ink-subtle">
-                    Publicada hace {vacancy.publishedDaysAgo} día{vacancy.publishedDaysAgo !== 1 ? 's' : ''}
+                    Publicada {formatTimeAgoEs(vacancy.publishedAt)}
                   </p>
                 </>
               )}

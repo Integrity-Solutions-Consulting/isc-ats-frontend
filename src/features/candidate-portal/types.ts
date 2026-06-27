@@ -24,7 +24,8 @@ export interface CandidateVacancy {
     level: string;
     openings: number;
   };
-  publishedDaysAgo: number;
+  /** ISO-8601 timestamp of when the vacancy was published. */
+  publishedAt: string;
   closingDaysLeft: number | null;
   applicationStatus: 'none' | 'applied' | 'closing_soon';
 }

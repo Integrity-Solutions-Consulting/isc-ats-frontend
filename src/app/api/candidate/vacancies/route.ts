@@ -64,9 +64,6 @@ function mapVacancy(v: BackendVacancyItem, appliedIds: Set<number>): CandidateVa
       : "Indefinido";
 
   const levelLabel = LEVEL_LABEL[v.resource_level] ?? v.resource_level;
-  const daysAgo = Math.floor(
-    (Date.now() - new Date(v.created_at).getTime()) / 86_400_000,
-  );
 
   const initials = v.client_company
     .split(/\s+/)
@@ -101,7 +98,7 @@ function mapVacancy(v: BackendVacancyItem, appliedIds: Set<number>): CandidateVa
       level: `${levelLabel}${v.experience_years ? ` (${v.experience_years}+ años)` : ""}`,
       openings: v.openings,
     },
-    publishedDaysAgo: daysAgo,
+    publishedAt: v.created_at,
     closingDaysLeft: null,
     applicationStatus: appliedIds.has(v.id) ? "applied" : "none",
   };

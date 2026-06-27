@@ -7,6 +7,7 @@ import { Search } from 'lucide-react';
 import { Input } from '@/design-system/ui/input';
 import { Combobox } from '@/design-system/molecules/Combobox';
 import { ROUTES } from '@/shared/constants/routes';
+import { formatTimeAgoEs } from '@/shared/utils';
 import type { CandidateVacancy } from '../types';
 import { VacancyCard } from './VacancyCard';
 
@@ -83,10 +84,6 @@ export function VacancyListPage({ vacancies }: VacancyListPageProps) {
           onChange={setCity}
           options={cityOptions}
         />
-
-        <button className="shrink-0 bg-primary-700 text-white text-[13px] font-semibold rounded-[100px] px-[18px] py-2 hover:bg-primary-600 transition-colors w-full sm:w-auto">
-          Buscar
-        </button>
       </div>
 
       <p className="text-sm text-ink-muted">
@@ -104,7 +101,7 @@ export function VacancyListPage({ vacancies }: VacancyListPageProps) {
             footer={
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[12px] text-ink-muted">
-                  Publicada hace {vacancy.publishedDaysAgo} día{vacancy.publishedDaysAgo !== 1 ? 's' : ''}
+                  Publicada {formatTimeAgoEs(vacancy.publishedAt)}
                 </span>
 
                 {vacancy.applicationStatus === 'closing_soon' && vacancy.closingDaysLeft !== null && (

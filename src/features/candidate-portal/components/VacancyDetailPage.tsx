@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ROUTES } from '@/shared/constants/routes';
+import { formatTimeAgoEs } from '@/shared/utils';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -166,10 +167,6 @@ export function VacancyDetailPage({ vacancy }: VacancyDetailPageProps) {
                     <CheckCircle2 size={22} className="text-white" strokeWidth={3} />
                   </div>
                   <h3 className="text-[15px] font-bold text-ink">Ya postulaste a esta vacante</h3>
-                  <p className="text-[13px] text-ink-subtle">Tu postulación está siendo revisada.</p>
-                  <span className="px-3 py-1 bg-warning/15 text-warning text-[12px] font-medium rounded-full">
-                    En revisión
-                  </span>
                   <Link
                     href={ROUTES.candidato.misPostulaciones}
                     className="w-full mt-1 h-11 bg-card border border-primary text-primary font-semibold text-[14px] rounded-lg hover:bg-surface-2 transition-colors flex items-center justify-center gap-2"
@@ -237,7 +234,7 @@ export function VacancyDetailPage({ vacancy }: VacancyDetailPageProps) {
                   <div className="w-full h-px bg-border mb-4" />
 
                   <p className="text-[12px] text-ink-subtle">
-                    Publicada hace {vacancy.publishedDaysAgo} día{vacancy.publishedDaysAgo !== 1 ? 's' : ''}
+                    Publicada {formatTimeAgoEs(vacancy.publishedAt)}
                   </p>
                 </>
               )}

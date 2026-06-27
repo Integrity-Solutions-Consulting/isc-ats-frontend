@@ -182,7 +182,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
           </button>
         </div>
         <div>
-          <h2 className="text-[18px] font-bold text-primary-800">
+          <h2 className="text-[18px] font-bold text-ink">
             {profile.firstName} {profile.lastName}
           </h2>
         </div>
@@ -193,7 +193,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
 
       {/* Section header */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[15px] font-bold text-primary-800">Información personal</h3>
+        <h3 className="text-[15px] font-bold text-ink">Información personal</h3>
         {!editing ? (
           <button
             type="button"
@@ -312,7 +312,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
 
         {/* Education & situation subsection */}
         <div className="pt-3">
-          <h4 className="text-[13px] font-semibold text-primary-800 mb-2.5">
+          <h4 className="text-[13px] font-semibold text-ink mb-2.5">
             Educación y situación
           </h4>
 

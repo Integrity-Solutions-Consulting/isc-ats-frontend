@@ -7,6 +7,7 @@ import { Search } from 'lucide-react';
 import { Input } from '@/design-system/ui/input';
 import { Combobox } from '@/design-system/molecules/Combobox';
 import { ROUTES } from '@/shared/constants/routes';
+import { formatTimeAgoEs } from '@/shared/utils';
 import type { CandidateVacancy } from '@/features/candidate-portal/types';
 import { VacancyCard } from '@/features/candidate-portal/components/VacancyCard';
 import { MascotWidget } from './MascotWidget';
@@ -105,7 +106,7 @@ export function PublicVacancyListPage({ vacancies }: PublicVacancyListPageProps)
             onClick={() => handleCardClick(vacancy.id)}
             footer={
               <span className="text-[12px] text-ink-muted">
-                Publicada hace {vacancy.publishedDaysAgo} día{vacancy.publishedDaysAgo !== 1 ? 's' : ''}
+                Publicada {formatTimeAgoEs(vacancy.publishedAt)}
               </span>
             }
           />

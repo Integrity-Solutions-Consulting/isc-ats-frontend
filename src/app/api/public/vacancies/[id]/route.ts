@@ -62,9 +62,6 @@ function mapVacancy(v: BackendPublicVacancyItem) {
       : "Indefinido";
 
   const levelLabel = LEVEL_LABEL[v.resource_level] ?? v.resource_level;
-  const daysAgo = Math.floor(
-    (Date.now() - new Date(v.created_at).getTime()) / 86_400_000,
-  );
 
   return {
     id: String(v.id),
@@ -90,7 +87,7 @@ function mapVacancy(v: BackendPublicVacancyItem) {
       level: `${levelLabel}${v.experience_years ? ` (${v.experience_years}+ años)` : ""}`,
       openings: v.openings,
     },
-    publishedDaysAgo: daysAgo,
+    publishedAt: v.created_at,
     closingDaysLeft: null,
     applicationStatus: "none" as const,
   };
