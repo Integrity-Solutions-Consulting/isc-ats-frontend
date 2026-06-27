@@ -14,6 +14,8 @@ import { Label } from '@/design-system/ui/label';
 import { cn } from '@/shared/utils';
 import { ROUTES } from '@/shared/constants/routes';
 import { PASSWORD_MIN_LENGTH, passwordPolicyError } from '@/shared/utils/ecuadorValidators';
+import { LegalModal } from '@/features/legal/LegalModal';
+import type { LegalDocId } from '@/features/legal/content';
 
 const schema = z
   .object({
@@ -48,6 +50,7 @@ export function RegistrationForm() {
   const [showPw, setShowPw] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [legalDoc, setLegalDoc] = useState<LegalDocId | null>(null);
 
   const {
     register,
@@ -199,9 +202,29 @@ export function RegistrationForm() {
             />
             <span>
               Acepto los{' '}
-              <a href="#" className="font-medium text-primary-600 hover:underline">Términos y condiciones</a>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setLegalDoc('terms');
+                }}
+                className="font-medium text-primary-600 hover:underline"
+              >
+                Términos y condiciones
+              </button>
               {' '}y la{' '}
-              <a href="#" className="font-medium text-primary-600 hover:underline">Política de privacidad</a>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setLegalDoc('privacy');
+                }}
+                className="font-medium text-primary-600 hover:underline"
+              >
+                Política de privacidad
+              </button>
             </span>
           </label>
           {errors.terms && <p className="text-xs text-danger">{errors.terms.message}</p>}
@@ -225,6 +248,8 @@ export function RegistrationForm() {
           </Link>
         </p>
       </form>
+
+      <LegalModal doc={legalDoc} onClose={() => setLegalDoc(null)} />
     </div>
   );
 }
