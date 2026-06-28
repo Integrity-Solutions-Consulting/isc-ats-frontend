@@ -86,7 +86,7 @@ export function ClientesPage() {
     setShowModal(false);
   };
 
-  const visible = clients.filter((c) => {
+  const visible = [...clients].sort((a, b) => Number(b.id) - Number(a.id)).filter((c) => {
     const q = search.toLowerCase();
     if (q && !c.name.toLowerCase().includes(q)) return false;
     if (filterStatus === 'active' && !c.is_active) return false;

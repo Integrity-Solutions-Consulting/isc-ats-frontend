@@ -59,7 +59,7 @@ export function ProcesosListPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return processes.filter((p) => {
+    return [...processes].sort((a, b) => Number(b.id) - Number(a.id)).filter((p) => {
       if (q && !p.name.toLowerCase().includes(q)) return false;
       if (filterClient && p.clientCompany !== filterClient) return false;
       if (filterDept && p.department !== filterDept) return false;

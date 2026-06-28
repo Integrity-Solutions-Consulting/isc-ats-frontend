@@ -35,7 +35,7 @@ export function TalentPoolPage() {
   const careers = [...new Set(entries.map((e) => e.career))];
   const vacancies = [...new Map(entries.map((e) => [e.vacancyId, e.vacancyTitle])).entries()];
 
-  const filtered = entries.filter((e) => {
+  const filtered = [...entries].sort((a, b) => Number(b.id) - Number(a.id)).filter((e) => {
     const q = filters.search.toLowerCase();
     if (q && !e.candidateName.toLowerCase().includes(q) && !e.career.toLowerCase().includes(q)) return false;
     if (filters.career && e.career !== filters.career) return false;

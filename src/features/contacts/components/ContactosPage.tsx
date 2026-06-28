@@ -123,7 +123,7 @@ export function ContactosPage() {
     });
   };
 
-  const visible = contacts.filter((c) => {
+  const visible = [...contacts].sort((a, b) => Number(b.id) - Number(a.id)).filter((c) => {
     const q = search.toLowerCase();
     if (q && !c.firstName.toLowerCase().includes(q) && !c.lastName.toLowerCase().includes(q) && !c.email.toLowerCase().includes(q)) return false;
     if (filterClient && c.clientCompany !== filterClient) return false;

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/design-system/ui/badge";
 import { Pagination } from "@/design-system/molecules/Pagination";
@@ -67,7 +68,8 @@ const COLUMNS: ColumnDef<Vacancy>[] = [
 
 export function VacanciesTable({ data }: { data: Vacancy[] }) {
   const router = useRouter();
-  const { pageRows, page, pageCount, goPrev, goNext } = usePagedData(data, PAGE_SIZE);
+  const sorted = useMemo(() => [...data].sort((a, b) => Number(b.id) - Number(a.id)), [data]);
+  const { pageRows, page, pageCount, goPrev, goNext } = usePagedData(sorted, PAGE_SIZE);
 
   return (
     <div className="flex flex-col gap-3">

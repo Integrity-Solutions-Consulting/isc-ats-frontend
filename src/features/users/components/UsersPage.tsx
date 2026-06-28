@@ -156,7 +156,7 @@ export function UsersPage() {
     return Array.from(seen).sort();
   }, [users]);
 
-  const filtered = users.filter((u) => {
+  const filtered = [...users].sort((a, b) => Number(b.id) - Number(a.id)).filter((u) => {
     const q = search.toLowerCase();
     if (q && !u.fullName.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q)) return false;
     if (filterRole && !u.role.split(',').map((r) => r.trim()).includes(filterRole)) return false;

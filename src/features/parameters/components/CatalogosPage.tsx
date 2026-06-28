@@ -152,7 +152,7 @@ export function CatalogosPage() {
     },
   });
 
-  const filtered = values.filter((v) => {
+  const filtered = [...values].sort((a, b) => Number(b.id) - Number(a.id)).filter((v) => {
     if (currentType.hiddenCodes?.includes(v.code ?? '')) return false;
     if (search && !v.name.toLowerCase().includes(search.toLowerCase())) return false;
     if (filter === 'active' && !v.active) return false;

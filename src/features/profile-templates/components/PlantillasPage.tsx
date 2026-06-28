@@ -48,7 +48,7 @@ export function PlantillasPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return templates.filter((t) => {
+    return [...templates].sort((a, b) => Number(b.id) - Number(a.id)).filter((t) => {
       if (q && !t.name.toLowerCase().includes(q)) return false;
       if (filterStatus === 'active' && !t.isActive) return false;
       if (filterStatus === 'inactive' && t.isActive) return false;

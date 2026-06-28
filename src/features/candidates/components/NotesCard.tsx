@@ -49,7 +49,7 @@ export function NotesCard({ applicationId, readOnly }: NotesCardProps) {
         <p className="text-sm text-ink-subtle mb-4">Sin notas registradas.</p>
       ) : (
         <ul className="space-y-4 mb-5">
-          {notes.map((note) => (
+          {[...notes].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((note) => (
             <li key={note.id} className="flex gap-3">
               {/* Author avatar */}
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
