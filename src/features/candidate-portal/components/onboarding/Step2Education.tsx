@@ -165,9 +165,6 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
             onChange={(v) => setField('university', v)}
             options={toOptions(catalogs.universities)}
           />
-          {watch('university') === 'other' && (
-            <p className="text-xs text-ink-subtle">No encontrás tu institución. Podés continuar y actualizarla más tarde desde tu perfil.</p>
-          )}
         </div>
       </div>
 
@@ -182,9 +179,6 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
             onChange={(v) => setField('title', v)}
             options={toOptions(catalogs.titles)}
           />
-          {watch('title') === 'other' && (
-            <p className="text-xs text-ink-subtle">Podés actualizarlo más tarde desde tu perfil.</p>
-          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="s2-completedCareer">Carrera</Label>
@@ -196,9 +190,6 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
             onChange={(v) => setField('completedCareer', v)}
             options={toOptions(catalogs.careers)}
           />
-          {watch('completedCareer') === 'other' && (
-            <p className="text-xs text-ink-subtle">Podés actualizarla más tarde desde tu perfil.</p>
-          )}
         </div>
       </div>
 

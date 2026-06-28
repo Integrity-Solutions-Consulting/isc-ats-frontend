@@ -1,15 +1,10 @@
 /**
- * Ecuador-specific field validators.
+ * Field validators for Ecuador and international formats.
  *
- * validateCedulaEC  — Validates an Ecuadorian cédula de identidad (10 digits).
- *   Algorithm: Luhn-style modulus-10 check used by the Registro Civil.
- *   - First two digits = province code (01–24).
- *   - Third digit must be < 6 (natural person) for the standard check digit.
- *   - Digits 1–9 weighted [2,1,2,1,2,1,2,1,2]; if product ≥ 10 subtract 9.
- *   - Sum of products mod 10 must equal digit 10.
- *
- * validatePhoneEC — Validates an Ecuadorian mobile number.
- *   Accepts: 09XXXXXXXX (10 digits) or +5939XXXXXXXX (13 chars including "+").
+ * validateCedulaEC  — Ecuadorian cédula de identidad (10 digits, Registro Civil algorithm).
+ * validatePassport  — International passport: 6–20 alphanumeric characters.
+ * validatePhoneEC   — Ecuador-only mobile: 09XXXXXXXX or +5939XXXXXXXX.
+ * validatePhone     — EC mobile OR any international E.164 (+7-15 digits).
  */
 
 export function validateCedulaEC(value: string): boolean {
@@ -34,10 +29,19 @@ export function validateCedulaEC(value: string): boolean {
   return checkDigit === parseInt(value[9], 10);
 }
 
+export function validatePassport(value: string): boolean {
+  return /^[A-Z0-9]{6,20}$/i.test(value.trim());
+}
+
 export function validatePhoneEC(value: string): boolean {
-  // Accepts: 09XXXXXXXX  (10 digits, starts with 09)
-  //       or +5939XXXXXXXX (country code +593 then 9XXXXXXXX)
   return /^09\d{8}$/.test(value) || /^\+5939\d{8}$/.test(value);
+}
+
+export function validatePhone(value: string): boolean {
+  // Ecuador mobile (local or with country code)
+  if (/^09\d{8}$/.test(value) || /^\+5939\d{8}$/.test(value)) return true;
+  // Any international E.164: + followed by 7–15 digits
+  return /^\+\d{7,15}$/.test(value);
 }
 
 export const PASSWORD_MIN_LENGTH = 8;

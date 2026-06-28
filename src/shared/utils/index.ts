@@ -1,3 +1,3 @@
 export { cn } from "./cn";
-export { validateCedulaEC, validatePhoneEC } from "./ecuadorValidators";
+export { validateCedulaEC, validatePassport, validatePhoneEC, validatePhone } from "./ecuadorValidators";
 export { formatTimeAgoEs } from "./timeAgo";

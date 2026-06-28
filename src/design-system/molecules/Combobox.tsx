@@ -136,6 +136,9 @@ export function Combobox({
             setOpen((prev) => !prev);
           }
         }}
+        onBlur={() => {
+          if (isIdMode) setQuery(selectedLabelRef.current);
+        }}
         onKeyDown={(e) => {
           if (e.key === "Escape") {
             setOpen(false);

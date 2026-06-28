@@ -21,7 +21,7 @@ export function OnboardingPage() {
 
   // Persist values across steps so back/forward navigation preserves data
   const [step1Values, setStep1Values] = useState<Step1Values>({
-    firstName: '', lastName: '', idNumber: '', birthDate: '', phone: '', homeAddress: '',
+    docType: 'cedula', firstName: '', lastName: '', idNumber: '', birthDate: '', phone: '', homeAddress: '',
   });
   const [step2Values, setStep2Values] = useState<Step2FormValues>({
     educationLevel: '', completedCareer: '', title: '', university: '', city: '',
