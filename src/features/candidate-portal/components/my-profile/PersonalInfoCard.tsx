@@ -52,7 +52,6 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
     universityId: '',
     isStudying: profile.isStudying,
     isWorking: profile.isWorking,
-    currentCompany: profile.currentCompany ?? '',
   });
 
   useEffect(() => {
@@ -103,7 +102,6 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
       universityId: '',
       isStudying: profile.isStudying,
       isWorking: profile.isWorking,
-      currentCompany: profile.currentCompany ?? '',
     });
     setSaveError(null);
     setEditing(false);
@@ -113,6 +111,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
     setSaving(true);
     setSaveError(null);
     try {
+      const toId = (v: string) => { const n = Number(v); return (!v || v === 'other' || isNaN(n)) ? null : n; };
       const patchBody: Record<string, unknown> = {
         candidateId: profile.id,
         firstName: form.firstName,
@@ -121,13 +120,12 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
         homeAddress: form.homeAddress || null,
         isStudying: form.isStudying,
         isWorking: form.isWorking,
-        currentCompany: form.isWorking ? (form.currentCompany || null) : null,
       };
-      if (form.universityId) patchBody.universityId = Number(form.universityId);
-      if (form.cityId) patchBody.cityId = Number(form.cityId);
-      if (form.educationLevelId) patchBody.educationLevelId = Number(form.educationLevelId);
-      if (form.careerId) patchBody.careerId = Number(form.careerId);
-      if (form.titleId) patchBody.titleId = Number(form.titleId);
+      const uid = toId(form.universityId); if (uid) patchBody.universityId = uid;
+      const cid = toId(form.cityId);       if (cid) patchBody.cityId = cid;
+      const eid = toId(form.educationLevelId); if (eid) patchBody.educationLevelId = eid;
+      const rid = toId(form.careerId);     if (rid) patchBody.careerId = rid;
+      const tid = toId(form.titleId);      if (tid) patchBody.titleId = tid;
 
       const res = await fetch('/api/candidate/profile', {
         method: 'PATCH',
@@ -140,8 +138,8 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
       }
       router.refresh();
       setEditing(false);
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Ocurrió un error inesperado');
+    } catch {
+      setSaveError('No fue posible guardar los cambios. Por favor, intentá de nuevo.');
     } finally {
       setSaving(false);
     }
@@ -176,7 +174,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
             aria-label="Cambiar foto"
             disabled={avatarUploading}
             onClick={() => fileInputRef.current?.click()}
-            className="absolute bottom-0 right-0 w-5 h-5 bg-white border border-primary-200 rounded-full flex items-center justify-center hover:bg-surface-2 transition-colors disabled:opacity-50"
+            className="absolute bottom-0 right-0 w-5 h-5 bg-surface border border-border rounded-full flex items-center justify-center hover:bg-surface-2 transition-colors disabled:opacity-50"
           >
             <Camera className="w-3 h-3 text-ink-muted" />
           </button>
@@ -209,7 +207,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
               type="button"
               onClick={handleCancel}
               disabled={saving}
-              className="h-8 px-3 bg-white border border-primary-200 text-ink-muted font-medium text-[13px] rounded-lg hover:bg-surface-2 transition-colors disabled:opacity-50"
+              className="h-8 px-3 bg-surface border border-border text-ink-muted font-medium text-[13px] rounded-lg hover:bg-surface-2 transition-colors disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -336,14 +334,19 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
             <div>
               <FieldLabel htmlFor={editing ? 'edit-career' : undefined}>Carrera</FieldLabel>
               {editing ? (
-                <Combobox
-                  id="edit-career"
-                  valueKey="id"
-                  placeholder={profile.career || 'Selecciona la carrera'}
-                  value={form.careerId}
-                  onChange={(val) => setForm((f) => ({ ...f, careerId: val }))}
-                  options={catalogs.careers.map((c) => ({ id: String(c.id), label: c.name }))}
-                />
+                <>
+                  <Combobox
+                    id="edit-career"
+                    valueKey="id"
+                    placeholder={profile.career || 'Selecciona la carrera'}
+                    value={form.careerId}
+                    onChange={(val) => setForm((f) => ({ ...f, careerId: val }))}
+                    options={[...catalogs.careers.map((c) => ({ id: String(c.id), label: c.name })), { id: 'other', label: 'Otros' }]}
+                  />
+                  {form.careerId === 'other' && (
+                    <p className="text-xs text-ink-subtle mt-1">Si tu carrera no está en la lista, podés dejar este campo sin seleccionar.</p>
+                  )}
+                </>
               ) : (
                 <FieldValue>{profile.career || '—'}</FieldValue>
               )}
@@ -354,14 +357,19 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
           <div className="pb-2.5 border-b border-surface-2">
             <FieldLabel htmlFor={editing ? 'edit-title' : undefined}>Título</FieldLabel>
             {editing ? (
-              <Combobox
-                id="edit-title"
-                valueKey="id"
-                placeholder={profile.title || 'Selecciona tu título'}
-                value={form.titleId}
-                onChange={(val) => setForm((f) => ({ ...f, titleId: val }))}
-                options={catalogs.titles.map((t) => ({ id: String(t.id), label: t.name }))}
-              />
+              <>
+                <Combobox
+                  id="edit-title"
+                  valueKey="id"
+                  placeholder={profile.title || 'Selecciona tu título'}
+                  value={form.titleId}
+                  onChange={(val) => setForm((f) => ({ ...f, titleId: val }))}
+                  options={[...catalogs.titles.map((t) => ({ id: String(t.id), label: t.name })), { id: 'other', label: 'Otros' }]}
+                />
+                {form.titleId === 'other' && (
+                  <p className="text-xs text-ink-subtle mt-1">Si tu título no está en la lista, podés dejar este campo sin seleccionar.</p>
+                )}
+              </>
             ) : (
               <FieldValue>{profile.title || '—'}</FieldValue>
             )}
@@ -371,14 +379,19 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
           <div className="pb-2.5 border-b border-surface-2">
             <FieldLabel htmlFor={editing ? 'edit-university' : undefined}>Universidad</FieldLabel>
             {editing ? (
-              <Combobox
-                id="edit-university"
-                valueKey="id"
-                placeholder={profile.university || 'Selecciona tu universidad'}
-                value={form.universityId}
-                onChange={(val) => setForm((f) => ({ ...f, universityId: val }))}
-                options={catalogs.universities.map((u) => ({ id: String(u.id), label: u.name }))}
-              />
+              <>
+                <Combobox
+                  id="edit-university"
+                  valueKey="id"
+                  placeholder={profile.university || 'Selecciona tu universidad'}
+                  value={form.universityId}
+                  onChange={(val) => setForm((f) => ({ ...f, universityId: val }))}
+                  options={[...catalogs.universities.map((u) => ({ id: String(u.id), label: u.name })), { id: 'other', label: 'Otros' }]}
+                />
+                {form.universityId === 'other' && (
+                  <p className="text-xs text-ink-subtle mt-1">Si tu universidad no está en la lista, podés dejar este campo sin seleccionar.</p>
+                )}
+              </>
             ) : (
               <FieldValue>{profile.university || '—'}</FieldValue>
             )}
@@ -397,7 +410,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
                       'h-7 px-3 text-xs font-medium rounded-full border transition-colors',
                       form.isStudying
                         ? 'bg-primary-700 text-white border-primary-700'
-                        : 'bg-white text-ink-muted border-primary-200 hover:bg-surface-2',
+                        : 'bg-surface text-ink-muted border-border hover:bg-surface-2',
                     )}
                   >
                     Sí
@@ -409,7 +422,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
                       'h-7 px-3 text-xs font-medium rounded-full border transition-colors',
                       !form.isStudying
                         ? 'bg-primary-700 text-white border-primary-700'
-                        : 'bg-white text-ink-muted border-primary-200 hover:bg-surface-2',
+                        : 'bg-surface text-ink-muted border-border hover:bg-surface-2',
                     )}
                   >
                     No
@@ -430,7 +443,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
                       'h-7 px-3 text-xs font-medium rounded-full border transition-colors',
                       form.isWorking
                         ? 'bg-primary-700 text-white border-primary-700'
-                        : 'bg-white text-ink-muted border-primary-200 hover:bg-surface-2',
+                        : 'bg-surface text-ink-muted border-border hover:bg-surface-2',
                     )}
                   >
                     Sí
@@ -442,7 +455,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
                       'h-7 px-3 text-xs font-medium rounded-full border transition-colors',
                       !form.isWorking
                         ? 'bg-primary-700 text-white border-primary-700'
-                        : 'bg-white text-ink-muted border-primary-200 hover:bg-surface-2',
+                        : 'bg-surface text-ink-muted border-border hover:bg-surface-2',
                     )}
                   >
                     No
@@ -454,21 +467,6 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
             </div>
           </div>
 
-          {/* Row 7: Empresa actual (conditional on isWorking) */}
-          {(editing ? form.isWorking : profile.isWorking) && (
-            <div>
-              <FieldLabel htmlFor={editing ? 'edit-currentCompany' : undefined}>Empresa actual</FieldLabel>
-              {editing ? (
-                <FieldInput
-                  id="edit-currentCompany"
-                  value={form.currentCompany}
-                  onChange={(v) => setForm((f) => ({ ...f, currentCompany: v }))}
-                />
-              ) : (
-                <FieldValue>{profile.currentCompany || '—'}</FieldValue>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </div>

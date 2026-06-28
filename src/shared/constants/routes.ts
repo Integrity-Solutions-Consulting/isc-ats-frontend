@@ -46,6 +46,8 @@ export const ROUTES = {
   login: '/login',
   registro: '/registro',
   registroVerificacion: '/registro/verificacion',
+  recuperarContrasena: '/recuperar-contrasena',
+  restablecerContrasena: '/restablecer-contrasena',
   publicVacantes: '/empleos',
   publicVacante: (id: string) => `/empleos/${id}`,
 

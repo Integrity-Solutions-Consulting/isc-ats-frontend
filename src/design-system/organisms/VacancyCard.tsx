@@ -60,10 +60,10 @@ export function VacancyCard({ vacancy, onClick, footer, applied = false }: Vacan
       </div>
 
       {/*
-        Two-row tag container: fixed height = 2 × tag height (py-1 + text-[11px] ≈ 22px) +
-        gap between rows (gap-1.5 ≈ 6px) = ~50px.  overflow-hidden clips any extras.
+        Two-row tag container: 2 × pill height (py-1 + text-[11px] ≈ 25px) +
+        row gap (gap-1.5 = 6px) = 56px. overflow-hidden clips any 3rd row.
       */}
-      <div className="flex flex-wrap gap-1.5 overflow-hidden" style={{ maxHeight: '50px' }}>
+      <div className="flex flex-wrap gap-1.5 overflow-hidden" style={{ maxHeight: '56px' }}>
         {tags.map((skill) => (
           <span
             key={skill}
@@ -73,7 +73,7 @@ export function VacancyCard({ vacancy, onClick, footer, applied = false }: Vacan
           </span>
         ))}
         {overflow > 0 && (
-          <span className="bg-primary-100 text-primary-700 text-[11px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap">
+          <span className="bg-surface-2 text-ink-muted text-[11px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap">
             +{overflow}
           </span>
         )}

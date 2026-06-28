@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowRight, Check, Circle, Eye, EyeOff, Loader2, Mail } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, ArrowRight, Check, Circle, Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 import { Button } from '@/design-system/ui/button';
@@ -14,18 +14,14 @@ import { Label } from '@/design-system/ui/label';
 import { cn } from '@/shared/utils';
 import { ROUTES } from '@/shared/constants/routes';
 import { PASSWORD_REQUIREMENTS, passwordPolicyError } from '@/shared/utils/ecuadorValidators';
-import { LegalModal } from '@/features/legal/LegalModal';
-import type { LegalDocId } from '@/features/legal/content';
 
 const schema = z
   .object({
-    email: z.string().trim().min(1, 'Ingresa tu correo').email('Correo no válido'),
     password: z.string().superRefine((value, ctx) => {
       const error = passwordPolicyError(value);
       if (error) ctx.addIssue({ code: z.ZodIssueCode.custom, message: error });
     }),
     confirmPassword: z.string().min(1, 'Confirma tu contraseña'),
-    terms: z.literal(true, { message: 'Debes aceptar los términos' }),
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: 'Las contraseñas no coinciden',
@@ -34,12 +30,14 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>;
 
-export function RegistrationForm() {
+export function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
+
   const [showPw, setShowPw] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [legalDoc, setLegalDoc] = useState<LegalDocId | null>(null);
 
   const {
     register,
@@ -55,65 +53,68 @@ export function RegistrationForm() {
   async function onSubmit(data: FormValues) {
     setSubmitError(null);
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: data.email, password: data.password }),
+        body: JSON.stringify({ token, password: data.password }),
       });
-      const resData = await res.json();
       if (!res.ok) {
-        setSubmitError(resData.error || 'Error al registrar la cuenta');
+        const resData = await res.json().catch(() => ({}));
+        setSubmitError(resData.error || 'No se pudo restablecer la contraseña');
         return;
       }
-      // Account is created but unverified — send the user to the "check your
-      // email" screen, not to login (login rejects unverified accounts).
-      router.push(`${ROUTES.registroVerificacion}?email=${encodeURIComponent(data.email)}`);
+      // Password changed — all sessions were revoked server-side; send them to
+      // login with a success banner.
+      router.push(`${ROUTES.login}?reset=true`);
     } catch {
       setSubmitError('No se pudo conectar con el servidor');
     }
   }
 
+  // A missing token means the user opened the page without a valid email link.
+  if (!token) {
+    return (
+      <div className="w-full max-w-sm">
+        <h1 className="text-3xl font-bold text-ink">Enlace no válido</h1>
+        <p className="mt-2 text-sm text-ink-muted">
+          Este enlace de restablecimiento es inválido o está incompleto. Solicita uno nuevo.
+        </p>
+        <Link
+          href={ROUTES.recuperarContrasena}
+          className="mt-8 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+        >
+          Solicitar un nuevo enlace
+          <ArrowRight size={16} />
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-sm">
       <div className="mb-5">
-        <h1 className="text-3xl font-bold text-ink">Crea tu cuenta</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Únete y encuentra tu próxima oportunidad
-        </p>
+        <h1 className="text-3xl font-bold text-ink">Nueva contraseña</h1>
+        <p className="mt-1 text-sm text-ink-muted">Elige una contraseña segura para tu cuenta.</p>
       </div>
 
       {submitError && (
         <div className="mb-4 rounded-lg bg-danger/10 p-3 text-sm text-danger border border-danger/20">
-          {submitError}
+          {submitError}{' '}
+          <Link href={ROUTES.recuperarContrasena} className="font-medium underline">
+            Solicitar un nuevo enlace
+          </Link>
         </div>
       )}
 
-
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
-        {/* Email */}
-        <div className="space-y-1">
-          <Label htmlFor="reg-email">Correo electrónico</Label>
-          <div className="relative">
-            <Input
-              id="reg-email"
-              type="email"
-              placeholder="tu@correo.com"
-              aria-invalid={!!errors.email}
-              className="pr-10"
-              {...register('email')}
-            />
-            <Mail className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-ink-subtle" />
-          </div>
-          {errors.email && <p className="text-xs text-danger">{errors.email.message}</p>}
-        </div>
-
         {/* Password */}
         <div className="space-y-1">
-          <Label htmlFor="reg-password">Contraseña</Label>
+          <Label htmlFor="rp-password">Contraseña</Label>
           <div className="relative">
             <Input
-              id="reg-password"
+              id="rp-password"
               type={showPw ? 'text' : 'password'}
+              autoComplete="new-password"
               placeholder="••••••••"
               aria-invalid={!!errors.password}
               className="pr-10"
@@ -128,7 +129,6 @@ export function RegistrationForm() {
               {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>
           </div>
-          {/* Live requirements checklist — replaces the strength bar */}
           {passwordValue.length > 0 && (
             <ul className="space-y-1 pt-0.5">
               {PASSWORD_REQUIREMENTS.map((req) => {
@@ -141,11 +141,7 @@ export function RegistrationForm() {
                       met ? 'text-success' : 'text-ink-subtle',
                     )}
                   >
-                    {met ? (
-                      <Check className="size-3.5 shrink-0" />
-                    ) : (
-                      <Circle className="size-3.5 shrink-0" />
-                    )}
+                    {met ? <Check className="size-3.5 shrink-0" /> : <Circle className="size-3.5 shrink-0" />}
                     {req.label}
                   </li>
                 );
@@ -156,11 +152,12 @@ export function RegistrationForm() {
 
         {/* Confirm password */}
         <div className="space-y-1">
-          <Label htmlFor="reg-confirm">Confirmar contraseña</Label>
+          <Label htmlFor="rp-confirm">Confirmar contraseña</Label>
           <div className="relative">
             <Input
-              id="reg-confirm"
+              id="rp-confirm"
               type={showConfirm ? 'text' : 'password'}
+              autoComplete="new-password"
               placeholder="••••••••"
               aria-invalid={!!errors.confirmPassword}
               className={cn('pr-10', confirmMatch && 'border-success focus-visible:ring-success/30')}
@@ -181,64 +178,25 @@ export function RegistrationForm() {
           {confirmMatch && <p className="text-xs text-success">✓ Las contraseñas coinciden</p>}
         </div>
 
-        {/* Terms */}
-        <div className="space-y-1">
-          <label className="flex cursor-pointer items-start gap-2.5 text-sm text-ink-muted">
-            <input
-              type="checkbox"
-              className="mt-0.5 size-4 rounded border-border accent-primary-600"
-              {...register('terms')}
-            />
-            <span>
-              Acepto los{' '}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setLegalDoc('terms');
-                }}
-                className="font-medium text-primary-600 hover:underline"
-              >
-                Términos y condiciones
-              </button>
-              {' '}y la{' '}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setLegalDoc('privacy');
-                }}
-                className="font-medium text-primary-600 hover:underline"
-              >
-                Política de privacidad
-              </button>
-            </span>
-          </label>
-          {errors.terms && <p className="text-xs text-danger">{errors.terms.message}</p>}
-        </div>
-
         <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
             <>
-              Crear cuenta
+              Restablecer contraseña
               <ArrowRight className="size-4" />
             </>
           )}
         </Button>
 
-        <p className="text-center text-sm text-ink-muted">
-          ¿Ya tienes cuenta?{' '}
-          <Link href={ROUTES.login} className="font-medium text-primary-600 hover:underline">
-            Inicia sesión
-          </Link>
-        </p>
+        <Link
+          href={ROUTES.login}
+          className="flex items-center justify-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink transition-colors"
+        >
+          <ArrowLeft size={16} />
+          Volver al inicio de sesión
+        </Link>
       </form>
-
-      <LegalModal doc={legalDoc} onClose={() => setLegalDoc(null)} />
     </div>
   );
 }

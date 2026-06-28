@@ -39,8 +39,15 @@ export async function POST(request: NextRequest) {
 
   if (!backendRes.ok) {
     const data = await backendRes.json().catch(() => ({}));
+    const detail = ((data as { detail?: string }).detail ?? "").toLowerCase();
+    let errorMsg = "Credenciales incorrectas";
+    if (detail.includes("not verified") || detail.includes("verify") || detail.includes("verificado")) {
+      errorMsg = "Tu correo no está verificado. Revisá tu bandeja de entrada y hacé clic en el enlace de confirmación.";
+    } else if (detail.includes("inactive") || detail.includes("not active") || detail.includes("disabled")) {
+      errorMsg = "Tu cuenta no está activa. Contactá al soporte.";
+    }
     return NextResponse.json(
-      { error: (data as { detail?: string }).detail ?? "Credenciales incorrectas" },
+      { error: errorMsg },
       { status: backendRes.status === 401 ? 401 : 400 },
     );
   }

@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/design-system/ui/button';
-import { Input } from '@/design-system/ui/input';
 import { Label } from '@/design-system/ui/label';
 import { Combobox } from '@/design-system/molecules/Combobox';
 import { cn } from '@/shared/utils';
@@ -52,7 +51,7 @@ function ToggleCards({ value, onChange, error }: {
             className={cn(
               'rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors text-left',
               value === v
-                ? 'border-primary-600 bg-primary-50 text-primary-700'
+                ? 'border-primary-600 bg-primary-700 text-white'
                 : 'border-border bg-surface text-ink-muted hover:border-primary-300',
             )}
           >
@@ -99,11 +98,9 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
     city: defaultValues.city || (prefill?.cityId ? String(prefill.cityId) : ''),
     isStudying: defaultValues.isStudying,
     isWorking: defaultValues.isWorking,
-    currentCompany: defaultValues.currentCompany || prefill?.currentCompany || '',
   }), [defaultValues, prefill]);
 
   const {
-    register,
     handleSubmit,
     watch,
     setValue,
@@ -133,8 +130,10 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
   // Searchable comboboxes (valueKey="id") replace the native selects so the
   // registration matches the rest of the system. RHF holds the id string; we
   // bridge it through watch/setValue since Combobox is value/onChange-driven.
-  const toOptions = (items: CatalogOption[]) =>
-    items.map((o) => ({ id: String(o.id), label: o.name }));
+  const toOptions = (items: CatalogOption[]) => [
+    ...items.map((o) => ({ id: String(o.id), label: o.name })),
+    { id: 'other', label: 'Otros' },
+  ];
   const setField = (field: keyof Step2FormValues, v: string) =>
     setValue(field, v, { shouldValidate: true });
 
@@ -166,6 +165,9 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
             onChange={(v) => setField('university', v)}
             options={toOptions(catalogs.universities)}
           />
+          {watch('university') === 'other' && (
+            <p className="text-xs text-ink-subtle">No encontrás tu institución. Podés continuar y actualizarla más tarde desde tu perfil.</p>
+          )}
         </div>
       </div>
 
@@ -180,6 +182,9 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
             onChange={(v) => setField('title', v)}
             options={toOptions(catalogs.titles)}
           />
+          {watch('title') === 'other' && (
+            <p className="text-xs text-ink-subtle">Podés actualizarlo más tarde desde tu perfil.</p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="s2-completedCareer">Carrera</Label>
@@ -191,6 +196,9 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
             onChange={(v) => setField('completedCareer', v)}
             options={toOptions(catalogs.careers)}
           />
+          {watch('completedCareer') === 'other' && (
+            <p className="text-xs text-ink-subtle">Podés actualizarla más tarde desde tu perfil.</p>
+          )}
         </div>
       </div>
 
@@ -224,17 +232,6 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
           onChange={handleIsWorking}
           error={errors.isWorking?.message}
         />
-        {isWorking && (
-          <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-            <Label htmlFor="s2-currentCompany">Empresa donde trabajas</Label>
-            <Input
-              id="s2-currentCompany"
-              placeholder="Nombre de la empresa"
-              {...register('currentCompany')}
-            />
-            <p className="text-xs text-ink-subtle">Esta información es confidencial.</p>
-          </div>
-        )}
       </div>
 
       <div className="flex gap-2">

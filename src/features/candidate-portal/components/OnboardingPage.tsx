@@ -27,7 +27,6 @@ export function OnboardingPage() {
     educationLevel: '', completedCareer: '', title: '', university: '', city: '',
     isStudying: null,
     isWorking: null,
-    currentCompany: '',
   });
 
   const handleStep0Complete = (data: CvPrefillData, file: File) => {
@@ -50,9 +49,11 @@ export function OnboardingPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const toId = (v?: string) => (v ? Number(v) : undefined);
-      // The CV is intentionally absent here: the candidate must be created
-      // first. We only persist the PDF afterwards, once registration exists.
+      const toId = (v?: string) => {
+        if (!v || v === 'other') return undefined;
+        const n = Number(v);
+        return isNaN(n) ? undefined : n;
+      };
       const body = {
         firstName: step1Values.firstName,
         lastName: step1Values.lastName,
@@ -67,7 +68,6 @@ export function OnboardingPage() {
         titleId: toId(step2.title),
         isStudying: step2.isStudying,
         isWorking: step2.isWorking,
-        currentCompany: step2.currentCompany || undefined,
       };
 
       const res = await fetch('/api/candidate/profile', {
@@ -109,9 +109,8 @@ export function OnboardingPage() {
       // Robust redirect: the server re-issues session-user with has_profile: true
       // in the profile POST response — window.location picks up the fresh cookie
       window.location.href = ROUTES.candidato.vacantes;
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Ocurrió un error inesperado al guardar tus datos.';
-      setError(message);
+    } catch {
+      setError('Ocurrió un error al guardar tus datos. Por favor, intentá de nuevo.');
       setSubmitting(false);
     }
   };

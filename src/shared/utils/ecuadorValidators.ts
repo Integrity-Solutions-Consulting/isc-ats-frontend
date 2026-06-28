@@ -58,3 +58,17 @@ export function passwordPolicyError(value: string): string | null {
   if (!/[^a-zA-Z0-9]/.test(value)) return 'La contraseña debe incluir al menos un carácter especial';
   return null;
 }
+
+/**
+ * Live requirements checklist for a password field — each rule ticks as the user
+ * types, so the form states exactly what is missing instead of a vague strength
+ * meter. Shared by the registration and password-reset forms; mirrors the policy
+ * enforced by passwordPolicyError (and the backend).
+ */
+export const PASSWORD_REQUIREMENTS: { label: string; test: (pw: string) => boolean }[] = [
+  { label: `Al menos ${PASSWORD_MIN_LENGTH} caracteres`, test: (pw) => pw.length >= PASSWORD_MIN_LENGTH },
+  { label: 'Una letra minúscula', test: (pw) => /[a-z]/.test(pw) },
+  { label: 'Una letra mayúscula', test: (pw) => /[A-Z]/.test(pw) },
+  { label: 'Un número', test: (pw) => /\d/.test(pw) },
+  { label: 'Un carácter especial', test: (pw) => /[^a-zA-Z0-9]/.test(pw) },
+];

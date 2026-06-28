@@ -27,10 +27,11 @@ export async function POST(request: NextRequest) {
 
   if (!backendRes.ok) {
     const data = await backendRes.json().catch(() => ({}));
-    return NextResponse.json(
-      { error: (data as { detail?: string }).detail ?? "Error al registrar usuario" },
-      { status: backendRes.status },
-    );
+    const detail = ((data as { detail?: string }).detail ?? '').toLowerCase();
+    const errorMsg = (detail.includes('already') || detail.includes('exist') || detail.includes('duplicate') || detail.includes('registrado'))
+      ? 'Ya existe una cuenta con este correo electrónico.'
+      : 'No se pudo crear la cuenta. Por favor, intentá de nuevo.';
+    return NextResponse.json({ error: errorMsg }, { status: backendRes.status });
   }
 
   return NextResponse.json({ message: "Usuario registrado exitosamente" }, { status: 201 });

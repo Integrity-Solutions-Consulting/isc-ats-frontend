@@ -100,8 +100,8 @@ export async function GET() {
     };
 
     return NextResponse.json(profile);
-  } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Error al cargar el perfil' }, { status: 500 });
   }
 }
 
@@ -153,9 +153,8 @@ export async function PATCH(request: Request) {
 
     await backendPatch(`/recruitment/candidates/${candidateId}`, payload);
     return NextResponse.json({ ok: true });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'No se pudo guardar los cambios' }, { status: 500 });
   }
 }
 
@@ -268,8 +267,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(result, { status: responseStatus });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Ocurrió un error inesperado. Por favor, intentá de nuevo.' }, { status: 500 });
   }
 }

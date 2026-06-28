@@ -103,8 +103,8 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
         time: `${ecTime(selectedSlot.start)}–${ecTime(selectedSlot.end)}`,
       });
       setSelectedSlot(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo confirmar el horario');
+    } catch {
+      setError('No fue posible confirmar el horario. Por favor, intentá de nuevo.');
     } finally {
       setConfirming(false);
     }
@@ -182,11 +182,11 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
 
       {/* Slot picker */}
       {showSlotPicker && (
-        <div className="bg-primary-50 border border-primary-700/20 rounded-lg p-4 flex flex-col gap-3">
+        <div className="bg-primary/8 border border-primary/20 rounded-lg p-4 flex flex-col gap-3">
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-2">
-              <Clock size={14} className="text-primary-800 shrink-0" />
-              <p className="text-[14px] font-semibold text-primary-800">
+              <Clock size={14} className="text-primary shrink-0" />
+              <p className="text-[14px] font-semibold text-ink">
                 Elige tu horario de entrevista
               </p>
             </div>
@@ -198,7 +198,7 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
           <div className="flex gap-3 flex-wrap">
             {dayGroups.map((group) => (
               <div key={group.key} className="flex flex-col gap-1.5">
-                <p className="text-[12px] font-semibold text-primary-800">{group.label}</p>
+                <p className="text-[12px] font-semibold text-ink">{group.label}</p>
                 {group.slots.map((slot) => {
                   const isSelected =
                     selectedSlot !== null && slotKey(selectedSlot) === slotKey(slot);
@@ -210,8 +210,8 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
                       className={cn(
                         'text-[12px] rounded-lg px-2 py-1.5 transition-colors',
                         isSelected
-                          ? 'bg-primary-700 text-white'
-                          : 'bg-white border border-primary-200 text-ink-muted hover:border-primary-700 hover:text-primary-700',
+                          ? 'bg-primary text-white'
+                          : 'bg-surface border border-border text-ink-muted hover:border-primary hover:text-primary',
                       )}
                     >
                       {ecTime(slot.start)}–{ecTime(slot.end)}
@@ -229,7 +229,7 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
               type="button"
               disabled={!selectedSlot || confirming}
               onClick={handleConfirm}
-              className="bg-primary-700 text-white text-[13px] font-semibold rounded-lg px-5 py-2 hover:bg-primary-600 disabled:opacity-40 transition-colors"
+              className="bg-primary text-white text-[13px] font-semibold rounded-lg px-5 py-2 hover:opacity-90 disabled:opacity-40 transition-colors"
             >
               {confirming ? 'Confirmando...' : 'Confirmar horario'}
             </button>
@@ -255,9 +255,6 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
                   {app.interview.date} — {app.interview.time}
                 </p>
                 <p className="text-ink-muted text-xs">{app.interview.platform}</p>
-                <button type="button" className="text-primary-600 text-xs mt-1 hover:underline">
-                  Agregar al calendario
-                </button>
               </>
             ) : null}
           </div>
@@ -276,7 +273,6 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
 export function MyApplicationsPage({ applications }: MyApplicationsPageProps) {
   const [tab, setTab] = useState<Tab>('all');
 
-  const total = applications.length;
   const active = applications.filter((a) => ACTIVE_STATUSES.includes(a.status)).length;
   const hired = applications.filter((a) => a.status === 'hired').length;
   const finished = applications.filter((a) => FINISHED_STATUSES.includes(a.status)).length;
@@ -302,11 +298,7 @@ export function MyApplicationsPage({ applications }: MyApplicationsPageProps) {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <div className="bg-surface border border-border rounded-lg p-4 flex flex-col gap-1">
-          <p className="text-2xl font-bold text-ink">{total}</p>
-          <p className="text-xs text-ink-muted">Total postulaciones</p>
-        </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="bg-surface border border-border rounded-lg p-4 flex flex-col gap-1">
           <p className="text-2xl font-bold text-primary-600">{active}</p>
           <p className="text-xs text-ink-muted">En proceso</p>

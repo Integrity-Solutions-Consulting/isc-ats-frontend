@@ -14,8 +14,8 @@ function minAge(minYears: number) {
 }
 
 export const step1Schema = z.object({
-  firstName: z.string().trim().min(1, 'Ingresa tu nombre').max(80, 'Máximo 80 caracteres'),
-  lastName: z.string().trim().min(1, 'Ingresa tus apellidos').max(80, 'Máximo 80 caracteres'),
+  firstName: z.string().trim().min(2, 'Ingresa tu nombre completo').max(80, 'Máximo 80 caracteres'),
+  lastName: z.string().trim().min(2, 'Ingresa tus apellidos completos').max(80, 'Máximo 80 caracteres'),
   idNumber: z
     .string()
     .trim()
@@ -61,7 +61,6 @@ export const step2Schema = z.object({
   city: z.string().min(1, 'Selecciona tu ciudad'),
   isStudying: booleanRequired('Indica si estudias actualmente'),
   isWorking: booleanRequired('Indica si trabajas actualmente'),
-  currentCompany: z.string().trim().max(120, 'Máximo 120 caracteres').optional(),
 });
 
 export type Step1Values = z.infer<typeof step1Schema>;

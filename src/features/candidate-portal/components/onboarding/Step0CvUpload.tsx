@@ -106,7 +106,7 @@ export function Step0CvUpload({
         <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
-          className="relative rounded-lg border-2 border-dashed border-primary-300/60 bg-primary-50/30 p-8 text-center"
+          className="relative rounded-lg border-2 border-dashed border-primary-300/60 bg-surface-2/50 p-8 text-center"
         >
           {loading ? (
             <div className="flex flex-col items-center gap-3">
@@ -137,7 +137,7 @@ export function Step0CvUpload({
         <p className="text-center text-sm text-ink-muted">Analizando tu hoja de vida...</p>
       )}
 
-      <div className="rounded-md border-l-2 border-primary-600 bg-primary-50 px-4 py-3 text-sm text-primary-700">
+      <div className="rounded-md border-l-2 border-primary-600 bg-surface-2 px-4 py-3 text-sm text-ink-muted">
         Usaremos tu CV para pre-completar el formulario. Tu información está protegida.
       </div>
 

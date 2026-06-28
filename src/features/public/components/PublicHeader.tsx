@@ -77,25 +77,25 @@ export function PublicHeader({ portalHref }: PublicHeaderProps) {
                 onClick={() => setOpen((v) => !v)}
                 aria-label="Menú"
                 aria-expanded={open}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-primary-800 hover:bg-primary-700/[0.06] transition-colors"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-ink hover:bg-surface-2 transition-colors"
               >
                 {open ? <X size={20} /> : <Menu size={20} />}
               </button>
 
               {open && (
-                <div className="absolute right-0 top-[calc(100%+12px)] w-[180px] bg-white rounded-[14px] border border-primary-200 shadow-brand-lg overflow-hidden z-50">
+                <div className="absolute right-0 top-[calc(100%+12px)] w-[180px] bg-card rounded-[14px] border border-border shadow-brand-lg overflow-hidden z-50">
                   <Link
                     href={ROUTES.login}
                     onClick={() => setOpen(false)}
-                    className="block px-4 py-3 text-[14px] font-semibold text-primary-800 hover:bg-primary-50 transition-colors"
+                    className="block px-4 py-3 text-[14px] font-semibold text-ink hover:bg-surface-2 transition-colors"
                   >
                     Iniciar sesión
                   </Link>
-                  <div className="h-px bg-primary-200" />
+                  <div className="h-px bg-border" />
                   <Link
                     href={ROUTES.registro}
                     onClick={() => setOpen(false)}
-                    className="block px-4 py-3 text-[14px] text-ink-muted hover:bg-primary-50 transition-colors"
+                    className="block px-4 py-3 text-[14px] text-ink-muted hover:bg-surface-2 transition-colors"
                   >
                     Registrarse
                   </Link>

@@ -60,14 +60,14 @@ export function PublicVacancyListPage({ vacancies }: PublicVacancyListPageProps)
         </p>
       </div>
 
-      <div className="bg-surface shadow-sm rounded-lg p-4 flex flex-col sm:flex-row gap-3 items-center">
+      <div className="bg-surface border border-border rounded-xl p-4 flex flex-col sm:flex-row gap-3 items-center">
         <div className="relative flex-1 w-full">
           <Search
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle pointer-events-none"
           />
           <Input
-            className="pl-9"
+            className="pl-9 bg-surface-2"
             placeholder="Buscar por cargo, tecnología…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -78,6 +78,7 @@ export function PublicVacancyListPage({ vacancies }: PublicVacancyListPageProps)
           valueKey="id"
           aria-label="Filtrar por modalidad"
           className="w-full sm:w-48"
+          inputClassName="bg-surface-2"
           value={workMode}
           onChange={setWorkMode}
           options={workModeOptions}
@@ -87,6 +88,7 @@ export function PublicVacancyListPage({ vacancies }: PublicVacancyListPageProps)
           valueKey="id"
           aria-label="Filtrar por ciudad"
           className="w-full sm:w-48"
+          inputClassName="bg-surface-2"
           value={city}
           onChange={setCity}
           options={cityOptions}

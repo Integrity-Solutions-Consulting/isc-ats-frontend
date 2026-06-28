@@ -60,7 +60,7 @@ export function Step3Resume({ data, onChange, onNext, onBack, onSkip, isSubmitti
         <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
-          className="rounded-lg border-2 border-dashed border-primary-300/60 bg-primary-50/30 p-8 text-center"
+          className="rounded-lg border-2 border-dashed border-primary-300/60 bg-surface-2/50 p-8 text-center"
         >
           <Upload className="mx-auto mb-3 size-8 text-ink-subtle" />
           <p className="text-sm font-medium text-ink mb-1">Arrastra tu CV aquí</p>
@@ -73,7 +73,7 @@ export function Step3Resume({ data, onChange, onNext, onBack, onSkip, isSubmitti
         </div>
       )}
 
-      <div className="rounded-md border-l-2 border-primary-600 bg-primary-50 px-4 py-3 text-sm text-primary-700">
+      <div className="rounded-md border-l-2 border-primary-600 bg-surface-2 px-4 py-3 text-sm text-ink-muted">
         Tu CV solo será compartido con empresas cuando postules a una vacante.
       </div>
 

@@ -46,6 +46,7 @@ export function LoginForm() {
 
   const searchParams = useSearchParams();
   const verified = searchParams.get("verified") === "true";
+  const passwordReset = searchParams.get("reset") === "true";
   const urlError = searchParams.get("error");
   const returnTo = searchParams.get("returnTo");
 
@@ -115,6 +116,11 @@ export function LoginForm() {
           ¡Tu cuenta ha sido creada exitosamente! Ya puedes iniciar sesión.
         </div>
       )}
+      {passwordReset && (
+        <div className="mb-4 rounded-lg bg-success/10 p-3 text-sm text-success border border-success/20">
+          Tu contraseña fue actualizada. Inicia sesión con la nueva.
+        </div>
+      )}
       {urlError && (
         <div className="mb-4 rounded-lg bg-danger/10 p-3 text-sm text-danger border border-danger/20">
           {urlError === "invalid_token" || urlError === "missing_token"
@@ -178,9 +184,9 @@ export function LoginForm() {
             />
             Recordar mis datos
           </label>
-          <a href="#" className="font-medium text-primary-600 hover:underline">
+          <Link href={ROUTES.recuperarContrasena} className="font-medium text-primary-600 hover:underline">
             ¿Olvidaste tu contraseña?
-          </a>
+          </Link>
         </div>
 
         {authError && (

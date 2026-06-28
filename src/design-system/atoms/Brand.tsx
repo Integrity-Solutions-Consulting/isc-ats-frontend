@@ -6,9 +6,9 @@ interface BrandProps {
   /**
    * Color context:
    * - "dark"   — dark surface (staff sidebar): white headline + primary-200 tagline.
-   * - "header" — frosted white pill header (public + candidate nav): dark headline
-   *              + muted tagline so text is legible against the near-white background.
-   * - "light"  — light surface (login page): full SVG wordmark.
+   * - "header" — frosted navy pill header (public + candidate nav): renders the
+   *              white/cyan wordmark (LogoBlanco.svg) so it reads on the dark pill.
+   * - "light"  — light surface: full color SVG wordmark.
    */
   tone?: "light" | "dark" | "header";
   /** Hide the tagline. */
