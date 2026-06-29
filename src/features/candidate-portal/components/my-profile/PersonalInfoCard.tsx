@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Camera, Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Combobox } from '@/design-system/molecules/Combobox';
 import { cn } from '@/shared/utils';
 import type { CandidateProfile } from '../../types';
+import { myProfileKeys } from '../../hooks/useMyProfile';
 import { FieldLabel, FieldValue, FieldInput } from './fields';
 import { formatBirthDate } from './formatBirthDate';
 
@@ -31,13 +33,20 @@ const EMPTY_CATALOGS: Catalogs = {
   universities: [],
 };
 
+// Mirror the backend allowlist for entity_type "avatar" so the user gets a clear
+// message client-side instead of a cryptic 422 from the upload validator.
+const ACCEPTED_AVATAR_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+
 export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
   const [catalogs, setCatalogs] = useState<Catalogs>(EMPTY_CATALOGS);
   const [form, setForm] = useState({
     firstName: profile.firstName,
@@ -67,22 +76,40 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setAvatarError(null);
+
+    if (!ACCEPTED_AVATAR_TYPES.includes(file.type)) {
+      setAvatarError('Formato no válido. Usá una imagen PNG, JPG o WEBP.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      setAvatarError('La imagen no puede superar 5 MB.');
+      e.target.value = '';
+      return;
+    }
+
     setAvatarUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('entity_type', 'avatar');
       const uploadRes = await fetch('/api/candidate/upload', { method: 'POST', body: formData });
-      if (!uploadRes.ok) throw new Error('upload failed');
+      if (!uploadRes.ok) {
+        const err = (await uploadRes.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error ?? 'No se pudo subir la foto.');
+      }
       const uploaded = await uploadRes.json() as { id: number };
       const patchRes = await fetch('/api/candidate/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ candidateId: profile.id, avatarFileId: uploaded.id }),
       });
-      if (!patchRes.ok) throw new Error('patch failed');
+      if (!patchRes.ok) throw new Error('No se pudo actualizar la foto de perfil.');
+      void queryClient.invalidateQueries({ queryKey: myProfileKeys.all });
       router.refresh();
-    } catch {
-      // avatar upload is optional — fail silently
+    } catch (err: unknown) {
+      setAvatarError(err instanceof Error ? err.message : 'Error inesperado al subir la foto.');
     } finally {
       setAvatarUploading(false);
       e.target.value = '';
@@ -136,6 +163,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
         const data = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(data.error ?? 'Error al guardar los cambios');
       }
+      void queryClient.invalidateQueries({ queryKey: myProfileKeys.all });
       router.refresh();
       setEditing(false);
     } catch {
@@ -185,6 +213,10 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
           </h2>
         </div>
       </div>
+
+      {avatarError && (
+        <p className="text-[12px] text-danger mb-3">{avatarError}</p>
+      )}
 
       {/* Thin divider */}
       <div className="w-full h-px bg-surface-2 mb-3" />

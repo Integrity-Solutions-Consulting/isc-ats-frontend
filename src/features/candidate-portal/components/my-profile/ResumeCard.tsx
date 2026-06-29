@@ -38,6 +38,7 @@ export function ResumeCard({ profile }: { profile: CandidateProfile }) {
       // Phase 1: upload to MinIO
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('entity_type', 'cv');
       const uploadRes = await fetch('/api/candidate/upload', { method: 'POST', body: formData });
       if (!uploadRes.ok) {
         const err = await uploadRes.json().catch(() => ({})) as { error?: string };

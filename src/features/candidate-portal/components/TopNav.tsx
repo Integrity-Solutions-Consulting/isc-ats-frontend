@@ -18,7 +18,7 @@ import {
   useNotifications,
 } from '@/features/notifications/hooks/useNotifications';
 import type { Notification } from '@/features/notifications/types';
-import { getMyProfile } from '../api/candidateApi';
+import { useMyProfile } from '../hooks/useMyProfile';
 
 const NAV_LINKS = [
   { href: ROUTES.candidato.vacantes, label: 'Vacantes' },
@@ -68,29 +68,26 @@ export function TopNav() {
   const { data: notifications = [] } = useNotifications();
   const markAllReadMutation = useMarkAllNotificationsRead();
   const markReadMutation = useMarkNotificationRead();
-  const [user, setUser] = useState<{ name: string; initials: string; avatarFileId?: number } | null>(null);
-
+  // Session-cookie fallback for the name/initials before the profile loads (or
+  // when none exists). Read post-mount on purpose: the cookie is a client-only
+  // source, and reading it during render would cause a hydration mismatch.
+  const [sessionUser, setSessionUser] = useState<{ name: string; initials: string; avatarFileId?: number } | null>(null);
   useEffect(() => {
-    // 1. Fallback to email-derived name from session cookie. Done post-mount on
-    // purpose: the cookie is a client-only external source, and reading it during
-    // render would cause a hydration mismatch (server has no access to it).
-    const sessionUser = getClientSessionUser();
-    if (sessionUser) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from a client-only cookie, hydration-safe
-      setUser(sessionUser);
-    }
-
-    // 2. Fetch actual candidate profile details if they exist
-    getMyProfile().then((profile) => {
-      if (profile && profile.firstName) {
-        const fullName = `${profile.firstName} ${profile.lastName}`.trim();
-        const initials = (profile.firstName.charAt(0) + (profile.lastName?.charAt(0) || '')).toUpperCase();
-        setUser({ name: fullName, initials, avatarFileId: profile.avatarFileId });
-      }
-    }).catch((err) => {
-      console.error('Failed to load dynamic profile in TopNav', err);
-    });
+    const cookieUser = getClientSessionUser();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from a client-only cookie, hydration-safe
+    if (cookieUser) setSessionUser(cookieUser);
   }, []);
+
+  // Live profile via React Query: invalidated by profile edits (avatar, name…),
+  // so the header avatar updates without a full page reload.
+  const { data: profile } = useMyProfile();
+  const user = profile?.firstName
+    ? {
+        name: `${profile.firstName} ${profile.lastName ?? ''}`.trim(),
+        initials: (profile.firstName.charAt(0) + (profile.lastName?.charAt(0) ?? '')).toUpperCase(),
+        avatarFileId: profile.avatarFileId,
+      }
+    : sessionUser;
 
   const notifRef = useRef<HTMLDivElement>(null);
   const avatarRef = useRef<HTMLDivElement>(null);
