@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { setSessionUserCookie } from "@/lib/sessionCookie";
+import { clientIpHeader } from "@/lib/clientIp";
 
 const BACKEND = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000/api/v1";
 
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
   try {
     backendRes = await fetch(`${BACKEND}/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...clientIpHeader(request) },
       body: JSON.stringify({ email, password }),
     });
   } catch {
@@ -39,11 +40,24 @@ export async function POST(request: NextRequest) {
 
   if (!backendRes.ok) {
     const data = await backendRes.json().catch(() => ({}));
-    const detail = ((data as { detail?: string }).detail ?? "").toLowerCase();
+    const detail = (data as { detail?: string }).detail ?? "";
+
+    // Rate-limit / account lockout: surface the backend's Spanish message as-is
+    // (it already explains the wait) and keep the 429 + Retry-After. Without this
+    // a locked-out user would be wrongly told "Credenciales incorrectas".
+    if (backendRes.status === 429) {
+      const retryAfter = backendRes.headers.get("Retry-After");
+      return NextResponse.json(
+        { error: detail || "Demasiados intentos. Intentá nuevamente más tarde." },
+        { status: 429, headers: retryAfter ? { "Retry-After": retryAfter } : undefined },
+      );
+    }
+
+    const low = detail.toLowerCase();
     let errorMsg = "Credenciales incorrectas";
-    if (detail.includes("not verified") || detail.includes("verify") || detail.includes("verificado")) {
+    if (low.includes("not verified") || low.includes("verify") || low.includes("verificado")) {
       errorMsg = "Tu correo no está verificado. Revisá tu bandeja de entrada y hacé clic en el enlace de confirmación.";
-    } else if (detail.includes("inactive") || detail.includes("not active") || detail.includes("disabled")) {
+    } else if (low.includes("inactive") || low.includes("not active") || low.includes("disabled")) {
       errorMsg = "Tu cuenta no está activa. Contactá al soporte.";
     }
     return NextResponse.json(
