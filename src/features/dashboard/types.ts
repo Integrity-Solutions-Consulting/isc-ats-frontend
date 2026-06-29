@@ -1,8 +1,6 @@
 export interface DashboardKPI {
   label: string;
   value: number;
-  trend: number;
-  trendUp: boolean;
 }
 
 export interface CandidateByStage {

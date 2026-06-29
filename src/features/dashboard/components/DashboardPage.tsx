@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { TrendingUp, TrendingDown, Calendar, Clock } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 import { DataTable, type ColumnDef } from '@/design-system/organisms/DataTable';
 import { Select } from '@/design-system/atoms/Select';
 import { Avatar } from '@/design-system/atoms/Avatar';
@@ -23,18 +23,8 @@ function KPICard({ kpi }: { kpi: DashboardKPI }) {
   return (
     <div className="rounded-lg border border-border bg-surface p-5 shadow-sm">
       <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">{kpi.label}</p>
-      <div className="mt-2 flex items-end justify-between">
+      <div className="mt-2">
         <span className="text-3xl font-bold text-ink">{kpi.value}</span>
-        <span
-          className={cn(
-            'flex items-center gap-1 text-xs font-medium',
-            kpi.trendUp ? 'text-success' : 'text-danger',
-          )}
-        >
-          {kpi.trendUp ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}
-          {kpi.trendUp ? '+' : ''}
-          {kpi.trend} este mes
-        </span>
       </div>
     </div>
   );

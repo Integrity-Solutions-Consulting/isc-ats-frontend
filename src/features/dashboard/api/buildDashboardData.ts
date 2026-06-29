@@ -45,7 +45,8 @@ interface Pipeline {
 interface BackendInterview {
   id: number;
   application_id: number;
-  scheduled_at: string;
+  scheduled_at: string | null;
+  cancellation_reason: string | null;
   teams_meeting_url: string | null;
 }
 
@@ -78,18 +79,40 @@ export async function buildDashboardData(): Promise<DashboardData> {
     })
   );
 
-  const totalApplicants = pipelines.reduce((sum, p) => sum + p.cards.length, 0);
+  // Terminal cards = in a final-positive stage (hired) or in the virtual
+  // "rejected" stage. They are no longer in active evaluation and must not
+  // surface as potential candidates.
+  const finalStageIds = (p: { stages: PipelineStage[] }) =>
+    new Set(p.stages.filter((s) => s.type === "final").map((s) => s.id));
+  const isTerminal = (stageId: string, finals: Set<string>) =>
+    stageId === "rejected" || finals.has(stageId);
+
+  const activeApplicants = pipelines.reduce((sum, p) => {
+    const finals = finalStageIds(p);
+    return sum + p.cards.filter((c) => !isTerminal(c.stageId, finals)).length;
+  }, 0);
 
   const hiredCards = pipelines.flatMap((p) => {
-    const finalStages = new Set(p.stages.filter((s) => s.type === "final").map((s) => s.id));
-    return p.cards.filter((c) => finalStages.has(c.stageId));
+    const finals = finalStageIds(p);
+    return p.cards.filter((c) => finals.has(c.stageId));
   });
 
+  // Scheduled interviews = have a real date, are not cancelled, and are today or
+  // later. Excludes Mode B offers (no date yet), cancelled and past interviews.
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const scheduledInterviews = interviewsPage.items.filter(
+    (int): int is BackendInterview & { scheduled_at: string } =>
+      int.scheduled_at !== null &&
+      !int.cancellation_reason &&
+      new Date(int.scheduled_at) >= startOfToday
+  );
+
   const kpis = [
-    { label: "Vacantes activas", value: activeVacancies.length, trend: 1, trendUp: true },
-    { label: "En evaluación activa", value: totalApplicants, trend: 5, trendUp: true },
-    { label: "Entrevistas programadas", value: interviewsPage.items.length, trend: 2, trendUp: true },
-    { label: "Contratados", value: hiredCards.length, trend: 1, trendUp: true },
+    { label: "Vacantes activas", value: activeVacancies.length },
+    { label: "En evaluación activa", value: activeApplicants },
+    { label: "Entrevistas programadas", value: scheduledInterviews.length },
+    { label: "Contratados", value: hiredCards.length },
   ];
 
   const stageCounts = new Map<string, number>();
@@ -149,7 +172,7 @@ export async function buildDashboardData(): Promise<DashboardData> {
   const allCardsMap = new Map(pipelines.flatMap((p) => p.cards).map((c) => [c.id, c]));
   const vacanciesMap = new Map(vacanciesPage.items.map((v) => [String(v.id), v]));
 
-  const upcomingInterviews = interviewsPage.items
+  const upcomingInterviews = scheduledInterviews
     .map((int) => {
       const card = allCardsMap.get(String(int.application_id));
       const vacancy = card ? vacanciesMap.get(card.vacancyId) : null;
@@ -195,20 +218,23 @@ export async function buildDashboardData(): Promise<DashboardData> {
   const topCandidates = pipelines
     .flatMap((p) => {
       const vacancy = vacanciesMap.get(p.vacancyId);
-      return p.cards.map((c) => ({
-        candidateId: c.candidateId,
-        applicationId: c.id,
-        vacancyId: p.vacancyId,
-        firstName: c.candidateName.split(" ")[0],
-        lastName: c.candidateName.split(" ").slice(1).join(" "),
-        initials: c.initials,
-        avatarColor: c.avatarColor,
-        matchPercent: Math.round(c.matchPercent ?? 0),
-        position: vacancy?.vacancy_name ?? "Cargo",
-        clientCompany: vacancy?.client_company ?? "Cliente",
-        department: vacancy?.department ?? "Tecnología",
-        daysAgo: 2,
-      }));
+      const finals = finalStageIds(p);
+      return p.cards
+        .filter((c) => !isTerminal(c.stageId, finals))
+        .map((c) => ({
+          candidateId: c.candidateId,
+          applicationId: c.id,
+          vacancyId: p.vacancyId,
+          firstName: c.candidateName.split(" ")[0],
+          lastName: c.candidateName.split(" ").slice(1).join(" "),
+          initials: c.initials,
+          avatarColor: c.avatarColor,
+          matchPercent: Math.round(c.matchPercent ?? 0),
+          position: vacancy?.vacancy_name ?? "Cargo",
+          clientCompany: vacancy?.client_company ?? "Cliente",
+          department: vacancy?.department ?? "Tecnología",
+          daysAgo: 2,
+        }));
     })
     .filter((c) => c.matchPercent >= 75)
     .sort((a, b) => b.matchPercent - a.matchPercent)
