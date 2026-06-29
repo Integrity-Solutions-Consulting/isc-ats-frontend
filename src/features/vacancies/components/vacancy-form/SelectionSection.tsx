@@ -130,7 +130,10 @@ export function SelectionSection() {
           className="w-20"
           placeholder="0"
           {...register("experienceYears", {
-            setValueAs: (v) => (v === "" ? 0 : Math.max(0, parseInt(v, 10) || 0)),
+            setValueAs: (v) =>
+              v === "" || v === null || v === undefined
+                ? null
+                : Math.max(0, parseInt(v, 10) || 0),
           })}
         />
         <span className="text-sm text-ink-muted">años</span>

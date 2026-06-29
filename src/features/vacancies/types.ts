@@ -62,7 +62,7 @@ export interface VacancyFormValues {
   process: string;
   level: SeniorityLevel;
   openings: number;
-  experienceYears: number;
+  experienceYears: number | null;
   workSchedule: string;
   requirements: ProfileRequirements;
   description: string;

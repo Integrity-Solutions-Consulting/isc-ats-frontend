@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
       resource_level_id: refs.resource_level_id,
       status_id: refs.status_id,
       openings: values.openings,
-      experience_years: values.experienceYears,
+      experience_years: values.experienceYears ?? 0,
       work_schedule: values.workSchedule || null,
       project_duration_years: values.durationYears ?? 0,
       project_duration_months: values.durationMonths ?? 0,
