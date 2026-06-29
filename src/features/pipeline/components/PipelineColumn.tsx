@@ -35,6 +35,17 @@ export function PipelineColumn({
     return true;
   });
 
+  // Sort by match percentage, highest first. Cards still analyzing or without a
+  // computed match have no score to compare, so they sink to the bottom.
+  const sortedCards = [...filteredCards].sort((a, b) => {
+    const aScore = a.matchStatus === 'analyzing' ? null : a.matchPercent;
+    const bScore = b.matchStatus === 'analyzing' ? null : b.matchPercent;
+    if (aScore === null && bScore === null) return 0;
+    if (aScore === null) return 1;
+    if (bScore === null) return -1;
+    return bScore - aScore;
+  });
+
   const isRejected = stage.type === 'rejected';
   const isFinal = stage.type === 'final';
 
@@ -105,26 +116,26 @@ export function PipelineColumn({
           />
         )}
 
-        {filteredCards.map((card, idx) => (
+        {sortedCards.map((card, idx) => (
           <CandidateCard
             key={card.id}
             card={card}
             onView={() => {
               setNavEntries(
-                filteredCards.map((c) => ({
+                sortedCards.map((c) => ({
                   candidateId: c.candidateId,
                   appId: c.id,
                   vacancyId: c.vacancyId,
                 })),
               );
               router.push(
-                `/vacantes/${card.vacancyId}/candidato/${card.candidateId}?appId=${card.id}&pos=${idx + 1}&total=${filteredCards.length}`,
+                `/vacantes/${card.vacancyId}/candidato/${card.candidateId}?appId=${card.id}&pos=${idx + 1}&total=${sortedCards.length}`,
               );
             }}
           />
         ))}
 
-        {filteredCards.length === 0 && !isOver && (
+        {sortedCards.length === 0 && !isOver && (
           <div className="flex items-center justify-center rounded-md border border-dashed border-border py-6">
             <p className="text-xs text-ink-subtle">Sin candidatos</p>
           </div>
