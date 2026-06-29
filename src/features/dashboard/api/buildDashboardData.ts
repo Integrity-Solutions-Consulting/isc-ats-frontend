@@ -54,7 +54,7 @@ const DEFAULT_STAGES = [
   { name: "Llamada de validación", color: "bg-primary-300" },
   { name: "Prueba técnica", color: "bg-primary-400" },
   { name: "Entrevista cliente", color: "bg-primary-500" },
-  { name: "Oferta · Contratación", color: "bg-primary-700" },
+  { name: "Contratados", color: "bg-primary-700" },
 ];
 
 export async function buildDashboardData(): Promise<DashboardData> {

@@ -19,7 +19,7 @@ import {
 } from '../api/processesApi';
 
 const FIXED_INITIAL: Omit<ProcessStage, 'id'> = { name: 'Postulantes', code: 'applicants', type: 'normal' };
-const FIXED_FINAL: Omit<ProcessStage, 'id'> = { name: 'Contratación', code: 'offer', type: 'final' };
+const FIXED_FINAL: Omit<ProcessStage, 'id'> = { name: 'Contratados', code: 'offer', type: 'final' };
 const FIXED_REJECTED: Omit<ProcessStage, 'id'> = { name: 'Rechazados', code: 'rejected', type: 'rejected' };
 import { useBreadcrumbStore } from '@/shared/stores/breadcrumbStore';
 import { ROUTES } from '@/shared/constants/routes';
@@ -55,7 +55,7 @@ export function ProcesoEditorPage({ id }: Props) {
     queryFn: () => fetch('/api/org/parameters?type=stage', { cache: 'no-store' }).then((r) => r.json()),
   });
 
-  // Fixed stages (Postulantes / Contratación) are always shown non-removable as
+  // Fixed stages (Postulantes / Contratados) are always shown non-removable as
   // first and last slots. Filter them out of the palette so users only see
   // the custom middle stages.
   const FIXED_CODES = new Set(['applicants', 'offer']);
@@ -317,7 +317,7 @@ export function ProcesoEditorPage({ id }: Props) {
               ))
             )}
 
-            {/* Fixed trailing stages — Contratación and Rechazados, always present */}
+            {/* Fixed trailing stages — Contratados and Rechazados, always present */}
             {[FIXED_FINAL, FIXED_REJECTED].map((stage, i) => (
               <div key={stage.name} className="flex items-center gap-3">
                 <ArrowRight className="size-4 shrink-0 text-ink-subtle" />
@@ -335,7 +335,7 @@ export function ProcesoEditorPage({ id }: Props) {
           </div>
 
           <p className="mt-4 text-xs text-ink-subtle">
-            {display.stages.length} etapa{display.stages.length !== 1 ? 's' : ''} intermedia{display.stages.length !== 1 ? 's' : ''} · Postulantes y Contratación siempre presentes
+            {display.stages.length} etapa{display.stages.length !== 1 ? 's' : ''} intermedia{display.stages.length !== 1 ? 's' : ''} · Postulantes y Contratados siempre presentes
           </p>
         </div>
       </div>

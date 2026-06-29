@@ -141,22 +141,26 @@ export function StatusSidebar({
             </p>
           </div>
 
-          <div>
-            <label htmlFor="sub-estado-select" className="text-xs text-ink-subtle mb-1 block">Sub-estado</label>
-            <Select
-              id="sub-estado-select"
-              value={application.currentStatusId ?? ""}
-              onChange={handleStatusChange}
-              disabled={isLoading || stageStatuses.length === 0}
-            >
-              <option value="">— Sin sub-estado —</option>
-              {stageStatuses.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </Select>
-          </div>
+          {/* Sub-estado only applies while the candidate is in process. Terminal
+              stages (hired / rejected) have no internal sub-states. */}
+          {!isOnFinalOrRejected && (
+            <div>
+              <label htmlFor="sub-estado-select" className="text-xs text-ink-subtle mb-1 block">Sub-estado</label>
+              <Select
+                id="sub-estado-select"
+                value={application.currentStatusId ?? ""}
+                onChange={handleStatusChange}
+                disabled={isLoading || stageStatuses.length === 0}
+              >
+                <option value="">— Sin sub-estado —</option>
+                {stageStatuses.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
         </div>
       </div>
 
