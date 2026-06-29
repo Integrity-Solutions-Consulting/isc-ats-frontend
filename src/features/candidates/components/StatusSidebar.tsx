@@ -46,7 +46,8 @@ export function StatusSidebar({
       if (!res.ok) return [];
       return res.json();
     },
-    staleTime: 5 * 60 * 1000,
+    // Catalog managed in another screen — fetch fresh so new sub-states appear.
+    staleTime: 0,
   });
 
   const updateStatusMutation = useUpdateStageStatus();

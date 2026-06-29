@@ -21,7 +21,8 @@ export function ProfileSection() {
   const { data: allTemplates = [] } = useQuery({
     queryKey: ["profile-templates"],
     queryFn: listTemplates,
-    staleTime: 5 * 60_000,
+    // Fresh on open so a template created in its own screen is selectable here.
+    staleTime: 0,
   });
 
   const filteredTemplates = allTemplates.filter((t) => t.isActive !== false);

@@ -33,7 +33,11 @@ export function useVacancyCatalogs() {
   return useQuery({
     queryKey: vacancyKeys.catalogs,
     queryFn: getVacancyCatalogs,
-    staleTime: 5 * 60_000,
+    // Fresh on every open: this catalog aggregates clients, departments,
+    // contacts, processes and parameters that are managed in other screens, so
+    // caching it would show a stale combo right after one of them is created.
+    // The endpoint is cheap and the form is opened occasionally — refetch wins.
+    staleTime: 0,
   });
 }
 
@@ -53,6 +57,7 @@ export function useContactsByClient(clientId: string) {
       return rows.map((c) => ({ id: c.id, label: `${c.firstName} ${c.lastName}` }));
     },
     enabled: Boolean(clientId),
-    staleTime: 5 * 60_000,
+    // Fresh per client selection so a contact just added in Contactos shows up.
+    staleTime: 0,
   });
 }

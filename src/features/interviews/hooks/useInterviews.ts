@@ -30,7 +30,8 @@ export function useInterviewers(): UseQueryResult<Interviewer[]> {
   return useQuery({
     queryKey: interviewKeys.interviewers,
     queryFn: listInterviewers,
-    staleTime: 5 * 60 * 1000,
+    // Fresh on open so a newly-configured interviewer is selectable right away.
+    staleTime: 0,
   });
 }
 
