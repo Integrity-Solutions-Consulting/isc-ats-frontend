@@ -71,6 +71,8 @@ export interface CandidateApplication {
   stages: VacancyStage[];
   /** The process_stage.id the candidate is currently at, or null. */
   currentStageId: number | null;
+  /** The stage the candidate had reached when rejected (current_stage_id is nulled on rejection). */
+  rejectedAtStageId: number | null;
   salaryExpectation: number;
   slotStatus: 'pending_selection' | 'confirmed' | null;
   /** Present when the candidate has an open interview offer to respond to. */

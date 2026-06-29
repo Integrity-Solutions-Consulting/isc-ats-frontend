@@ -62,6 +62,7 @@ interface BackendApplication {
   candidate_id: number;
   status_id: number;
   current_stage_id: number | null;
+  rejected_at_stage_id: number | null;
   match_score: number | null;
   applied_at: string;
   is_active: boolean;
@@ -168,6 +169,7 @@ export async function GET() {
         status: deriveCandidateStatus(app.status_id, app.current_stage_id, stages, statusCodeById),
         stages,
         currentStageId: app.current_stage_id,
+        rejectedAtStageId: app.rejected_at_stage_id,
         salaryExpectation: 0,
         slotStatus: offer
           ? ("pending_selection" as const)

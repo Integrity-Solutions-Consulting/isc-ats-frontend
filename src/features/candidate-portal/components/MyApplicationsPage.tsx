@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Calendar, Clipboard, Clock } from 'lucide-react';
+import { Calendar, Clipboard, Clock, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -118,6 +118,12 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
   const currentStageIndex = (!isRejected && app.currentStageId != null)
     ? stages.findIndex((s) => s.id === app.currentStageId)
     : -1;
+  // When rejected, current_stage_id is nulled, so the last stage the candidate
+  // reached comes from rejectedAtStageId. -1 when unknown (older data) → the
+  // stepper just shows the detached ✕ with no filled stages.
+  const reachedIndex = (isRejected && app.rejectedAtStageId != null)
+    ? stages.findIndex((s) => s.id === app.rejectedAtStageId)
+    : -1;
 
   return (
     <div className="bg-surface border border-border rounded-lg p-5 flex flex-col gap-4">
@@ -127,7 +133,7 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
       {stages.length > 0 && (
         <div className="flex items-center flex-wrap gap-y-2">
           {stages.map((stage, idx) => {
-            const isPast = !isRejected && idx < currentStageIndex;
+            const isPast = isRejected ? idx <= reachedIndex : idx < currentStageIndex;
             const isCurrent = !isRejected && idx === currentStageIndex;
             const isLast = idx === stages.length - 1;
 
@@ -154,7 +160,9 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
                   <div
                     className={cn(
                       'h-0.5 flex-1 mx-0.5',
-                      !isRejected && idx < currentStageIndex ? 'bg-primary-200' : 'bg-surface-2',
+                      (isRejected ? idx < reachedIndex : idx < currentStageIndex)
+                        ? 'bg-primary-200'
+                        : 'bg-surface-2',
                     )}
                   />
                 )}
@@ -264,6 +272,16 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
       {app.status === 'hired' && (
         <div className="bg-success/10 border border-success/30 rounded-md px-4 py-3 text-sm text-ink">
           Felicitaciones. Fuiste seleccionado para esta posición.
+        </div>
+      )}
+
+      {isRejected && (
+        <div className="bg-danger/10 border border-danger/30 rounded-md px-4 py-3 flex items-start gap-3 text-sm text-ink">
+          <X size={16} className="text-danger shrink-0 mt-0.5" />
+          <span>
+            No fuiste seleccionado para esta posición. Agradecemos tu interés y te
+            animamos a postular a otras vacantes.
+          </span>
         </div>
       )}
     </div>
