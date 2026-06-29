@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { backendGet, backendPatch, backendPost } from "@/lib/backendFetch";
+import { backendGet, backendPatch, backendPost, BackendError } from "@/lib/backendFetch";
 import { decodeUserId } from "@/lib/decodeUserId";
 import { setSessionUserCookie } from "@/lib/sessionCookie";
 import type { SessionUserPayload } from "@/lib/sessionCookie";
@@ -216,6 +216,17 @@ export async function POST(request: Request) {
         payload,
       );
     } catch (postError: unknown) {
+      // Validation rejected by the backend (e.g. an invalid phone the browser let
+      // through) → surface the backend's Spanish reason as a 422, never a generic
+      // 500. Strip Pydantic's "Value error, " prefix so the message reads clean.
+      if (postError instanceof BackendError && postError.status === 422) {
+        const reason = postError.detail.replace(/^Value error,\s*/i, "");
+        return NextResponse.json(
+          { error: reason || "Revisá los datos ingresados." },
+          { status: 422 },
+        );
+      }
+
       const msg = postError instanceof Error ? postError.message : String(postError);
       if (!msg.includes("409")) throw postError;
 
@@ -243,7 +254,6 @@ export async function POST(request: Request) {
       }
 
       // Scenario A: same user re-submitting → update the existing record
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { user_id: _uid, ...patchPayload } = payload;
       result = await backendPatch<Record<string, unknown>>(
         `/recruitment/candidates/${candidateId}`,

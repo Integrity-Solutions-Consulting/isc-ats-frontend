@@ -91,6 +91,7 @@ export function OnboardingPage() {
           if (candidateId) {
             const fd = new FormData();
             fd.append('file', cvFile);
+            fd.append('entity_type', 'cv');
             const uploadRes = await fetch('/api/candidate/upload', { method: 'POST', body: fd });
             if (uploadRes.ok) {
               const uploaded = (await uploadRes.json()) as { id: number };
@@ -109,8 +110,12 @@ export function OnboardingPage() {
       // Robust redirect: the server re-issues session-user with has_profile: true
       // in the profile POST response — window.location picks up the fresh cookie
       window.location.href = ROUTES.candidato.vacantes;
-    } catch {
-      setError('Ocurrió un error al guardar tus datos. Por favor, intentá de nuevo.');
+    } catch (err) {
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : 'Ocurrió un error al guardar tus datos. Por favor, intentá de nuevo.',
+      );
       setSubmitting(false);
     }
   };
