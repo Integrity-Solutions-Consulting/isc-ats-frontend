@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { setSessionUserCookie } from "@/lib/sessionCookie";
+import { setAuthTokenCookies } from "@/lib/authCookies";
 import { clientIpHeader } from "@/lib/clientIp";
 
 const BACKEND = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000/api/v1";
@@ -89,16 +90,9 @@ export async function POST(request: NextRequest) {
     user: { name, initials, role, has_profile: tokens.has_profile },
   });
 
-  const isProd = process.env.NODE_ENV === "production";
-  const base = { httpOnly: true, secure: isProd, sameSite: "lax" as const, path: "/" };
-
-  response.cookies.set("access-token", tokens.access_token, {
-    ...base,
-    maxAge: 60 * 30, // 30 min — matches backend ACCESS_TOKEN_EXPIRE_MINUTES
-  });
-  response.cookies.set("refresh-token", tokens.refresh_token, {
-    ...base,
-    maxAge: 60 * 60 * 24 * 7, // 7 days — matches backend REFRESH_TOKEN_EXPIRE_DAYS
+  setAuthTokenCookies(response.cookies, {
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token,
   });
   // Non-httpOnly: read client-side by layouts and components that need display info.
   setSessionUserCookie(response.cookies, {

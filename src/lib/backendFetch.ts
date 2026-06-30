@@ -1,7 +1,58 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { setAuthTokenCookies, type AuthTokenPair } from "@/lib/authCookies";
 
 const BASE = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000/api/v1";
+
+// Single-flight refresh: a burst of parallel route-handler calls that all hit an
+// expired access token must trigger ONE refresh, not one each — the backend
+// rotates (revokes) the refresh token on use, so concurrent refreshes would race
+// and all but the first would fail against an already-revoked token.
+let refreshInFlight: Promise<string | null> | null = null;
+
+function refreshAccessToken(): Promise<string | null> {
+  if (!refreshInFlight) {
+    refreshInFlight = doRefresh().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+}
+
+/**
+ * Exchange the refresh-token cookie for a fresh token pair and persist it.
+ * Returns the new access token, or null if there is no refresh token or the
+ * backend rejects it. Cookie writes only succeed in writable contexts (route
+ * handlers / server actions); in a server component the write throws and is
+ * swallowed — the new token still serves the in-flight request.
+ */
+async function doRefresh(): Promise<string | null> {
+  const store = await cookies();
+  const refreshToken = store.get("refresh-token")?.value;
+  if (!refreshToken) return null;
+
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+      cache: "no-store",
+    });
+  } catch {
+    return null;
+  }
+  if (!res.ok) return null;
+
+  const tokens = (await res.json()) as AuthTokenPair;
+  try {
+    setAuthTokenCookies(store, tokens);
+  } catch {
+    // Server-component context: cookies are read-only here. The token is still
+    // returned for the current retry; the proxy persists rotation on navigation.
+  }
+  return tokens.access_token ?? null;
+}
 
 /**
  * A failed backend response, carrying its HTTP status and the human-readable
@@ -62,23 +113,36 @@ export function backendErrorResponse(error: unknown): NextResponse {
 async function sendRequest<T>(
   path: string,
   method: string,
-  body?: any,
+  body?: unknown,
   init?: RequestInit,
 ): Promise<T> {
   const store = await cookies();
   const token = store.get("access-token")?.value;
 
-  const res = await fetch(`${BASE}${path}`, {
-    ...init,
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(init?.headers ?? {}),
-    },
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-    cache: "no-store",
-  });
+  const doFetch = (bearer: string | undefined) =>
+    fetch(`${BASE}${path}`, {
+      ...init,
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+        ...(init?.headers ?? {}),
+      },
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      cache: "no-store",
+    });
+
+  let res = await doFetch(token);
+
+  // Access token expired → refresh once and retry. The 401 is raised at the
+  // auth layer before the handler runs, so re-issuing the request is safe even
+  // for writes. Never refresh-loop on the auth endpoints themselves.
+  if (res.status === 401 && !path.startsWith("/auth/")) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      res = await doFetch(newToken);
+    }
+  }
 
   if (!res.ok) {
     const responseText = await res.text().catch(() => "");
@@ -101,11 +165,11 @@ export async function backendGet<T>(path: string, init?: RequestInit): Promise<T
   return sendRequest<T>(path, "GET", undefined, init);
 }
 
-export async function backendPost<T>(path: string, body: any, init?: RequestInit): Promise<T> {
+export async function backendPost<T>(path: string, body: unknown, init?: RequestInit): Promise<T> {
   return sendRequest<T>(path, "POST", body, init);
 }
 
-export async function backendPatch<T>(path: string, body: any, init?: RequestInit): Promise<T> {
+export async function backendPatch<T>(path: string, body: unknown, init?: RequestInit): Promise<T> {
   return sendRequest<T>(path, "PATCH", body, init);
 }
 

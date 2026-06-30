@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { backendGet, backendPost } from "@/lib/backendFetch";
+import { backendGet, backendPost, backendErrorResponse } from "@/lib/backendFetch";
 
 interface BackendPage<T> {
   items: T[];
@@ -76,7 +76,7 @@ export async function GET() {
 
     return NextResponse.json(records);
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    return backendErrorResponse(error);
   }
 }
 
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     });
 
     const categoryIdByCode = new Map(categories.items.map((p) => [p.code, p.id]));
-    const itemPromises: Promise<any>[] = [];
+    const itemPromises: Promise<unknown>[] = [];
     const categoriesList = ["knowledge", "tools", "skills", "certifications"] as const;
 
     for (const cat of categoriesList) {
@@ -131,6 +131,6 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    return backendErrorResponse(error);
   }
 }
