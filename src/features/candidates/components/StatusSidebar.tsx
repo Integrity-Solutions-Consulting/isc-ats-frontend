@@ -87,10 +87,8 @@ export function StatusSidebar({
   const currentStageIndex = normalStages.findIndex((s) => s.id === application.stageId);
   const nextStage = currentStageIndex >= 0 ? normalStages[currentStageIndex + 1] : undefined;
 
-  const isOnFinalOrRejected =
-    currentStage?.type === 'final' ||
-    currentStage?.type === 'rejected' ||
-    application.stageId === 'stage-rejected';
+  const isRejected = currentStage?.type === 'rejected';
+  const isOnFinalOrRejected = currentStage?.type === 'final' || isRejected;
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const statusId = Number(e.target.value);
@@ -230,9 +228,13 @@ export function StatusSidebar({
             variant="destructive"
             className="w-full"
             onClick={handleReject}
-            disabled={isLoading || application.stageId === 'stage-rejected'}
+            disabled={isLoading || isRejected}
           >
-            {rejectMutation.isPending ? 'Rechazando…' : 'Rechazar candidato'}
+            {isRejected
+              ? 'Candidato rechazado'
+              : rejectMutation.isPending
+                ? 'Rechazando…'
+                : 'Rechazar candidato'}
           </Button>
         </div>
       </div>
@@ -262,11 +264,7 @@ export function StatusSidebar({
     {showScheduleModal && (
       <AgendarEntrevistaModal
         applicationId={parseInt(application.id, 10)}
-        processStageId={
-          application.stageId === 'rejected'
-            ? undefined
-            : parseInt(application.stageId, 10)
-        }
+        processStageId={isRejected ? undefined : parseInt(application.stageId, 10)}
         candidateName={candidateName}
         position={position}
         onClose={() => setShowScheduleModal(false)}
