@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { clientIpHeader } from "@/lib/clientIp";
 
 const BACKEND = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000/api/v1";
 
@@ -18,6 +19,7 @@ export async function POST(request: Request) {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
+        ...clientIpHeader(request),
         // Do NOT set Content-Type — fetch sets it automatically with the boundary
       },
       body: formData,

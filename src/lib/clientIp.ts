@@ -1,5 +1,3 @@
-import type { NextRequest } from "next/server";
-
 /**
  * Header that forwards the real client IP to the backend so per-IP rate limits
  * key on the actual user, not on this Next.js proxy (the backend's only peer).
@@ -10,10 +8,13 @@ import type { NextRequest } from "next/server";
  * backend honours `X-Real-Client-IP` only when TRUST_PROXY_HEADERS is on, and
  * this proxy always sets it, so clients cannot spoof it end-to-end.
  *
+ * Takes the base `Request` (not `NextRequest`) since it only reads a header, so
+ * any route handler can pass its request regardless of the declared type.
+ *
  * Returns an empty object when no forwarded IP is present (e.g. local dev), so
  * the backend falls back to the peer address.
  */
-export function clientIpHeader(request: NextRequest): Record<string, string> {
+export function clientIpHeader(request: Request): Record<string, string> {
   const xff = request.headers.get("x-forwarded-for");
   if (!xff) return {};
   const parts = xff.split(",").map((p) => p.trim()).filter(Boolean);

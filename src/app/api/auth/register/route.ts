@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { clientIpHeader } from "@/lib/clientIp";
 
 const BACKEND = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000/api/v1";
 
@@ -15,10 +16,10 @@ export async function POST(request: NextRequest) {
   try {
     backendRes = await fetch(`${BACKEND}/auth/register`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...clientIpHeader(request) },
       body: JSON.stringify({ email, password }),
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: "No se pudo conectar con el servidor" },
       { status: 503 },

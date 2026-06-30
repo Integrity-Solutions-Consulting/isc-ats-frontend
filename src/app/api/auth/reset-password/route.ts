@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { clientIpHeader } from "@/lib/clientIp";
 
 const BACKEND = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000/api/v1";
 
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
   try {
     backendRes = await fetch(`${BACKEND}/auth/reset-password`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...clientIpHeader(request) },
       body: JSON.stringify({ token, new_password: password }),
     });
   } catch {
