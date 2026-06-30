@@ -284,7 +284,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
         {/* Row 2: Cédula (read-only) | Fecha de nacimiento (read-only) */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pb-2.5 border-b border-surface-2">
           <div>
-            <FieldLabel>Cédula</FieldLabel>
+            <FieldLabel>{profile.docType === 'passport' ? 'Pasaporte' : 'Cédula'}</FieldLabel>
             <FieldValue>{profile.idNumber}</FieldValue>
           </div>
           <div>

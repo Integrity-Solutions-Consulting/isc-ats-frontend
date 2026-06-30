@@ -12,6 +12,7 @@ interface BackendCandidateExpanded {
   email: string;
   first_name: string;
   last_name: string;
+  doc_type: string;
   cedula: string | null;
   birth_date: string | null;
   phone: string | null;
@@ -75,6 +76,7 @@ export async function GET() {
       lastName: candidate.last_name,
       email: candidate.email,
       phone: candidate.phone ?? "",
+      docType: candidate.doc_type === "passport" ? "passport" : "cedula",
       idNumber: candidate.cedula ?? "",
       birthDate: candidate.birth_date ?? "",
       city: candidate.city ?? "",
@@ -171,6 +173,7 @@ export async function POST(request: Request) {
     const {
       firstName,
       lastName,
+      docType,
       idNumber,
       birthDate,
       phone,
@@ -192,6 +195,7 @@ export async function POST(request: Request) {
       user_id: userId,
       first_name: firstName,
       last_name: lastName,
+      doc_type: docType === "passport" ? "passport" : "cedula",
       cedula: idNumber || null,
       birth_date: birthDate || null,
       phone: phone || null,

@@ -90,6 +90,7 @@ export interface CandidateProfile {
   lastName: string;
   email: string;
   phone: string;
+  docType: 'cedula' | 'passport';
   idNumber: string;
   birthDate: string;
   city: string;

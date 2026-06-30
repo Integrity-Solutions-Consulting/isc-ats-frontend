@@ -57,6 +57,7 @@ export function OnboardingPage() {
       const body = {
         firstName: step1Values.firstName,
         lastName: step1Values.lastName,
+        docType: step1Values.docType,
         idNumber: step1Values.idNumber,
         birthDate: step1Values.birthDate,
         phone: step1Values.phone,
