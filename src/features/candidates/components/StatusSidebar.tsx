@@ -16,6 +16,7 @@ import {
   useUpdateStageStatus,
 } from '@/features/candidates/hooks/useCandidates';
 import type { CandidateApplication, OtherApplication } from '@/features/candidates/types';
+import { getTalentPoolMembership } from '@/features/talent-pool/api/talentPoolApi';
 import { AgendarEntrevistaModal } from '@/features/interviews/components/AgendarEntrevistaModal';
 
 interface StatusSidebarProps {
@@ -55,6 +56,15 @@ export function StatusSidebar({
   const rejectMutation = useRejectCandidate();
   const talentPoolMutation = useAddToTalentPool();
   const [talentPoolAdded, setTalentPoolAdded] = useState(false);
+
+  // Derive the "already saved" state from the server so the button stays correct
+  // after a reload — and never offers a duplicate add for the same vacancy.
+  const { data: talentMembership } = useQuery({
+    queryKey: ['talent-pool', 'membership', application.candidateId, vacancyId],
+    queryFn: () => getTalentPoolMembership(application.candidateId, vacancyId),
+    staleTime: 0,
+  });
+  const alreadyInTalentPool = talentPoolAdded || talentMembership?.inPool === true;
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [generatingWord, setGeneratingWord] = useState(false);
 
@@ -114,7 +124,14 @@ export function StatusSidebar({
   const handleAddToTalentPool = () => {
     talentPoolMutation.mutate(
       { candidateId: application.candidateId, vacancyId },
-      { onSuccess: () => setTalentPoolAdded(true) },
+      {
+        onSuccess: () => setTalentPoolAdded(true),
+        // 409 = already in the pool for this vacancy: settle into the added
+        // state instead of surfacing it as an error.
+        onError: (e) => {
+          if ((e as { status?: number }).status === 409) setTalentPoolAdded(true);
+        },
+      },
     );
   };
 
@@ -209,15 +226,15 @@ export function StatusSidebar({
             variant="outline"
             className="w-full"
             onClick={handleAddToTalentPool}
-            disabled={talentPoolAdded || talentPoolMutation.isPending}
+            disabled={alreadyInTalentPool || talentPoolMutation.isPending}
           >
-            {talentPoolAdded
+            {alreadyInTalentPool
               ? 'Añadido al banco de talento'
               : talentPoolMutation.isPending
                 ? 'Añadiendo…'
                 : 'Añadir al banco de talento'}
           </Button>
-          {talentPoolMutation.isError && !talentPoolAdded && (
+          {talentPoolMutation.isError && !alreadyInTalentPool && (
             <p className="text-center text-xs text-danger">
               {talentPoolMutation.error.message}
             </p>

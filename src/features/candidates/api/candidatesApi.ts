@@ -146,6 +146,10 @@ export async function addToTalentPool(
   });
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(data.error || 'No se pudo añadir al banco de talento');
+    const err = new Error(data.error || 'No se pudo añadir al banco de talento') as Error & {
+      status?: number;
+    };
+    err.status = res.status;
+    throw err;
   }
 }
