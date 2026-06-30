@@ -54,5 +54,9 @@ export async function saveProcess(process: Process): Promise<void> {
 }
 
 export async function deleteProcess(id: string): Promise<void> {
-  await fetch(`/api/org/processes/${id}`, { method: 'DELETE' }).catch(() => null);
+  const res = await fetch(`/api/org/processes/${id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { detail?: string; error?: string };
+    throw new Error(data.detail || data.error || 'No se pudo eliminar el proceso.');
+  }
 }

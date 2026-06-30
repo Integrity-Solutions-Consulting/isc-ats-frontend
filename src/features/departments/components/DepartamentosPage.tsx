@@ -81,7 +81,10 @@ export function DepartamentosPage() {
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/org/departments/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Error deleting department');
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { detail?: string; error?: string };
+        throw new Error(body.detail ?? body.error ?? 'No se pudo desactivar el departamento.');
+      }
     },
     onSuccess: () => { void qc.invalidateQueries({ queryKey: QUERY_KEY }); },
   });
@@ -124,6 +127,15 @@ export function DepartamentosPage() {
         <h1 className="text-2xl font-bold text-ink">Departamentos</h1>
         <Button onClick={() => setDrawer('new')}><Plus className="mr-1.5 size-4" />Nuevo departamento</Button>
       </div>
+
+      {deleteMut.isError && (
+        <div className="flex items-start justify-between gap-3 rounded-md bg-danger/10 px-4 py-3 text-sm text-danger">
+          <span>{(deleteMut.error as Error).message}</span>
+          <button type="button" onClick={() => deleteMut.reset()} aria-label="Cerrar" className="shrink-0">
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
         <table className="w-full text-sm">

@@ -65,7 +65,10 @@ export function ContactosPage() {
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/org/contacts/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Error deleting contact');
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { detail?: string; error?: string };
+        throw new Error(body.detail ?? body.error ?? 'No se pudo eliminar el contacto.');
+      }
     },
     onSuccess: () => { void qc.invalidateQueries({ queryKey: CONTACTS_KEY }); },
   });
@@ -228,6 +231,15 @@ export function ContactosPage() {
           ]}
         />
       </FilterBar>
+
+      {deleteMut.isError && (
+        <div className="flex items-start justify-between gap-3 rounded-md bg-danger/10 px-4 py-3 text-sm text-danger">
+          <span>{(deleteMut.error as Error).message}</span>
+          <button type="button" onClick={() => deleteMut.reset()} aria-label="Cerrar" className="shrink-0">
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
 
       <DataTable columns={columns} data={paginated} rowKey={(c) => c.id}
         rowClassName={(c) => (c.id === editingId ? 'bg-surface-2' : '')}

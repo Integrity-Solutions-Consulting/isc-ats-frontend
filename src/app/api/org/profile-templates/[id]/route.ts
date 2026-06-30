@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { backendGet, backendPatch, backendErrorResponse } from "@/lib/backendFetch";
+import { backendGet, backendPatch, backendDelete, backendErrorResponse } from "@/lib/backendFetch";
 import {
   buildItemsByCategory, replaceItems, CATEGORY_KEYS,
   type BackendPage, type BackendParam, type BackendTemplate, type BackendTemplateItem, type CategoryKey,
@@ -78,7 +78,10 @@ export async function DELETE(
 ) {
   const { id } = await params;
   try {
-    await backendPatch(`/org/profile-templates/${Number(id)}`, { is_active: false });
+    // Use the backend's guarded DELETE (soft-deletes) instead of a raw is_active
+    // PATCH, so a template still referenced by a live vacancy is blocked (409)
+    // rather than silently deactivated.
+    await backendDelete(`/org/profile-templates/${Number(id)}`);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     return backendErrorResponse(error);

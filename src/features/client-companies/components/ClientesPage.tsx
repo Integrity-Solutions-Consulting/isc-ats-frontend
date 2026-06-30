@@ -55,7 +55,10 @@ export function ClientesPage() {
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/org/client-companies/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Error deleting client');
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { detail?: string; error?: string };
+        throw new Error(body.detail ?? body.error ?? 'No se pudo desactivar el cliente.');
+      }
     },
     onSuccess: () => { void qc.invalidateQueries({ queryKey: QUERY_KEY }); },
   });
@@ -176,6 +179,15 @@ export function ClientesPage() {
           ]}
         />
       </FilterBar>
+
+      {deleteMut.isError && (
+        <div className="flex items-start justify-between gap-3 rounded-md bg-danger/10 px-4 py-3 text-sm text-danger">
+          <span>{(deleteMut.error as Error).message}</span>
+          <button type="button" onClick={() => deleteMut.reset()} aria-label="Cerrar" className="shrink-0">
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
 
       <DataTable columns={columns} data={paginated} rowKey={(c) => c.id}
         rowClassName={(c) => (c.id === editingId ? 'bg-surface-2' : '')}

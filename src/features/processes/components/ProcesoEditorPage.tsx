@@ -75,6 +75,7 @@ export function ProcesoEditorPage({ id }: Props) {
   const [editing, setEditing] = useState(isNew);
   const [isSaving, setIsSaving] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const setPageTitle = useBreadcrumbStore((s) => s.setPageTitle);
 
@@ -114,6 +115,7 @@ export function ProcesoEditorPage({ id }: Props) {
 
   const handleSave = async () => {
     setIsSaving(true);
+    setActionError(null);
     const withFixed: Process = {
       ...draft,
       stages: [
@@ -123,22 +125,32 @@ export function ProcesoEditorPage({ id }: Props) {
         { id: 'fixed-rejected', ...FIXED_REJECTED },
       ],
     };
-    await saveProcess(withFixed);
-    setSaved(draft);
-    setIsSaving(false);
-    setEditing(false);
-    if (isNew) router.push(ROUTES.configuracion.procesos);
+    try {
+      await saveProcess(withFixed);
+      setSaved(draft);
+      setEditing(false);
+      if (isNew) router.push(ROUTES.configuracion.procesos);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'No se pudo guardar el proceso.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = async () => {
     if (!id) return;
+    setActionError(null);
     setConfirmDeleteOpen(true);
   };
 
   const confirmDelete = async () => {
     if (!id) return;
-    await deleteProcess(id);
-    router.push(ROUTES.configuracion.procesos);
+    try {
+      await deleteProcess(id);
+      router.push(ROUTES.configuracion.procesos);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'No se pudo eliminar el proceso.');
+    }
   };
 
   const handleReactivate = async () => {
@@ -167,6 +179,12 @@ export function ProcesoEditorPage({ id }: Props) {
   return (
     <>
     <div className="flex flex-1 flex-col gap-5">
+
+      {actionError && (
+        <div className="rounded-md bg-danger/10 px-4 py-3 text-sm text-danger">
+          {actionError}
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -356,7 +374,7 @@ export function ProcesoEditorPage({ id }: Props) {
       open={confirmDeleteOpen}
       onOpenChange={setConfirmDeleteOpen}
       title="¿Eliminar proceso?"
-      description="Esta acción desactivará el proceso de forma permanente. Las vacantes que lo usan no se verán afectadas."
+      description="Esta acción desactivará el proceso. Si una vacante activa lo está usando, no podrá eliminarse."
       confirmLabel="Eliminar"
       variant="danger"
       onConfirm={confirmDelete}

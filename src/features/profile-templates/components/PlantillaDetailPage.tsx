@@ -52,8 +52,10 @@ export function PlantillaDetailPage({ id }: PlantillaDetailPageProps) {
       queryClient.removeQueries({ queryKey: ['profile-templates'] });
       router.push(ROUTES.configuracion.plantillas);
     },
-    onError: () => {
-      setTemplateError('No fue posible eliminar la plantilla. Intentá de nuevo.');
+    onError: (err) => {
+      setTemplateError(
+        err instanceof Error ? err.message : 'No fue posible eliminar la plantilla. Intentá de nuevo.',
+      );
     },
   });
 

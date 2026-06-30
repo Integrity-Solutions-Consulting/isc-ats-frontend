@@ -42,7 +42,10 @@ export async function deleteTemplate(id: string): Promise<void> {
   const res = await fetch(`/api/org/profile-templates/${id}`, {
     method: 'DELETE',
   });
-  if (!res.ok) throw new Error('Error al eliminar la plantilla');
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { detail?: string; error?: string };
+    throw new Error(data.detail || data.error || 'No se pudo eliminar la plantilla.');
+  }
 }
 
 export async function reactivateTemplate(id: string): Promise<void> {
