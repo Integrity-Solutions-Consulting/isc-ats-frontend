@@ -1,12 +1,14 @@
 import { Save, Trash2 } from 'lucide-react';
 import { Button } from '@/design-system/ui/button';
 import { Input } from '@/design-system/ui/input';
-import { MODULES, type ModuleDef, TOTAL_PERMS } from './permissions';
+import { type ModuleGroup } from './permissions';
 import { type Role } from './mockRoles';
 import { PermissionModuleCard } from './PermissionModuleCard';
 
 export function RoleEditor({
   role,
+  modules,
+  totalPerms,
   dirty,
   onUpdate,
   onTogglePerm,
@@ -16,10 +18,12 @@ export function RoleEditor({
   onSave,
 }: {
   role: Role;
+  modules: ModuleGroup[];
+  totalPerms: number;
   dirty: boolean;
   onUpdate: (patch: Partial<Omit<Role, 'id'>>) => void;
-  onTogglePerm: (permId: string, checked: boolean) => void;
-  onToggleModule: (mod: ModuleDef, enable: boolean) => void;
+  onTogglePerm: (code: string, checked: boolean) => void;
+  onToggleModule: (mod: ModuleGroup, enable: boolean) => void;
   onDiscard: () => void;
   onDelete: () => void;
   onSave: () => void;
@@ -47,7 +51,7 @@ export function RoleEditor({
         </div>
         <div className="flex shrink-0 flex-col items-center rounded-md border border-border px-3 py-1.5 text-center">
           <span className="text-xs text-ink-muted">permisos</span>
-          <span className="text-sm font-semibold text-ink">{role.permissionIds.size} / {TOTAL_PERMS}</span>
+          <span className="text-sm font-semibold text-ink">{role.permissionIds.size} / {totalPerms}</span>
         </div>
         <div className="flex shrink-0 flex-col items-center rounded-md border border-border px-3 py-1.5 text-center">
           <span className="text-xs text-ink-muted">usuarios</span>
@@ -55,16 +59,23 @@ export function RoleEditor({
         </div>
       </div>
 
+      {role.isSystem && (
+        <div className="border-b border-border bg-surface px-5 py-2 text-xs text-ink-muted">
+          Este es un rol del sistema: sus permisos son fijos y no pueden modificarse.
+        </div>
+      )}
+
       {/* Permissions grid */}
       <div className="flex-1 overflow-y-auto p-5">
-        <div className="grid grid-cols-2 gap-4">
-          {MODULES.map((mod) => (
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          {modules.map((mod) => (
             <PermissionModuleCard
-              key={mod.id}
+              key={mod.key}
               mod={mod}
-              role={role}
+              granted={role.permissionIds}
               onTogglePerm={onTogglePerm}
               onToggleModule={onToggleModule}
+              disabled={role.isSystem}
             />
           ))}
         </div>

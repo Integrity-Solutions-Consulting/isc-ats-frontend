@@ -1,38 +1,47 @@
 import { backendGet } from "@/lib/backendFetch";
 
-/** Maps frontend permission keys to backend permission codes. */
-export const FRONTEND_TO_BACKEND: Record<string, string> = {
-  "vacancies.view": "recruitment.vacancies.read",
-  "vacancies.create": "recruitment.vacancies.create",
-  "vacancies.edit": "recruitment.vacancies.update",
-  "vacancies.delete": "recruitment.vacancies.delete",
-  "vacancies.publish": "recruitment.vacancies.update",
-  "candidates.view": "recruitment.candidates.read",
-  "candidates.move": "recruitment.applications.update",
-  "candidates.notes": "recruitment.application_notes.create",
-  "candidates.reject": "recruitment.applications.update",
-  "talent.view": "talent.talent_pool.read",
-  "talent.add": "talent.talent_pool.create",
-  "talent.remove": "talent.talent_pool.delete",
-  "processes.view": "org.processes.read",
-  "processes.create": "org.processes.create",
-  "processes.edit": "org.processes.update",
-  "processes.delete": "org.processes.delete",
-  "reports.view": "recruitment.vacancies.read",
-  "users.view": "auth.users.read",
-  "users.create": "auth.users.create",
-  "users.edit": "auth.users.update",
-  "users.delete": "auth.users.delete",
-  "roles.manage": "auth.roles.update",
-  "config.manage": "org.parameters.update",
-};
+export interface PermissionSyncPlan {
+  toGrant: number[];
+  toRevoke: number[];
+}
 
-export const BACKEND_TO_FRONTEND: Record<string, string[]> = {};
-for (const [fe, be] of Object.entries(FRONTEND_TO_BACKEND)) {
-  if (!BACKEND_TO_FRONTEND[be]) {
-    BACKEND_TO_FRONTEND[be] = [];
+/**
+ * Computes which backend permission IDs to grant/revoke for a role given the
+ * permission codes the user selected in the Roles screen.
+ *
+ * Critical invariant: only permissions whose code is in `knownCodes` (the
+ * catalog the UI actually rendered) are ever revoked. Any permission the role
+ * holds whose code is outside that set is preserved untouched — so a partial or
+ * filtered catalog can never silently strip permissions the screen didn't show.
+ */
+export function computeRolePermissionSync(
+  currentPermissions: { id: number; code: string }[],
+  targetCodes: string[],
+  permissionIdByCode: Map<string, number>,
+  knownCodes: ReadonlySet<string>,
+): PermissionSyncPlan {
+  // Resolve the selected codes to backend permission IDs.
+  const targetIds = new Set<number>();
+  for (const code of targetCodes) {
+    const id = permissionIdByCode.get(code);
+    if (id !== undefined) targetIds.add(id);
   }
-  BACKEND_TO_FRONTEND[be].push(fe);
+
+  const currentIds = new Set(currentPermissions.map((p) => p.id));
+
+  const toGrant: number[] = [];
+  for (const id of targetIds) {
+    if (!currentIds.has(id)) toGrant.push(id);
+  }
+
+  const toRevoke: number[] = [];
+  for (const perm of currentPermissions) {
+    // Never touch a permission the catalog did not surface.
+    if (!knownCodes.has(perm.code)) continue;
+    if (!targetIds.has(perm.id)) toRevoke.push(perm.id);
+  }
+
+  return { toGrant, toRevoke };
 }
 
 interface BackendUserPage {

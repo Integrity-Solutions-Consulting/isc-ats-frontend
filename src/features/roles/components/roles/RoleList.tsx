@@ -1,17 +1,17 @@
 import { cn } from '@/shared/utils';
-import { TOTAL_PERMS } from './permissions';
 import { type Role } from './mockRoles';
 import { permFraction } from './helpers';
 
-export function RoleList({ roles, selectedId, onSelect }: {
+export function RoleList({ roles, selectedId, totalPerms, onSelect }: {
   roles: Role[];
   selectedId: string;
+  totalPerms: number;
   onSelect: (id: string) => void;
 }) {
   return (
     <aside className="flex w-64 shrink-0 flex-col overflow-y-auto border-r border-border">
       {roles.map((role) => {
-        const pct = permFraction(role);
+        const pct = permFraction(role.permissionIds.size, totalPerms);
         return (
           <button
             key={role.id}
@@ -38,7 +38,7 @@ export function RoleList({ roles, selectedId, onSelect }: {
                 <div className="h-full rounded-full bg-primary-400" style={{ width: `${pct}%` }} />
               </div>
               <span className="shrink-0 text-xs text-ink-subtle">
-                {role.permissionIds.size}/{TOTAL_PERMS}
+                {role.permissionIds.size}/{totalPerms}
               </span>
             </div>
             <p className="mt-1 text-xs text-ink-subtle">{role.usersCount} usuario{role.usersCount !== 1 ? 's' : ''}</p>

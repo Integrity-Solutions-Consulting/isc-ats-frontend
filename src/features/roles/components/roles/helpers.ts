@@ -1,14 +1,20 @@
-import { type ModuleDef, TOTAL_PERMS } from './permissions';
-import { type Role } from './mockRoles';
+import { type ModuleGroup, moduleCodes } from './permissions';
 
-export function permFraction(role: Role): number {
-  return Math.round((role.permissionIds.size / TOTAL_PERMS) * 100);
+/** Whether a role has all / some / none of a module's permissions granted. */
+export function moduleGranted(
+  granted: Set<string>,
+  mod: ModuleGroup,
+): 'all' | 'partial' | 'none' {
+  const codes = moduleCodes(mod);
+  if (codes.length === 0) return 'none';
+  const on = codes.filter((code) => granted.has(code)).length;
+  if (on === 0) return 'none';
+  if (on === codes.length) return 'all';
+  return 'partial';
 }
 
-export function moduleGranted(role: Role, mod: ModuleDef): 'all' | 'partial' | 'none' {
-  const ids = mod.permissions.map((p) => p.id);
-  const on = ids.filter((id) => role.permissionIds.has(id)).length;
-  if (on === ids.length) return 'all';
-  if (on > 0) return 'partial';
-  return 'none';
+/** Percentage of the catalog a role has granted (0–100). */
+export function permFraction(grantedCount: number, total: number): number {
+  if (total === 0) return 0;
+  return Math.round((grantedCount / total) * 100);
 }

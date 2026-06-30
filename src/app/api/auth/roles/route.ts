@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { backendGet, backendPost } from "@/lib/backendFetch";
-import { BACKEND_TO_FRONTEND, getRoleUserCounts } from "@/lib/rolePermissions";
+import { getRoleUserCounts } from "@/lib/rolePermissions";
 
 interface BackendPage<T> {
   items: T[];
@@ -36,13 +36,8 @@ export async function GET() {
           perms = await backendGet<BackendPermission[]>(`/auth/roles/${role.id}/permissions`);
         } catch {}
 
-        const permissionIdsSet = new Set<string>();
-        for (const p of perms) {
-          const frontKeys = BACKEND_TO_FRONTEND[p.code] ?? [];
-          for (const key of frontKeys) {
-            permissionIdsSet.add(key);
-          }
-        }
+        // Permission identity is the backend code itself — no frontend mapping.
+        const permissionIds = perms.map((p) => p.code);
 
         return {
           id: String(role.id),
@@ -50,7 +45,7 @@ export async function GET() {
           description: role.description ?? "",
           usersCount: userCounts.get(role.name) ?? 0,
           isSystem: role.name === "admin" || role.name === "candidate",
-          permissionIds: Array.from(permissionIdsSet),
+          permissionIds,
           isActive: role.is_active,
         };
       }),

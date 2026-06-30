@@ -1,14 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, AlertCircle, X } from 'lucide-react';
 import { Button } from '@/design-system/ui/button';
-import { type ModuleDef } from './roles/permissions';
+import {
+  buildPermissionTree,
+  moduleCodes,
+  countPermissions,
+  type ModuleGroup,
+} from './roles/permissions';
 import { type Role } from './roles/mockRoles';
 import { RoleList } from './roles/RoleList';
 import { RoleEditor } from './roles/RoleEditor';
 import {
   useRoles,
+  usePermissionCatalog,
   useCreateRole,
   useUpdateRole,
   useDeleteRole,
@@ -20,20 +26,26 @@ function copyRole(r: Role): Role {
 
 export function RolesPage() {
   const { data: roles = [], isLoading, error } = useRoles();
+  const { data: catalog = [], isLoading: catalogLoading } = usePermissionCatalog();
   const createMutation = useCreateRole();
   const updateMutation = useUpdateRole();
   const deleteMutation = useDeleteRole();
+
+  const modules = useMemo(() => buildPermissionTree(catalog), [catalog]);
+  const totalPerms = useMemo(() => countPermissions(modules), [modules]);
 
   const [selectedId, setSelectedId] = useState<string>('');
   const [draftRole, setDraftRole] = useState<Role | null>(null);
   const [dirty, setDirty] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Default selection when roles list is loaded
+  // Default selection when roles list is loaded. Intentional server→local sync.
   useEffect(() => {
     if (roles.length > 0 && !selectedId) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setSelectedId(roles[0].id);
       setDraftRole(copyRole(roles[0]));
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [roles, selectedId]);
 
@@ -42,6 +54,9 @@ export function RolesPage() {
     if (selectedId && roles.length > 0) {
       const activeRole = roles.find((r) => r.id === selectedId);
       if (activeRole && !dirty) {
+        // Re-sync the editable draft when the roles list refetches after a
+        // mutation. Intentional server→local sync; not a render derivation.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setDraftRole(copyRole(activeRole));
       }
     }
@@ -56,20 +71,20 @@ export function RolesPage() {
     setDirty(true);
   }
 
-  function togglePerm(permId: string, checked: boolean) {
+  function togglePerm(code: string, checked: boolean) {
     if (!draftRole) return;
     const next = new Set(draftRole.permissionIds);
-    if (checked) next.add(permId);
-    else next.delete(permId);
+    if (checked) next.add(code);
+    else next.delete(code);
     updateRoleDraft({ permissionIds: next });
   }
 
-  function toggleModule(mod: ModuleDef, enable: boolean) {
+  function toggleModule(mod: ModuleGroup, enable: boolean) {
     if (!draftRole) return;
     const next = new Set(draftRole.permissionIds);
-    mod.permissions.forEach((p) => {
-      if (enable) next.add(p.id);
-      else next.delete(p.id);
+    moduleCodes(mod).forEach((code) => {
+      if (enable) next.add(code);
+      else next.delete(code);
     });
     updateRoleDraft({ permissionIds: next });
   }
@@ -84,8 +99,8 @@ export function RolesPage() {
       setSelectedId(newRole.id);
       setDraftRole(newRole);
       setDirty(false);
-    } catch (e: any) {
-      setErrorMsg(e?.message ?? 'Error al crear el rol');
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : 'Error al crear el rol');
     }
   }
 
@@ -110,8 +125,8 @@ export function RolesPage() {
         },
       });
       setDirty(false);
-    } catch (e: any) {
-      setErrorMsg(e?.message ?? 'Error al guardar el rol');
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : 'Error al guardar el rol');
     }
   }
 
@@ -129,8 +144,8 @@ export function RolesPage() {
         setDraftRole(null);
       }
       setDirty(false);
-    } catch (e: any) {
-      setErrorMsg(e?.message ?? 'Error al eliminar el rol');
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : 'Error al eliminar el rol');
     }
   }
 
@@ -146,7 +161,7 @@ export function RolesPage() {
     }
   }
 
-  if (isLoading && roles.length === 0) {
+  if ((isLoading && roles.length === 0) || (catalogLoading && catalog.length === 0)) {
     return (
       <div className="flex h-full items-center justify-center p-10">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -191,11 +206,13 @@ export function RolesPage() {
         className="flex flex-1 overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
         style={{ minHeight: 520 }}
       >
-        <RoleList roles={roles} selectedId={selectedId} onSelect={selectRole} />
+        <RoleList roles={roles} selectedId={selectedId} totalPerms={totalPerms} onSelect={selectRole} />
 
         {draftRole && (
           <RoleEditor
             role={draftRole}
+            modules={modules}
+            totalPerms={totalPerms}
             dirty={dirty}
             onUpdate={updateRoleDraft}
             onTogglePerm={togglePerm}

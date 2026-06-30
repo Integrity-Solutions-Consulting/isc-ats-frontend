@@ -1,4 +1,19 @@
 import { type Role } from '../components/roles/mockRoles';
+import { type CatalogPermission } from '../components/roles/permissions';
+
+/** Role as returned over the wire by the route handlers (permissions as codes). */
+interface RoleDTO {
+  id: string;
+  name: string;
+  description: string;
+  usersCount: number;
+  isSystem: boolean;
+  permissionIds: string[];
+  isActive: boolean;
+}
+
+/** An Error carrying the originating HTTP status, so callers can branch on it. */
+type HttpError = Error & { status?: number };
 
 async function handleResponse<T>(res: Response, fallbackMsg: string): Promise<T> {
   if (res.ok) {
@@ -10,23 +25,32 @@ async function handleResponse<T>(res: Response, fallbackMsg: string): Promise<T>
     const body = (await res.json()) as { error?: string; detail?: string };
     detail = body.detail ?? body.error ?? fallbackMsg;
   } catch {}
-  const err = new Error(detail);
-  (err as any).status = res.status;
+  const err: HttpError = new Error(detail);
+  err.status = res.status;
   throw err;
 }
 
-function mapRole(r: any): Role {
+function mapRole(r: RoleDTO): Role {
   return {
     ...r,
-    permissionIds: new Set(r.permissionIds as string[]),
-  } as Role;
+    permissionIds: new Set(r.permissionIds),
+  };
+}
+
+export async function listPermissionCatalog(): Promise<CatalogPermission[]> {
+  const res = await fetch('/api/auth/permissions', { cache: 'no-store' });
+  const data = await res.json().catch(() => ({}));
+  if (res.ok) {
+    return data as CatalogPermission[];
+  }
+  throw new Error((data as { error?: string }).error ?? 'Error al cargar el catálogo de permisos');
 }
 
 export async function listRoles(): Promise<Role[]> {
   const res = await fetch('/api/auth/roles', { cache: 'no-store' });
   const data = await res.json().catch(() => ({}));
   if (res.ok) {
-    return (data as any[]).map(mapRole);
+    return (data as RoleDTO[]).map(mapRole);
   }
   throw new Error((data as { error?: string }).error ?? 'Error al cargar los roles');
 }
@@ -37,7 +61,7 @@ export async function createRole(data: { name: string; description: string }): P
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  const role = await handleResponse<any>(res, 'Error al crear el rol');
+  const role = await handleResponse<RoleDTO>(res, 'Error al crear el rol');
   return mapRole(role);
 }
 
@@ -50,7 +74,7 @@ export async function updateRole(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  const role = await handleResponse<any>(res, 'Error al actualizar el rol');
+  const role = await handleResponse<RoleDTO>(res, 'Error al actualizar el rol');
   return mapRole(role);
 }
 
@@ -64,8 +88,8 @@ export async function deleteRole(id: string): Promise<void> {
       const body = (await res.json()) as { error?: string; detail?: string };
       detail = body.detail ?? body.error ?? detail;
     } catch {}
-    const err = new Error(detail);
-    (err as any).status = res.status;
+    const err: HttpError = new Error(detail);
+    err.status = res.status;
     throw err;
   }
 }

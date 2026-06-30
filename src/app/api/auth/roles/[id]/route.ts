@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { backendGet, backendPatch, backendDelete, backendPost } from "@/lib/backendFetch";
-import { FRONTEND_TO_BACKEND, getRoleUserCounts } from "@/lib/rolePermissions";
+import { computeRolePermissionSync, getRoleUserCounts } from "@/lib/rolePermissions";
+
+/** Roles seeded by the backend whose identity/permissions must not be mutated here. */
+const SYSTEM_ROLE_NAMES = new Set(["admin", "candidate"]);
 
 interface BackendPage<T> {
   items: T[];
@@ -41,45 +44,42 @@ export async function PATCH(
       permissionIds?: string[];
     };
 
-    const patchPayload: Record<string, any> = {};
-    if (body.name !== undefined) patchPayload.name = body.name;
-    if (body.description !== undefined) patchPayload.description = body.description || null;
+    // Resolve the role's identity up front. System roles (admin/candidate) are
+    // immutable through this screen: admin holds every permission, so a single
+    // save here could strip its access and lock everyone out. Reject mutations.
+    const existingRole = await backendGet<BackendRole>(`/auth/roles/${roleId}`);
+    const isSystemRole = SYSTEM_ROLE_NAMES.has(existingRole.name);
 
-    // 1. Update basic fields if provided
-    let updatedRole = { id: roleId, name: "", description: null, is_active: true } as BackendRole;
-    if (Object.keys(patchPayload).length > 0) {
-      updatedRole = await backendPatch<BackendRole>(`/auth/roles/${roleId}`, patchPayload);
-    } else {
-      updatedRole = await backendGet<BackendRole>(`/auth/roles/${roleId}`);
-    }
+    let updatedRole = existingRole;
 
-    // 2. Sync permissions if provided
-    if (body.permissionIds !== undefined) {
-      const [allPermissionsData, currentPermissions] = await Promise.all([
-        backendGet<BackendPage<BackendPermission>>("/auth/permissions?size=300"),
-        backendGet<BackendPermission[]>(`/auth/roles/${roleId}/permissions`),
-      ]);
-
-      const permissionIdByCode = new Map(allPermissionsData.items.map((p) => [p.code, p.id]));
-
-      // Determine target backend permission IDs
-      const targetPermissionIds = new Set<number>();
-      for (const fePermId of body.permissionIds) {
-        const beCode = FRONTEND_TO_BACKEND[fePermId];
-        if (beCode) {
-          const beId = permissionIdByCode.get(beCode);
-          if (beId !== undefined) {
-            targetPermissionIds.add(beId);
-          }
-        }
+    if (!isSystemRole) {
+      // 1. Update basic fields if provided
+      const patchPayload: Record<string, unknown> = {};
+      if (body.name !== undefined) patchPayload.name = body.name;
+      if (body.description !== undefined) patchPayload.description = body.description || null;
+      if (Object.keys(patchPayload).length > 0) {
+        updatedRole = await backendPatch<BackendRole>(`/auth/roles/${roleId}`, patchPayload);
       }
 
-      const currentPermissionIds = new Set(currentPermissions.map((p) => p.id));
-      const promises: Promise<any>[] = [];
+      // 2. Sync permissions if provided — only within the manageable surface,
+      //    so permissions the UI cannot show are preserved untouched.
+      if (body.permissionIds !== undefined) {
+        const [allPermissionsData, currentPermissions] = await Promise.all([
+          backendGet<BackendPage<BackendPermission>>("/auth/permissions?size=300"),
+          backendGet<BackendPermission[]>(`/auth/roles/${roleId}/permissions`),
+        ]);
 
-      // Grant new permissions
-      for (const targetId of targetPermissionIds) {
-        if (!currentPermissionIds.has(targetId)) {
+        const permissionIdByCode = new Map(allPermissionsData.items.map((p) => [p.code, p.id]));
+        const knownCodes = new Set(allPermissionsData.items.map((p) => p.code));
+        const { toGrant, toRevoke } = computeRolePermissionSync(
+          currentPermissions,
+          body.permissionIds,
+          permissionIdByCode,
+          knownCodes,
+        );
+
+        const promises: Promise<unknown>[] = [];
+        for (const targetId of toGrant) {
           promises.push(
             backendPost(`/auth/roles/${roleId}/permissions`, {
               permission_id: targetId,
@@ -88,20 +88,16 @@ export async function PATCH(
             }),
           );
         }
-      }
-
-      // Revoke removed permissions
-      for (const currentPerm of currentPermissions) {
-        if (!targetPermissionIds.has(currentPerm.id)) {
+        for (const revokeId of toRevoke) {
           promises.push(
-            backendDelete(`/auth/roles/${roleId}/permissions/${currentPerm.id}`).catch((e) => {
-              console.error(`Error revoking permission ${currentPerm.id} from role ${roleId}:`, e);
+            backendDelete(`/auth/roles/${roleId}/permissions/${revokeId}`).catch((e) => {
+              console.error(`Error revoking permission ${revokeId} from role ${roleId}:`, e);
             }),
           );
         }
-      }
 
-      await Promise.all(promises);
+        await Promise.all(promises);
+      }
     }
 
     const userCounts = await getRoleUserCounts();
@@ -111,7 +107,7 @@ export async function PATCH(
       name: updatedRole.name,
       description: updatedRole.description ?? "",
       usersCount: userCounts.get(updatedRole.name) ?? 0,
-      isSystem: updatedRole.name === "admin" || updatedRole.name === "candidate",
+      isSystem: isSystemRole,
       permissionIds: body.permissionIds ?? [],
       isActive: updatedRole.is_active,
     });
