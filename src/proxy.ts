@@ -96,8 +96,17 @@ export async function proxy(request: NextRequest) {
   // Auth gates bounce authenticated users to their portal; the public job
   // board stays reachable for everyone so the apply-after-login flow works.
   const isAuthGate = pathname === "/login" || pathname.startsWith("/registro");
+  // Password-recovery pages are used precisely when there is no session (forgot
+  // your password / opening the emailed reset link), so they must stay reachable
+  // to unauthenticated users. Omitting them made the "forgot password" link bounce
+  // straight back to /login, looking dead.
+  const isPasswordRecovery =
+    pathname === "/recuperar-contrasena" || pathname === "/restablecer-contrasena";
   const isPublicPage =
-    isAuthGate || pathname === "/empleos" || pathname.startsWith("/empleos/");
+    isAuthGate ||
+    isPasswordRecovery ||
+    pathname === "/empleos" ||
+    pathname.startsWith("/empleos/");
 
   if (!isAuthenticated && !isPublicPage) {
     const destination = pathname === "/" ? "/empleos" : "/login";
