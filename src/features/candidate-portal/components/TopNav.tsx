@@ -108,7 +108,8 @@ export function TopNav() {
 
   return (
     <div className="w-full pt-5 pb-4 flex justify-center sticky top-0 z-40">
-      <div className="bg-card/90 backdrop-blur-md border border-border/80 rounded-[100px] shadow-brand-md px-2 py-[5px] pl-4 flex items-center gap-3 relative">
+      <div className="px-2 py-[5px] pl-4 flex items-center gap-3 relative">
+        <div className="absolute inset-0 bg-card/90 backdrop-blur-md border border-border/80 rounded-[100px] shadow-brand-md -z-10" />
 
         {/* Logo — same corporate lockup as the public header */}
         <div className="shrink-0">
@@ -145,7 +146,7 @@ export function TopNav() {
         <div className="flex items-center gap-2">
 
           {/* Bell */}
-          <div ref={notifRef}>
+          <div ref={notifRef} className="relative">
             <button
               type="button"
               onClick={() => { setShowNotifications((v) => !v); setShowAvatar(false); }}
@@ -161,7 +162,7 @@ export function TopNav() {
             </button>
 
             {showNotifications && (
-              <div className="absolute right-4 top-[calc(100%+12px)] w-[calc(100vw-2rem)] max-w-[360px] bg-card/95 backdrop-blur-md rounded-xl border border-border shadow-brand-lg overflow-hidden z-50 flex flex-col">
+              <div className="fixed left-4 right-4 top-[72px] sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+12px)] sm:w-[360px] max-w-[calc(100vw-2rem)] bg-card/95 backdrop-blur-md rounded-xl border border-border shadow-brand-lg overflow-hidden z-50 flex flex-col">
                 {/* Header */}
                 <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
                   <span className="text-[15px] font-bold text-ink">Notificaciones</span>
