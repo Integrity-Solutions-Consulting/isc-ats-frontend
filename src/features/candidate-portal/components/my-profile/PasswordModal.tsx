@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle2, Eye, EyeOff, X } from 'lucide-react';
+import { Check, CheckCircle2, Circle, Eye, EyeOff, X } from 'lucide-react';
 import { Button } from '@/design-system/ui/button';
 import { Input } from '@/design-system/ui/input';
 import { Label } from '@/design-system/ui/label';
-import { passwordPolicyError } from '@/shared/utils/ecuadorValidators';
+import { cn } from '@/shared/utils';
+import { PASSWORD_REQUIREMENTS, passwordPolicyError } from '@/shared/utils/ecuadorValidators';
 
 export function PasswordModal({ onClose }: { onClose: () => void }) {
   const modalId = 'pw-modal';
@@ -114,8 +115,28 @@ export function PasswordModal({ onClose }: { onClose: () => void }) {
                       {show[key] ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
-                  {key === 'next' && nextPolicyError && (
-                    <p className="text-xs text-danger">{nextPolicyError}</p>
+                  {key === 'next' && form.next.length > 0 && (
+                    <ul className="space-y-1 pt-0.5">
+                      {PASSWORD_REQUIREMENTS.map((req) => {
+                        const met = req.test(form.next);
+                        return (
+                          <li
+                            key={req.label}
+                            className={cn(
+                              'flex items-center gap-1.5 text-xs transition-colors',
+                              met ? 'text-success' : 'text-ink-subtle',
+                            )}
+                          >
+                            {met ? (
+                              <Check className="size-3.5 shrink-0" />
+                            ) : (
+                              <Circle className="size-3.5 shrink-0" />
+                            )}
+                            {req.label}
+                          </li>
+                        );
+                      })}
+                    </ul>
                   )}
                   {key === 'next' && !nextPolicyError && form.next.length > 0 &&
                     form.next === form.current && (
