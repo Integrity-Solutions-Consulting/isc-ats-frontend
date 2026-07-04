@@ -87,7 +87,13 @@ export async function POST(request: NextRequest) {
   } catch {}
 
   const response = NextResponse.json({
-    user: { name, initials, role, has_profile: tokens.has_profile },
+    user: {
+      name,
+      initials,
+      role,
+      has_profile: tokens.has_profile,
+      must_change_password: tokens.must_change_password === true,
+    },
   });
 
   setAuthTokenCookies(response.cookies, {
@@ -101,6 +107,7 @@ export async function POST(request: NextRequest) {
     portal: tokens.portal,
     has_profile: tokens.has_profile,
     userId,
+    must_change_password: tokens.must_change_password === true,
   });
 
   return response;

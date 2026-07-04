@@ -53,12 +53,12 @@ export function mapVacancy(v: BackendVacancyItem, catalogs?: CatalogMaps): Vacan
     city: v.city,
     career: v.career,
     process: v.process,
-    clientCompanyId: catalogs?.companyNameToId.get(v.client_company) ?? "",
+    clientCompanyId: catalogs?.companyNameToId.get(slugify(v.client_company)) ?? "",
     contactId: String(v.contact_id),
-    departmentId: catalogs?.deptNameToId.get(v.department) ?? "",
-    cityId: catalogs?.cityNameToId.get(v.city) ?? "",
-    careerId: catalogs?.careerNameToId.get(v.career) ?? "",
-    processId: catalogs?.processNameToId.get(v.process) ?? "",
+    departmentId: catalogs?.deptNameToId.get(slugify(v.department)) ?? "",
+    cityId: catalogs?.cityNameToId.get(slugify(v.city)) ?? "",
+    careerId: catalogs?.careerNameToId.get(slugify(v.career)) ?? "",
+    processId: catalogs?.processNameToId.get(slugify(v.process)) ?? "",
     profileTemplateId: v.profile_template_id ? String(v.profile_template_id) : "",
     workMode: (v.work_mode as Vacancy["workMode"]) ?? "onsite",
     level: (v.resource_level as Vacancy["level"]) ?? "junior",
@@ -81,7 +81,7 @@ export function mapVacancy(v: BackendVacancyItem, catalogs?: CatalogMaps): Vacan
 
 function slugify(text: string): string {
   return text.toLowerCase().normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
 }
@@ -122,17 +122,17 @@ export async function buildCatalogMaps(): Promise<CatalogMaps> {
   const [companies, contacts, departments, processes, cities, careers] = await Promise.all([
     backendGet<BackendPage<BackendCompany>>("/org/client-companies?size=100"),
     backendGet<BackendPage<BackendContact>>("/org/contacts?size=100"),
-    backendGet<BackendPage<BackendDept>>("/org/departments?size=100"),
-    backendGet<BackendPage<BackendProcess>>("/org/processes?size=100"),
-    backendGet<BackendPage<BackendParam>>("/org/parameters?type=city&size=100"),
-    backendGet<BackendPage<BackendParam>>("/org/parameters?type=career&size=100"),
+    backendGet<BackendPage<BackendDept>>("/org/departments?size=100&include_inactive=true"),
+    backendGet<BackendPage<BackendProcess>>("/org/processes?size=100&include_inactive=true"),
+    backendGet<BackendPage<BackendParam>>("/org/parameters?type=city&size=100&include_inactive=true"),
+    backendGet<BackendPage<BackendParam>>("/org/parameters?type=career&size=100&include_inactive=true"),
   ]);
   return {
-    companyNameToId: new Map(companies.items.map((c) => [c.name, String(c.id)])),
-    contactNameToId: new Map(contacts.items.map((c) => [`${c.first_name} ${c.last_name}`, String(c.id)])),
-    deptNameToId: new Map(departments.items.map((d) => [d.name, String(d.id)])),
-    processNameToId: new Map(processes.items.map((p) => [p.name, String(p.id)])),
-    cityNameToId: new Map(cities.items.map((p) => [p.name, String(p.id)])),
-    careerNameToId: new Map(careers.items.map((p) => [p.name, String(p.id)])),
+    companyNameToId: new Map(companies.items.map((c) => [slugify(c.name), String(c.id)])),
+    contactNameToId: new Map(contacts.items.map((c) => [slugify(`${c.first_name} ${c.last_name}`), String(c.id)])),
+    deptNameToId: new Map(departments.items.map((d) => [slugify(d.name), String(d.id)])),
+    processNameToId: new Map(processes.items.map((p) => [slugify(p.name), String(p.id)])),
+    cityNameToId: new Map(cities.items.map((p) => [slugify(p.name), String(p.id)])),
+    careerNameToId: new Map(careers.items.map((p) => [slugify(p.name), String(p.id)])),
   };
 }

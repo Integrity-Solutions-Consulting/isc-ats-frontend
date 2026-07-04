@@ -7,6 +7,12 @@ export interface SessionUserPayload {
   has_profile: boolean;
   /** Backend user id — used by the staff UI for self-protection (e.g. disabling deactivate on own row). */
   userId?: number;
+  /**
+   * Backend flag: the account was created/reset with a temporary password and
+   * MUST change it before any portal access. Gated by the proxy so no protected
+   * page renders until the password is changed.
+   */
+  must_change_password?: boolean;
 }
 
 const SESSION_USER_MAX_AGE = 60 * 60 * 24 * 7; // 7 days — matches refresh-token lifetime

@@ -3,11 +3,14 @@ import type { NextRequest } from "next/server";
 
 const BACKEND = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000/api/v1";
 
+/**
+ * Trusted origin for absolute redirects. Never derived from client-controlled
+ * forwarded-host/Host headers (open-redirect risk): those let an attacker point
+ * the verification redirect at an external origin. Prefer a server-only
+ * configured origin; otherwise fall back to the request's own resolved origin.
+ */
 function publicBase(request: NextRequest): string {
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-  const proto = request.headers.get("x-forwarded-proto") ?? "https";
-  if (host) return `${proto}://${host}`;
-  return new URL("/", request.url).origin;
+  return process.env.PUBLIC_APP_URL ?? request.nextUrl.origin;
 }
 
 export async function GET(request: NextRequest) {

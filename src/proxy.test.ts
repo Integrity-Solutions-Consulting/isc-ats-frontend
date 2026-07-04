@@ -29,3 +29,66 @@ describe("proxy — public reachability of password-recovery pages", () => {
     expect(target).toContain("/login");
   });
 });
+
+/** Build a request carrying the given cookies so we can exercise authenticated paths. */
+function requestWith(pathname: string, cookies: Record<string, string>): NextRequest {
+  const req = new NextRequest(new URL(pathname, "http://localhost:3000"));
+  for (const [name, value] of Object.entries(cookies)) {
+    req.cookies.set(name, value);
+  }
+  return req;
+}
+
+describe("proxy — returnTo preservation on the login bounce", () => {
+  it("appends the requested path (and query) as an encoded returnTo", async () => {
+    const target = await redirectTarget("/candidato/vacantes?ref=email");
+    expect(target).not.toBeNull();
+    const url = new URL(target as string, "http://localhost:3000");
+    expect(url.pathname).toBe("/login");
+    expect(url.searchParams.get("returnTo")).toBe("/candidato/vacantes?ref=email");
+  });
+
+  it("does not add returnTo when redirecting the root to the public board", async () => {
+    const target = await redirectTarget("/");
+    expect(target).toContain("/empleos");
+    expect(target).not.toContain("returnTo");
+  });
+});
+
+describe("proxy — must_change_password gate", () => {
+  const session = JSON.stringify({ portal: "staff", must_change_password: true });
+
+  it("funnels a flagged user to /cambiar-contrasena from any portal page", async () => {
+    const req = requestWith("/vacantes", {
+      "access-token": "tok",
+      "session-user": session,
+    });
+    const res = await proxy(req);
+    expect(res.headers.get("location")).toContain("/cambiar-contrasena");
+  });
+
+  it("lets the flagged user reach the change-password page itself (no loop)", async () => {
+    const req = requestWith("/cambiar-contrasena", {
+      "access-token": "tok",
+      "session-user": session,
+    });
+    const res = await proxy(req);
+    expect(res.headers.get("location")).toBeNull();
+  });
+});
+
+describe("proxy — missing session-user recovery", () => {
+  it("forces a clean re-login when authenticated but session-user is absent", async () => {
+    // A valid access token with no session-user cookie must not silently default a
+    // staff user into candidate onboarding — force logout instead.
+    const req = requestWith("/vacantes", { "access-token": "tok" });
+    const res = await proxy(req);
+    expect(res.headers.get("location")).toContain("/login");
+  });
+
+  it("does not kick an authenticated user off a public page for a missing cookie", async () => {
+    const req = requestWith("/empleos", { "access-token": "tok" });
+    const res = await proxy(req);
+    expect(res.headers.get("location")).toBeNull();
+  });
+});

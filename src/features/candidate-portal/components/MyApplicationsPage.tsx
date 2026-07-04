@@ -20,12 +20,7 @@ interface MyApplicationsPageProps {
 
 type Tab = 'all' | 'active' | 'finished';
 
-const ACTIVE_STATUSES: CandidateApplication['status'][] = [
-  'reviewing',
-  'interview_initial',
-  'interview_technical',
-  'offer',
-];
+
 const FINISHED_STATUSES: CandidateApplication['status'][] = ['hired', 'rejected', 'cancelled'];
 
 // Offered slots arrive as UTC ISO strings. Ecuador is a fixed UTC-5 (no DST);
@@ -291,16 +286,39 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
 export function MyApplicationsPage({ applications }: MyApplicationsPageProps) {
   const [tab, setTab] = useState<Tab>('all');
 
-  const active = applications.filter((a) => ACTIVE_STATUSES.includes(a.status)).length;
-  const hired = applications.filter((a) => a.status === 'hired').length;
-  const finished = applications.filter((a) => FINISHED_STATUSES.includes(a.status)).length;
-  const pending = applications.filter((a) => a.slotStatus === 'pending_selection').length;
+  const helpers = applications.map((a) => {
+    const isFinished = FINISHED_STATUSES.includes(a.status);
+    const isHired = a.status === 'hired';
 
-  const filtered = applications.filter((a) => {
-    if (tab === 'active') return ACTIVE_STATUSES.includes(a.status);
-    if (tab === 'finished') return FINISHED_STATUSES.includes(a.status);
-    return true;
+    const isInitialStage = a.stages.length > 0 && (
+      a.stages[0].id === a.currentStageId ||
+      a.stages.find((s) => s.id === a.currentStageId)?.is_initial === true
+    );
+
+    const isPending = a.slotStatus === 'pending_selection' || (!isFinished && (a.status === 'applied' || isInitialStage));
+    const isActive = !isFinished && !isPending;
+
+    return {
+      a,
+      isFinished,
+      isHired,
+      isPending,
+      isActive,
+    };
   });
+
+  const active = helpers.filter((h) => h.isActive).length;
+  const hired = helpers.filter((h) => h.isHired).length;
+  const finished = helpers.filter((h) => h.isFinished).length;
+  const pending = helpers.filter((h) => h.isPending).length;
+
+  const filtered = helpers
+    .filter((h) => {
+      if (tab === 'active') return h.isActive;
+      if (tab === 'finished') return h.isFinished;
+      return true;
+    })
+    .map((h) => h.a);
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'all', label: 'Todas' },

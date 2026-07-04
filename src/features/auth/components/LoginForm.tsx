@@ -137,6 +137,9 @@ export function LoginForm() {
               id="email"
               type="email"
               autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder="tu@correo.com"
               aria-invalid={!!errors.email}
               className="pr-10"

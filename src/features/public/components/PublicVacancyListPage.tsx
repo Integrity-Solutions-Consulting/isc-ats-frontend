@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
 
 import { Input } from '@/design-system/ui/input';
 import { Combobox } from '@/design-system/molecules/Combobox';
+import { Pagination } from '@/design-system/molecules/Pagination';
 import { ROUTES } from '@/shared/constants/routes';
 import { formatTimeAgoEs } from '@/shared/utils';
 import type { CandidateVacancy } from '@/features/candidate-portal/types';
@@ -30,11 +31,19 @@ const cityOptions = [
   { id: 'Cuenca', label: 'Cuenca' },
 ];
 
+const PAGE_SIZE = 9;
+
 export function PublicVacancyListPage({ vacancies }: PublicVacancyListPageProps) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [workMode, setWorkMode] = useState('');
   const [city, setCity] = useState('');
+  const [page, setPage] = useState(0);
+
+  // Reset to first page when search or filters change
+  useEffect(() => {
+    setPage(0);
+  }, [search, workMode, city]);
 
   const filtered = vacancies.filter((v) => {
     const matchesSearch =
@@ -45,6 +54,9 @@ export function PublicVacancyListPage({ vacancies }: PublicVacancyListPageProps)
     const matchesCity = !city || v.city === city;
     return matchesSearch && matchesMode && matchesCity;
   });
+
+  const pageCount = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const handleCardClick = (id: string) => router.push(ROUTES.publicVacante(id));
 
@@ -101,7 +113,7 @@ export function PublicVacancyListPage({ vacancies }: PublicVacancyListPageProps)
       </p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((vacancy) => (
+        {paginated.map((vacancy) => (
           <VacancyCard
             key={vacancy.id}
             vacancy={vacancy}
@@ -114,6 +126,20 @@ export function PublicVacancyListPage({ vacancies }: PublicVacancyListPageProps)
           />
         ))}
       </div>
+
+      <Pagination
+        page={page}
+        pageCount={pageCount}
+        onPrev={() => {
+          setPage((p) => Math.max(0, p - 1));
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onNext={() => {
+          setPage((p) => Math.min(pageCount - 1, p + 1));
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        className="flex justify-center mt-4"
+      />
 
       {filtered.length === 0 && (
         <div className="py-16 text-center">

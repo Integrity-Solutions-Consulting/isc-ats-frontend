@@ -12,28 +12,60 @@ const BACKEND = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000/api/v
 interface SessionInfo {
   portal: "staff" | "candidate";
   hasProfile: boolean;
+  mustChangePassword: boolean;
 }
 
 /** Parse the session-user cookie, failing safe to a profile-less candidate (least privilege). */
 function parseSession(raw: string | undefined): SessionInfo {
-  if (!raw) return { portal: "candidate", hasProfile: false }; // missing → least privilege
+  // missing → least privilege
+  if (!raw) return { portal: "candidate", hasProfile: false, mustChangePassword: false };
   try {
-    const parsed = JSON.parse(raw) as { portal?: string; has_profile?: boolean };
+    const parsed = JSON.parse(raw) as {
+      portal?: string;
+      has_profile?: boolean;
+      must_change_password?: boolean;
+    };
     return {
       portal: parsed.portal === "staff" ? "staff" : "candidate",
       hasProfile: parsed.has_profile === true,
+      mustChangePassword: parsed.must_change_password === true,
     };
   } catch {
-    return { portal: "candidate", hasProfile: false }; // corrupt → least privilege
+    // corrupt → least privilege
+    return { portal: "candidate", hasProfile: false, mustChangePassword: false };
   }
 }
+
+// Rotation-race guard: parallel navigations (multiple tabs, prefetch, a page
+// firing several sub-requests) each run this middleware and each carry the SAME
+// rotating refresh token. The backend revokes the token on first use, so only
+// the first POST succeeds and the rest get a 401 — bouncing an active user to
+// /login mid-session. Coalescing concurrent refreshes for one token onto a
+// single in-flight promise means the "losers" await the winner's result instead
+// of racing a POST against an already-revoked token.
+const refreshInFlight = new Map<string, Promise<AuthTokenPair | null>>();
 
 /**
  * Exchange a refresh token for a fresh token pair. Returns null on any failure
  * (expired/revoked refresh token, backend unreachable) so the caller falls back
- * to the login redirect.
+ * to the login redirect. Concurrent calls for the same refresh token share one
+ * in-flight request to survive backend rotation-on-use races.
  */
-async function tryRefresh(
+function tryRefresh(
+  refreshToken: string,
+  request: NextRequest,
+): Promise<AuthTokenPair | null> {
+  const existing = refreshInFlight.get(refreshToken);
+  if (existing) return existing;
+
+  const flight = doRefresh(refreshToken, request).finally(() => {
+    refreshInFlight.delete(refreshToken);
+  });
+  refreshInFlight.set(refreshToken, flight);
+  return flight;
+}
+
+async function doRefresh(
   refreshToken: string,
   request: NextRequest,
 ): Promise<AuthTokenPair | null> {
@@ -95,7 +127,7 @@ export async function proxy(request: NextRequest) {
 
   // Auth gates bounce authenticated users to their portal; the public job
   // board stays reachable for everyone so the apply-after-login flow works.
-  const isAuthGate = pathname === "/login" || pathname.startsWith("/registro");
+  const isAuthGate = pathname === "/login" || pathname === "/registro" || pathname.startsWith("/registro/");
   // Password-recovery pages are used precisely when there is no session (forgot
   // your password / opening the emailed reset link), so they must stay reachable
   // to unauthenticated users. Omitting them made the "forgot password" link bounce
@@ -109,13 +141,44 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/empleos/");
 
   if (!isAuthenticated && !isPublicPage) {
-    const destination = pathname === "/" ? "/empleos" : "/login";
-    return NextResponse.redirect(new URL(destination, request.url));
+    if (pathname === "/") {
+      return NextResponse.redirect(new URL("/empleos", request.url));
+    }
+    // Preserve the requested URL so LoginForm can send the user back after
+    // authenticating (validated there via isSafeInternalPath/resolveReturnTo).
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("returnTo", pathname + request.nextUrl.search);
+    return NextResponse.redirect(loginUrl);
   }
 
   if (isAuthenticated) {
     const rawSession = request.cookies.get("session-user")?.value;
-    const { portal, hasProfile } = parseSession(rawSession);
+
+    // Recovery: a valid (httpOnly) refresh token but NO session-user cookie means
+    // we cannot know the user's portal. parseSession fails safe to "candidate",
+    // which would wrongly funnel a STAFF user into candidate onboarding with no
+    // way out. Rather than silently mis-route them, force a clean re-login so a
+    // fresh session-user cookie is minted from the backend. Public pages are
+    // exempt so an authenticated user browsing /empleos is not kicked out.
+    if (!rawSession && !isPublicPage) {
+      const loginUrl = new URL("/login", request.url);
+      const response = NextResponse.redirect(loginUrl);
+      response.cookies.delete("access-token");
+      response.cookies.delete("refresh-token");
+      response.cookies.delete("session-user");
+      return response;
+    }
+
+    const { portal, hasProfile, mustChangePassword } = parseSession(rawSession);
+
+    // Mandatory password change: an account provisioned with a temporary password
+    // must set a new one before ANY portal access. This gate outranks portal
+    // routing so no protected page renders first. The change-password page itself
+    // stays reachable to avoid a redirect loop.
+    const isChangePasswordPage = pathname === "/cambiar-contrasena";
+    if (mustChangePassword && !isChangePasswordPage) {
+      return finalize(NextResponse.redirect(new URL("/cambiar-contrasena", request.url)));
+    }
 
     const isOnboarding = pathname === "/candidato/onboarding";
 

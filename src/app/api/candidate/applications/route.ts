@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { cookies } from "next/headers";
-import { backendGet, backendPost } from "@/lib/backendFetch";
+import { z } from "zod";
+import { backendErrorResponse, backendGet, backendPost } from "@/lib/backendFetch";
 import { decodeUserId } from "@/lib/decodeUserId";
 import type {
   CandidateApplication,
@@ -11,6 +12,17 @@ import type {
 import { deriveCandidateStatus } from "./deriveCandidateStatus";
 
 interface BackendPage<T> { items: T[]; total: number; }
+
+/**
+ * Validated shape of the create-application request body. Guards against the
+ * silent coercions the old `Number(body.vacancyId)` / `salaryExpectation || null`
+ * path allowed: NaN vacancy ids, negative ids, and salaryExpectation 0 being
+ * turned into null or negative/non-finite values reaching the backend.
+ */
+const createApplicationSchema = z.object({
+  vacancyId: z.coerce.number().int().positive(),
+  salaryExpectation: z.coerce.number().finite().nonnegative().optional().nullable(),
+});
 
 /** Subset of the backend InterviewRead we need for the candidate offer picker. */
 interface BackendInterviewOffer {
@@ -106,12 +118,26 @@ export async function GET() {
     const appStatuses = await backendGet<BackendParamPage>("/org/parameters?type=application_status&size=10");
     const statusCodeById = new Map<number, string>(appStatuses.items.map((s) => [s.id, s.code]));
 
-    // Batch-fetch unique vacancy names (no client data)
-    const vacancyIds = [...new Set(appsData.items.map((a) => a.vacancy_id))];
-    const vacanciesData = await backendGet<BackendPage<BackendVacancyItem>>(
-      `/recruitment/vacancies/expanded?size=100`,
-    );
-    const vacancyMap = new Map(vacanciesData.items.map((v) => [v.id, v]));
+    // Resolve vacancy names for exactly the vacancies this candidate applied to.
+    // The expanded list caps `size` at 100 with no id filter, so a blanket
+    // `expanded?size=100` silently dropped any vacancy beyond the first page and
+    // rendered older applications as "Vacante #id". Page through the list until
+    // every collected id is resolved (or pages run out), keeping only inactive
+    // ones too via include_inactive so closed vacancies still show their name.
+    const neededIds = new Set(appsData.items.map((a) => a.vacancy_id));
+    const vacancyMap = new Map<number, BackendVacancyItem>();
+    const PAGE_SIZE = 100;
+    for (let page = 1; vacancyMap.size < neededIds.size; page += 1) {
+      const vacanciesData = await backendGet<BackendPage<BackendVacancyItem>>(
+        `/recruitment/vacancies/expanded?size=${PAGE_SIZE}&page=${page}&include_inactive=true`,
+      );
+      for (const v of vacanciesData.items) {
+        if (neededIds.has(v.id)) vacancyMap.set(v.id, v);
+      }
+      // Last page reached (fewer than a full page returned) → stop.
+      if (vacanciesData.items.length < PAGE_SIZE) break;
+    }
+    const vacancyIds = [...neededIds];
 
     // Fetch process stages per unique vacancy (parallel)
     const stagesMap = new Map<number, VacancyStage[]>();
@@ -183,7 +209,7 @@ export async function GET() {
 
     return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    return backendErrorResponse(error);
   }
 }
 
@@ -196,7 +222,12 @@ export async function POST(request: NextRequest) {
     const userId = decodeUserId(token);
     if (!userId) return NextResponse.json({ error: "Token inválido" }, { status: 401 });
 
-    const body = (await request.json()) as { vacancyId: string; salaryExpectation: number };
+    const raw = await request.json().catch(() => null);
+    const parsed = createApplicationSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Datos de postulación inválidos" }, { status: 400 });
+    }
+    const body = parsed.data;
 
     // Resolve user → candidate
     const candidates = await backendGet<{ items: BackendCandidateExpanded[] }>(
@@ -212,14 +243,15 @@ export async function POST(request: NextRequest) {
     if (!activeStatus) return NextResponse.json({ error: "Estado de aplicación no encontrado" }, { status: 500 });
 
     const created = await backendPost("/recruitment/applications", {
-      vacancy_id: Number(body.vacancyId),
+      vacancy_id: body.vacancyId,
       candidate_id: candidate.id,
       status_id: activeStatus.id,
-      salary_expectation: body.salaryExpectation || null,
+      // Preserve an explicit 0; only absent/null becomes null.
+      salary_expectation: body.salaryExpectation ?? null,
     });
 
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    return backendErrorResponse(error);
   }
 }

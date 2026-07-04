@@ -20,6 +20,8 @@ export interface AuthUser {
   initials: string;
   role: UserRole;
   has_profile?: boolean;
+  /** True when the account must change its temporary password before portal access. */
+  must_change_password?: boolean;
 }
 
 export interface AuthSession {

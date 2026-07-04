@@ -48,6 +48,8 @@ export const ROUTES = {
   registroVerificacion: '/registro/verificacion',
   recuperarContrasena: '/recuperar-contrasena',
   restablecerContrasena: '/restablecer-contrasena',
+  // Mandatory password change for accounts provisioned with a temporary password.
+  cambiarContrasena: '/cambiar-contrasena',
   publicVacantes: '/empleos',
   publicVacante: (id: string) => `/empleos/${id}`,
 

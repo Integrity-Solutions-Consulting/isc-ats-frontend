@@ -299,4 +299,40 @@
     -webkit-text-fill-color: var(--ink) !important;
     caret-color: var(--ink);
   }
+
+  /* Custom scrollbars to prevent thick white/gray native scrollbars on Windows/Linux */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.25);
+  }
+
+  /* Firefox support */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  }
+
+  /* Overrides for candidate/public dark theme scrollbars */
+  .integrity-public-theme::-webkit-scrollbar-thumb,
+  .integrity-public-theme ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  .integrity-public-theme::-webkit-scrollbar-thumb:hover,
+  .integrity-public-theme ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+  .integrity-public-theme,
+  .integrity-public-theme * {
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  }
 }

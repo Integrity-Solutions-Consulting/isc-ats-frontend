@@ -4,33 +4,46 @@ import { setAuthTokenCookies, type AuthTokenPair } from "@/lib/authCookies";
 
 const BASE = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000/api/v1";
 
-// Single-flight refresh: a burst of parallel route-handler calls that all hit an
-// expired access token must trigger ONE refresh, not one each — the backend
-// rotates (revokes) the refresh token on use, so concurrent refreshes would race
-// and all but the first would fail against an already-revoked token.
-let refreshInFlight: Promise<string | null> | null = null;
+// Single-flight refresh, KEYED PER REFRESH TOKEN. A burst of parallel
+// route-handler calls from the SAME user that all hit an expired access token
+// must trigger ONE refresh, not one each — the backend rotates (revokes) the
+// refresh token on use, so concurrent refreshes for one user would race and all
+// but the first would fail against an already-revoked token.
+//
+// SECURITY: the key MUST be the caller's own refresh-token cookie value. A
+// module-global single promise is shared process-wide across ALL concurrent
+// requests in a Next.js server; keying it globally means user B's request can
+// await and receive the access token minted from user A's refresh token —
+// cross-account identity mixing. Keying by the refresh token guarantees a
+// request only ever receives a token derived from its own refresh token.
+const refreshInFlight = new Map<string, Promise<string | null>>();
 
-function refreshAccessToken(): Promise<string | null> {
-  if (!refreshInFlight) {
-    refreshInFlight = doRefresh().finally(() => {
-      refreshInFlight = null;
-    });
-  }
-  return refreshInFlight;
-}
-
-/**
- * Exchange the refresh-token cookie for a fresh token pair and persist it.
- * Returns the new access token, or null if there is no refresh token or the
- * backend rejects it. Cookie writes only succeed in writable contexts (route
- * handlers / server actions); in a server component the write throws and is
- * swallowed — the new token still serves the in-flight request.
- */
-async function doRefresh(): Promise<string | null> {
+async function refreshAccessToken(): Promise<string | null> {
   const store = await cookies();
   const refreshToken = store.get("refresh-token")?.value;
   if (!refreshToken) return null;
 
+  const existing = refreshInFlight.get(refreshToken);
+  if (existing) return existing;
+
+  const flight = doRefresh(store, refreshToken).finally(() => {
+    refreshInFlight.delete(refreshToken);
+  });
+  refreshInFlight.set(refreshToken, flight);
+  return flight;
+}
+
+/**
+ * Exchange the given refresh token for a fresh token pair and persist it.
+ * Returns the new access token, or null if the backend rejects it. Cookie
+ * writes only succeed in writable contexts (route handlers / server actions);
+ * in a server component the write throws and is swallowed — the new token still
+ * serves the in-flight request.
+ */
+async function doRefresh(
+  store: Awaited<ReturnType<typeof cookies>>,
+  refreshToken: string,
+): Promise<string | null> {
   let res: Response;
   try {
     res = await fetch(`${BASE}/auth/refresh`, {

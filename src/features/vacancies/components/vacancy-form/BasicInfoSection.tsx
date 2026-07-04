@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useFormContext, Controller, useWatch } from "react-hook-form";
 
 import { Combobox } from "@/design-system/molecules/Combobox";
@@ -19,8 +19,22 @@ export function BasicInfoSection() {
   const selectedClient = useWatch({ name: "clientCompany" });
   const { data: contacts = [] } = useContactsByClient(selectedClient ?? "");
 
+  const prevClient = useRef<string | undefined>(undefined);
+  const isFirst = useRef(true);
+
   useEffect(() => {
-    setValue("contact", "");
+    if (isFirst.current) {
+      if (selectedClient) {
+        isFirst.current = false;
+        prevClient.current = selectedClient;
+      }
+      return;
+    }
+    
+    if (prevClient.current !== undefined && prevClient.current !== selectedClient) {
+      setValue("contact", "");
+    }
+    prevClient.current = selectedClient;
   }, [selectedClient, setValue]);
 
   return (
