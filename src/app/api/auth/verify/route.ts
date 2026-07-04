@@ -10,7 +10,12 @@ const BACKEND = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000/api/v
  * configured origin; otherwise fall back to the request's own resolved origin.
  */
 function publicBase(request: NextRequest): string {
-  return process.env.PUBLIC_APP_URL ?? request.nextUrl.origin;
+  if (process.env.PUBLIC_APP_URL) {
+    return process.env.PUBLIC_APP_URL;
+  }
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "localhost:3000";
+  const proto = request.headers.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
 }
 
 export async function GET(request: NextRequest) {

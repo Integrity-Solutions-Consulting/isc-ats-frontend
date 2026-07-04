@@ -22,7 +22,7 @@ export async function listRoles(): Promise<{ id: number; name: string }[]> {
 
 export interface CreateUserPayload {
   email: string;
-  password: string;
+  password?: string;
   role_id: number;
   is_active: boolean;
 }

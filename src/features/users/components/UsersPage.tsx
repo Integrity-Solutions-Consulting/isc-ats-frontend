@@ -61,10 +61,8 @@ function readCurrentUserId(): number | null {
   }
 }
 
-const EMPTY_FORM: CreateUserPayload & { confirmPassword: string } = {
+const EMPTY_FORM: Omit<CreateUserPayload, 'password'> = {
   email: '',
-  password: '',
-  confirmPassword: '',
   role_id: 0,
   is_active: true,
 };
@@ -85,7 +83,6 @@ export function UsersPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [touched, setTouched] = useState<{
     email?: boolean;
-    password?: boolean;
     role?: boolean;
   }>({});
 
@@ -240,21 +237,18 @@ export function UsersPage() {
 
   // Computed each render so feedback can be shown live (per-field, once touched)
   // instead of only after pressing "Crear usuario".
-  const errors: { email?: string; password?: string; role?: string } = {};
+  const errors: { email?: string; role?: string } = {};
   const emailError = validateEmail(form.email);
   if (emailError) errors.email = emailError;
-  if (!form.password || form.password.length < 6) errors.password = 'La contraseña debe tener al menos 6 caracteres.';
-  else if (form.password !== form.confirmPassword) errors.password = 'Las contraseñas no coinciden.';
   if (!form.role_id) errors.role = 'Seleccioná un rol.';
 
-  const showError = (field: 'email' | 'password' | 'role') =>
+  const showError = (field: 'email' | 'role') =>
     touched[field] ? errors[field] : undefined;
 
   function handleSubmit() {
-    setTouched({ email: true, password: true, role: true });
+    setTouched({ email: true, role: true });
     if (Object.keys(errors).length > 0) return;
-    const { confirmPassword: _cp, ...payload } = form;
-    createMutation.mutate(payload);
+    createMutation.mutate(form as CreateUserPayload);
   }
 
   return (
@@ -347,8 +341,8 @@ export function UsersPage() {
           <DialogHeader>
             <DialogTitle>Nuevo usuario</DialogTitle>
             <DialogDescription>
-              Definí el rol y la contraseña inicial. Podés activar la cuenta ahora o dejarla
-              inactiva para habilitarla más tarde.
+              Definí el correo y el rol. Se generará una contraseña aleatoria que se
+              enviará por correo al usuario.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -365,29 +359,7 @@ export function UsersPage() {
               />
               {showError('email') && <p className="mt-1 text-xs text-danger">{showError('email')}</p>}
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-ink">Contraseña inicial</label>
-              <Input
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                onBlur={() => setTouched((t) => ({ ...t, password: true }))}
-                placeholder="Mínimo 6 caracteres"
-                className="mt-1.5"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-ink">Confirmar contraseña</label>
-              <Input
-                type="password"
-                value={form.confirmPassword}
-                onChange={(e) => setForm((f) => ({ ...f, confirmPassword: e.target.value }))}
-                onBlur={() => setTouched((t) => ({ ...t, password: true }))}
-                placeholder="Repetir contraseña"
-                className="mt-1.5"
-              />
-              {showError('password') && <p className="mt-1 text-xs text-danger">{showError('password')}</p>}
-            </div>
+
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">Rol</label>
               <Select
@@ -402,16 +374,6 @@ export function UsersPage() {
                   .map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
               </Select>
               {showError('role') && <p className="mt-1 text-xs text-danger">{showError('role')}</p>}
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                id="is_active"
-                type="checkbox"
-                checked={form.is_active}
-                onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
-                className="size-4 rounded border-border"
-              />
-              <label htmlFor="is_active" className="text-sm text-ink">Activar cuenta inmediatamente</label>
             </div>
           </div>
           {createError && (
