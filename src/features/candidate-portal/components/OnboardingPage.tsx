@@ -124,11 +124,6 @@ export function OnboardingPage() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm p-4">
       <div className="w-full max-w-[500px] max-h-[90dvh] overflow-y-auto rounded-2xl bg-surface p-6 shadow-xl sm:p-8">
-        {error && (
-          <div className="mb-4 rounded-lg bg-danger/10 p-3 text-sm text-danger border border-danger/20">
-            {error}
-          </div>
-        )}
         <ProgressIndicator steps={STEPS} current={step} />
 
         <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-subtle">
@@ -157,6 +152,7 @@ export function OnboardingPage() {
             onBack={() => setStep(1)}
             prefill={prefillData}
             isSubmitting={submitting}
+            submitError={error}
           />
         )}
       </div>

@@ -64,12 +64,13 @@ function ToggleCards({ value, onChange, error }: {
   );
 }
 
-export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmitting }: {
+export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmitting, submitError }: {
   defaultValues: Step2FormValues;
   onNext: (data: Step2Values) => void;
   onBack: () => void;
   prefill?: CvPrefillData;
   isSubmitting?: boolean;
+  submitError?: string | null;
 }) {
   const [catalogs, setCatalogs] = useState<Catalogs>(EMPTY_CATALOGS);
 
@@ -224,6 +225,15 @@ export function Step2Education({ defaultValues, onNext, onBack, prefill, isSubmi
           error={errors.isWorking?.message}
         />
       </div>
+
+      {submitError && (
+        <div
+          role="alert"
+          className="rounded-lg bg-danger/10 p-3 text-sm text-danger border border-danger/20"
+        >
+          {submitError}
+        </div>
+      )}
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" className="w-2/5" onClick={onBack} disabled={isSubmitting}>
