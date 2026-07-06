@@ -151,6 +151,8 @@ export const PRIVACY: LegalDocument = {
       heading: '6. Conservación de los datos',
       body: [
         'Conservamos sus datos mientras su cuenta permanezca activa y durante el tiempo necesario para los procesos de selección y para cumplir obligaciones legales. Cuando ya no sean necesarios, serán eliminados o anonimizados de forma segura.',
+        'Cierre de cuenta: cuando usted cierra su cuenta, esta se desactiva y usted pierde el acceso al Portal, pero conservamos su perfil y su historial de postulaciones por interés legítimo en los procesos de selección y para cumplir obligaciones legales. Esta información permanece disponible únicamente para el equipo de Talento Humano. Usted puede reactivar su cuenta más adelante registrándose con el mismo correo y confirmando la reactivación por correo electrónico.',
+        'Si desea la eliminación o anonimización definitiva de sus datos, puede solicitarlo ejerciendo sus derechos conforme a la sección 7.',
       ],
     },
     {
