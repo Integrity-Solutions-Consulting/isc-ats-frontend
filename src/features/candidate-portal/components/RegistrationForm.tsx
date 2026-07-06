@@ -118,6 +118,7 @@ export function RegistrationForm() {
             <Input
               id="reg-password"
               type={showPw ? 'text' : 'password'}
+              autoComplete="new-password"
               placeholder="••••••••"
               aria-invalid={!!errors.password}
               className="pr-10"
@@ -165,6 +166,7 @@ export function RegistrationForm() {
             <Input
               id="reg-confirm"
               type={showConfirm ? 'text' : 'password'}
+              autoComplete="new-password"
               placeholder="••••••••"
               aria-invalid={!!errors.confirmPassword}
               className={cn('pr-10', confirmMatch && 'border-success focus-visible:ring-success/30')}
