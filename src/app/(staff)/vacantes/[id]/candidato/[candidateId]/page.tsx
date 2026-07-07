@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getCandidate, getCandidateApplication, getAIAnalysis, getOtherApplications } from '@/features/candidates/api/candidatesApi';
 import { getVacancy } from '@/features/vacancies/api/vacanciesApi';
 import { getVacancyPipeline } from '@/features/pipeline/api/pipelineApi';
+import { buildStageNavigation } from '@/features/pipeline/navigation';
 import { VacancyBreadcrumbSetter } from '@/features/vacancies/components/VacancyBreadcrumbSetter';
 import { AIAnalysisSectionClient } from '@/features/candidates/components/AIAnalysisSectionClient';
 import { CandidateHeader } from '@/features/candidates/components/CandidateHeader';
@@ -21,8 +22,11 @@ export default async function CandidateProfilePage({
   const { from, pos: posParam, total: totalParam, appId, tpId } = await searchParams;
 
   const isTalentPool = from === 'banco-talento';
-  const pos = posParam ? parseInt(posParam, 10) : 1;
-  const total = totalParam ? parseInt(totalParam, 10) : 1;
+  // Talent-pool position still comes from the URL; the pipeline navigator is
+  // derived below from the candidate's current stage so it stays correct after
+  // the candidate is moved to another stage.
+  const talentPos = posParam ? parseInt(posParam, 10) : 1;
+  const talentTotal = totalParam ? parseInt(totalParam, 10) : 1;
 
   const applicationId = appId ?? `app-${candidateId.replace('cand-', '')}`;
 
@@ -41,6 +45,12 @@ export default async function CandidateProfilePage({
     isTalentPool ? Promise.resolve([]) : getOtherApplications(candidateId, application.id),
   ]);
 
+  // Pipeline navigator derived from the candidate's current stage (fresh on
+  // every refresh). Talent-pool keeps its URL-based position.
+  const nav = isTalentPool
+    ? null
+    : buildStageNavigation(pipeline.cards, application.stageId, candidateId);
+
   return (
     <div className="flex flex-col gap-6">
       <VacancyBreadcrumbSetter name={vacancy.position} />
@@ -48,8 +58,9 @@ export default async function CandidateProfilePage({
         candidate={candidate}
         vacancyId={vacancyId}
         vacancyName={vacancy.position}
-        pos={pos}
-        total={total}
+        pos={nav?.pos ?? talentPos}
+        total={nav?.total ?? talentTotal}
+        navEntries={nav?.entries}
         talentPoolId={tpId}
       />
 

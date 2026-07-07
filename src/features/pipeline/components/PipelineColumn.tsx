@@ -5,7 +5,7 @@ import { Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { cn } from '@/shared/utils';
-import { usePipelineNavStore } from '@/shared/stores/pipelineNavStore';
+import { sortCardsByMatch } from '../navigation';
 import type { PipelineCard, PipelineStage, RejectionSummary } from '../types';
 import { CandidateCard } from './CandidateCard';
 
@@ -24,7 +24,6 @@ export function PipelineColumn({
 }: PipelineColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   const router = useRouter();
-  const setNavEntries = usePipelineNavStore((s) => s.setEntries);
 
   // Filter cards based on match percentage
   const filteredCards = cards.filter((card) => {
@@ -35,16 +34,9 @@ export function PipelineColumn({
     return true;
   });
 
-  // Sort by match percentage, highest first. Cards still analyzing or without a
-  // computed match have no score to compare, so they sink to the bottom.
-  const sortedCards = [...filteredCards].sort((a, b) => {
-    const aScore = a.matchStatus === 'analyzing' ? null : a.matchPercent;
-    const bScore = b.matchStatus === 'analyzing' ? null : b.matchPercent;
-    if (aScore === null && bScore === null) return 0;
-    if (aScore === null) return 1;
-    if (bScore === null) return -1;
-    return bScore - aScore;
-  });
+  // Sort by match percentage, highest first (shared with the profile navigator
+  // so a candidate's position is consistent between board and profile).
+  const sortedCards = sortCardsByMatch(filteredCards);
 
   const isRejected = stage.type === 'rejected';
   const isFinal = stage.type === 'final';
@@ -116,20 +108,15 @@ export function PipelineColumn({
           />
         )}
 
-        {sortedCards.map((card, idx) => (
+        {sortedCards.map((card) => (
           <CandidateCard
             key={card.id}
             card={card}
             onView={() => {
-              setNavEntries(
-                sortedCards.map((c) => ({
-                  candidateId: c.candidateId,
-                  appId: c.id,
-                  vacancyId: c.vacancyId,
-                })),
-              );
+              // The profile derives "X de N" and prev/next from the candidate's
+              // current stage, so only the appId needs to travel in the URL.
               router.push(
-                `/vacantes/${card.vacancyId}/candidato/${card.candidateId}?appId=${card.id}&pos=${idx + 1}&total=${sortedCards.length}`,
+                `/vacantes/${card.vacancyId}/candidato/${card.candidateId}?appId=${card.id}`,
               );
             }}
           />

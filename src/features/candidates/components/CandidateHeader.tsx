@@ -11,7 +11,7 @@ import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
 import { cn } from '@/shared/utils';
 import { ROUTES } from '@/shared/constants/routes';
 import { useTalentPoolNavStore } from '@/shared/stores/talentPoolNavStore';
-import { usePipelineNavStore } from '@/shared/stores/pipelineNavStore';
+import type { PipelineNavEntry } from '@/features/pipeline/navigation';
 import { useRemoveFromTalentPool } from '@/features/talent-pool/hooks/useTalentPool';
 import type { Candidate } from '@/features/candidates/types';
 
@@ -21,6 +21,9 @@ interface CandidateHeaderProps {
   vacancyName: string;
   pos: number;
   total: number;
+  // Pipeline-only: candidates of the current stage, derived server-side so
+  // prev/next follow the candidate's current stage (undefined for talent pool).
+  navEntries?: PipelineNavEntry[];
   talentPoolId?: string;
 }
 
@@ -30,6 +33,7 @@ export function CandidateHeader({
   vacancyName,
   pos,
   total,
+  navEntries,
   talentPoolId,
 }: CandidateHeaderProps) {
   const searchParams = useSearchParams();
@@ -40,7 +44,6 @@ export function CandidateHeader({
   const isTalentPool = from === 'banco-talento';
 
   const talentPoolEntries = useTalentPoolNavStore((s) => s.entries);
-  const pipelineEntries = usePipelineNavStore((s) => s.entries);
 
   function buildNavUrl(targetPos: number): string | null {
     if (isTalentPool) {
@@ -52,7 +55,7 @@ export function CandidateHeader({
         tpId: entry.tpId,
       });
     }
-    const entry = pipelineEntries[targetPos - 1];
+    const entry = navEntries?.[targetPos - 1];
     if (!entry) return null;
     return ROUTES.candidatoEnVacante(entry.vacancyId, entry.candidateId, {
       appId: entry.appId,
