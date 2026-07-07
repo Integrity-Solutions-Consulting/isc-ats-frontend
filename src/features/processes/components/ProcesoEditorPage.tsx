@@ -129,6 +129,10 @@ export function ProcesoEditorPage({ id }: Props) {
       await saveProcess(withFixed);
       setSaved(draft);
       setEditing(false);
+      // The list query has a 60s staleTime, so navigating back would show a
+      // cached list without the just-saved process. Invalidate it so the list
+      // refetches and reflects the create/edit immediately.
+      queryClient.invalidateQueries({ queryKey: ['processes'] });
       if (isNew) router.push(ROUTES.configuracion.procesos);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'No se pudo guardar el proceso.');

@@ -39,7 +39,7 @@ const COLUMNS: ColumnDef<Process>[] = [
 
 export function ProcesosListPage() {
   const router = useRouter();
-  const { data: processes = [], isLoading } = useQuery({
+  const { data: processes = [], isLoading, isError, error } = useQuery({
     queryKey: ['processes'],
     queryFn: listProcesses,
   });
@@ -83,6 +83,13 @@ export function ProcesosListPage() {
           </Link>
         </Button>
       </div>
+
+      {/* Load error — surfaced instead of showing an empty table */}
+      {isError && (
+        <div className="rounded-md bg-danger/10 px-4 py-3 text-sm text-danger">
+          {error instanceof Error ? error.message : 'No se pudieron cargar los procesos.'}
+        </div>
+      )}
 
       {/* Filters */}
       <FilterBar

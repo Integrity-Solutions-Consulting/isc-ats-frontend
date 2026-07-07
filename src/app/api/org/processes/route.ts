@@ -35,7 +35,10 @@ export async function GET() {
     }));
     return NextResponse.json(rows);
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    // Preserve the backend status and detail (e.g. 403 "Missing permission")
+    // instead of collapsing to a generic 500 — a swallowed error here made a
+    // permission gap look like an empty list.
+    return backendErrorResponse(error);
   }
 }
 

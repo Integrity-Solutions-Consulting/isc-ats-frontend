@@ -16,16 +16,17 @@ export interface Process {
 }
 
 export async function listProcesses(): Promise<Process[]> {
-  try {
-    const res = await fetch('/api/org/processes', { cache: 'no-store' });
-    if (res.ok) {
-      const data = (await res.json()) as Array<{
-        id: string; name: string; clientCompany: string; department: string; isActive: boolean;
-      }>;
-      return data.map((p) => ({ ...p, stages: [] }));
-    }
-  } catch {}
-  return [];
+  const res = await fetch('/api/org/processes', { cache: 'no-store' });
+  if (!res.ok) {
+    // Surface the real failure instead of returning [] — a swallowed error
+    // (e.g. a 403 permission gap) is indistinguishable from "no processes".
+    const data = (await res.json().catch(() => ({}))) as { detail?: string; error?: string };
+    throw new Error(data.detail || data.error || 'No se pudieron cargar los procesos.');
+  }
+  const data = (await res.json()) as Array<{
+    id: string; name: string; clientCompany: string; department: string; isActive: boolean;
+  }>;
+  return data.map((p) => ({ ...p, stages: [] }));
 }
 
 export async function getProcess(id: string): Promise<Process | null> {
