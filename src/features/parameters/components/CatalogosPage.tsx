@@ -11,7 +11,7 @@ import { cn } from '@/shared/utils';
 
 // Catalogs like cities or careers can grow large; paginate client-side so the
 // table never renders hundreds of rows at once.
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 10;
 
 type CatalogType = { key: string; label: string; endpoint: 'parameters' | 'departments'; hasDescription?: boolean; hiddenCodes?: string[] };
 type CatalogValue = { id: string; code?: string; name: string; description?: string; active: boolean };
