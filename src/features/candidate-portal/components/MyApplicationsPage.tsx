@@ -266,7 +266,7 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
 
       {app.status === 'hired' && (
         <div className="bg-success/10 border border-success/30 rounded-md px-4 py-3 text-sm text-ink">
-          Felicitaciones. Fuiste seleccionado para esta posición.
+          ¡Felicitaciones! Tu perfil fue seleccionado para esta posición.
         </div>
       )}
 
@@ -274,8 +274,8 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
         <div className="bg-danger/10 border border-danger/30 rounded-md px-4 py-3 flex items-start gap-3 text-sm text-ink">
           <X size={16} className="text-danger shrink-0 mt-0.5" />
           <span>
-            No fuiste seleccionado para esta posición. Agradecemos tu interés y te
-            animamos a postular a otras vacantes.
+            En esta ocasión tu perfil no fue seleccionado para esta posición.
+            Agradecemos tu interés y te invitamos a postularte a otras vacantes.
           </span>
         </div>
       )}
