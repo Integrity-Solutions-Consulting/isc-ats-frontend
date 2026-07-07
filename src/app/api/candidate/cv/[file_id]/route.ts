@@ -38,6 +38,10 @@ export async function GET(
   const headers: Record<string, string> = {
     "Content-Disposition": disposition,
     "Content-Type": contentType,
+    // Files are immutable per file_id (a new upload always gets a new id), so
+    // the browser can cache aggressively and skip re-downloading the avatar/CV
+    // on every reload. "private" keeps it out of shared proxy caches.
+    "Cache-Control": "private, max-age=31536000, immutable",
   };
   if (contentLength) headers["Content-Length"] = contentLength;
 
