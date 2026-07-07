@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 
-import { backendGet, backendPost } from "@/lib/backendFetch";
+import { backendGet, backendErrorResponse } from "@/lib/backendFetch";
+import { syncStages } from "./[id]/_helpers";
 
 const BACKEND = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000/api/v1";
 
@@ -13,19 +14,6 @@ interface BackendProcess {
 interface BackendCompany { id: number; name: string; }
 interface BackendDept { id: number; name: string; }
 interface BackendParam { id: number; type: string; code: string; name: string; }
-
-async function authedFetch(path: string, init?: RequestInit) {
-  const store = await cookies();
-  const token = store.get("access-token")?.value;
-  return fetch(`${BACKEND}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(init?.headers ?? {}),
-    },
-  });
-}
 
 export async function GET() {
   try {
@@ -105,34 +93,13 @@ export async function POST(request: NextRequest) {
 
     const created = await res.json() as BackendProcess;
 
-    // Save stages for the new process (excluding virtual 'rejected' stage)
-    const incomingStages = (body.stages || [])
-      .filter((s) => s.type !== "rejected")
-      .map((s, index) => {
-        const param = stageParams.items.find(
-          (p) => p.name.toLowerCase() === s.name.toLowerCase()
-        );
-        if (!param) {
-          throw new Error(`Etapa no encontrada en el catálogo: ${s.name}`);
-        }
-        return {
-          stage_id: param.id,
-          order: index + 1,
-          is_final_positive: s.type === "final",
-        };
-      });
-
-    for (const incoming of incomingStages) {
-      await backendPost("/org/process-stages", {
-        process_id: created.id,
-        stage_id: incoming.stage_id,
-        order: incoming.order,
-        is_final_positive: incoming.is_final_positive,
-      });
-    }
+    // Reuse the edit-path stage sync: it skips the backbone stages the backend
+    // auto-seeds (Postulantes / Contratados) instead of re-adding them, which is
+    // what caused the "Stage already added" 409 on create.
+    await syncStages(String(created.id), body.stages || [], stageParams.items);
 
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    return backendErrorResponse(error);
   }
 }
