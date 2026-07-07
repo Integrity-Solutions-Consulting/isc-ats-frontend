@@ -28,6 +28,9 @@ export function useNotifications(): UseQueryResult<Notification[]> {
   return useQuery({
     queryKey: notificationKeys.list(),
     queryFn: listNotifications,
+    // Poll every 60s so notifications appear without a manual reload. React Query
+    // pauses polling while the tab is hidden, so this doesn't waste requests.
+    refetchInterval: 60_000,
     // Newest first. createdAt is an ISO-8601 string, so a lexicographic
     // descending sort matches chronological order.
     select: (data) => [...data].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
