@@ -6,7 +6,12 @@ import { Plus, Search, Pencil, Trash2, X, Check, Loader2, RefreshCw } from 'luci
 import { Button } from '@/design-system/ui/button';
 import { Badge } from '@/design-system/ui/badge';
 import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
+import { Pagination } from '@/design-system/molecules/Pagination';
 import { cn } from '@/shared/utils';
+
+// Catalogs like cities or careers can grow large; paginate client-side so the
+// table never renders hundreds of rows at once.
+const PAGE_SIZE = 15;
 
 type CatalogType = { key: string; label: string; endpoint: 'parameters' | 'departments'; hasDescription?: boolean; hiddenCodes?: string[] };
 type CatalogValue = { id: string; code?: string; name: string; description?: string; active: boolean };
@@ -64,6 +69,7 @@ export function CatalogosPage() {
   const [newDescription, setNewDescription] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<CatalogValue | null>(null);
+  const [page, setPage] = useState(0);
 
   const currentType = CATALOG_TYPES.find((t) => t.key === selectedType)!;
   const queryKey = ['org', 'catalog', selectedType];
@@ -160,10 +166,17 @@ export function CatalogosPage() {
     return true;
   });
 
+  // Client-side pagination over the filtered rows. currentPage is clamped so the
+  // page stays valid after rows are removed (e.g. deleting the last item on a page).
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount - 1);
+  const paged = filtered.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
+
   const selectType = (key: string) => {
     setSelectedType(key);
     setFilter('all');
     setSearch('');
+    setPage(0);
     setEditingId(null);
     setShowAdd(false);
     deleteMut.reset();
@@ -198,11 +211,11 @@ export function CatalogosPage() {
           <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2 p-3">
             <div className="flex h-8 flex-1 items-center gap-2 rounded-full border border-border bg-surface px-3 text-xs focus-within:border-primary-600 focus-within:ring-2 focus-within:ring-ring/30 focus-within:ring-offset-1">
               <Search className="size-3.5 shrink-0 text-ink-subtle" />
-              <input type="search" placeholder="Buscar…" value={search} onChange={(e) => setSearch(e.target.value)}
+              <input type="search" placeholder="Buscar…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }}
                 className="flex-1 bg-transparent text-ink outline-none placeholder:text-ink-subtle" />
             </div>
             {(['all', 'active', 'inactive'] as Filter[]).map((f) => (
-              <button key={f} type="button" onClick={() => setFilter(f)}
+              <button key={f} type="button" onClick={() => { setFilter(f); setPage(0); }}
                 className={cn('rounded-full px-3 py-1 text-xs font-medium transition-colors',
                   filter === f ? 'bg-primary-600 text-white' : 'bg-surface text-ink-muted hover:bg-primary-50 hover:text-primary-700')}>
                 {f === 'all' ? 'Todos' : f === 'active' ? 'Activos' : 'Inactivos'}
@@ -255,7 +268,7 @@ export function CatalogosPage() {
                   </td></tr>
                 ) : filtered.length === 0 ? (
                   <tr><td colSpan={colSpan} className="px-4 py-8 text-center text-sm text-ink-subtle">Sin valores.</td></tr>
-                ) : filtered.map((v) => (
+                ) : paged.map((v) => (
                   <tr key={v.id} className={cn('border-b border-border last:border-0',
                     editingId === v.id ? 'bg-surface-2' : 'hover:bg-primary-50/30')}>
                     <td className="px-4 py-2.5">
@@ -313,6 +326,14 @@ export function CatalogosPage() {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            className="mt-3 flex justify-end"
+            page={currentPage}
+            pageCount={pageCount}
+            onPrev={() => setPage((p) => Math.max(0, p - 1))}
+            onNext={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+          />
         </div>
       </div>
 
