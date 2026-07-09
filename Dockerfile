@@ -11,6 +11,12 @@ RUN npm ci
 
 COPY . .
 
+# NEXT_PUBLIC_* values are inlined into the client bundle at build time, so the
+# Turnstile site key must be present during `next build`, not just at runtime.
+# Dokploy passes it as a build arg; we surface it as an env var for the build.
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
+
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 

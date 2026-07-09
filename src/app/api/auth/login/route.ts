@@ -19,7 +19,11 @@ function deriveDisplay(email: string): { name: string; initials: string } {
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
-  const { email, password } = body as { email?: string; password?: string };
+  const { email, password, turnstile_token } = body as {
+    email?: string;
+    password?: string;
+    turnstile_token?: string | null;
+  };
 
   if (!email || !password) {
     return NextResponse.json({ error: "Credenciales incompletas" }, { status: 400 });
@@ -30,7 +34,7 @@ export async function POST(request: NextRequest) {
     backendRes = await fetch(`${BACKEND}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...clientIpHeader(request) },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, turnstile_token }),
     });
   } catch {
     return NextResponse.json(
@@ -55,6 +59,16 @@ export async function POST(request: NextRequest) {
     }
 
     const low = detail.toLowerCase();
+
+    // Turnstile (anti-bot) rejection: surface the backend's Spanish message as-is
+    // so the user knows to retry the challenge, not that credentials were wrong.
+    if (
+      backendRes.status === 403 &&
+      (low.includes("robot") || low.includes("verificación de seguridad"))
+    ) {
+      return NextResponse.json({ error: detail }, { status: 403 });
+    }
+
     let errorMsg = "Credenciales incorrectas";
     if (low.includes("not verified") || low.includes("verify") || low.includes("verificado")) {
       errorMsg = "Tu correo no está verificado. Revisá tu bandeja de entrada y hacé clic en el enlace de confirmación.";

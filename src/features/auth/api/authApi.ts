@@ -5,13 +5,16 @@ import type { AuthSession, LoginInput } from "../types";
  * When FastAPI is ready, update the Route Handler (app/api/auth/login/route.ts),
  * not this file.
  */
-export async function login(credentials: LoginInput): Promise<AuthSession> {
+export async function login(
+  credentials: LoginInput,
+  turnstileToken?: string | null,
+): Promise<AuthSession> {
   let res: Response;
   try {
     res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(credentials),
+      body: JSON.stringify({ ...credentials, turnstile_token: turnstileToken }),
     });
   } catch {
     // Network-level failure (offline, server unreachable, dropped connection).

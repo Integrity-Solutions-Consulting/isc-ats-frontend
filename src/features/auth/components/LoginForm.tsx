@@ -10,9 +10,11 @@ import Link from "next/link";
 import { Button } from "@/design-system/ui/button";
 import { Input } from "@/design-system/ui/input";
 import { Label } from "@/design-system/ui/label";
+import { Turnstile } from "@/design-system/molecules/Turnstile";
 import { login } from "../api/authApi";
 import { loginSchema, type LoginInput } from "../types";
 import { ROUTES } from "@/shared/constants/routes";
+import { TURNSTILE_SITE_KEY, isTurnstileEnabled } from "@/shared/constants/turnstile";
 
 // "Remember me" persists only the email — never the password. On the next visit
 // the email is prefilled and the checkbox stays on, so the user just types the
@@ -23,6 +25,10 @@ export function LoginForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  // Anti-bot token. `captchaKey` remounts the widget to mint a fresh token after
+  // a failed attempt, since the token is single-use once the server verifies it.
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
 
   const {
     register,
@@ -86,7 +92,7 @@ export function LoginForm() {
       localStorage.removeItem(REMEMBERED_EMAIL_KEY);
     }
     try {
-      const session = await login(values);
+      const session = await login(values, captchaToken);
       if (session.user.role === "candidate") {
         if (session.user.has_profile === false) {
           router.push(ROUTES.candidato.onboarding);
@@ -102,6 +108,9 @@ export function LoginForm() {
       setAuthError(
         error instanceof Error ? error.message : "No se pudo iniciar sesión",
       );
+      // The token was consumed by the failed attempt — mint a fresh one.
+      setCaptchaToken(null);
+      setCaptchaKey((k) => k + 1);
     }
   }
 
@@ -192,13 +201,28 @@ export function LoginForm() {
           </Link>
         </div>
 
+        {isTurnstileEnabled && (
+          <Turnstile
+            key={captchaKey}
+            siteKey={TURNSTILE_SITE_KEY}
+            onVerify={setCaptchaToken}
+            onExpire={() => setCaptchaToken(null)}
+            onError={() => setCaptchaToken(null)}
+          />
+        )}
+
         {authError && (
           <div className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
             {authError}
           </div>
         )}
 
-        <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full"
+          disabled={isSubmitting || (isTurnstileEnabled && !captchaToken)}
+        >
           {isSubmitting ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (

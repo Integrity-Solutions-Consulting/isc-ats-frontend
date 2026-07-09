@@ -6,7 +6,11 @@ const BACKEND = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000/api/v
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
-  const { email, password } = body as { email?: string; password?: string };
+  const { email, password, turnstile_token } = body as {
+    email?: string;
+    password?: string;
+    turnstile_token?: string | null;
+  };
 
   if (!email || !password) {
     return NextResponse.json({ error: "Credenciales incompletas" }, { status: 400 });
@@ -17,7 +21,7 @@ export async function POST(request: NextRequest) {
     backendRes = await fetch(`${BACKEND}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...clientIpHeader(request) },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, turnstile_token }),
     });
   } catch {
     return NextResponse.json(
@@ -28,7 +32,19 @@ export async function POST(request: NextRequest) {
 
   if (!backendRes.ok) {
     const data = await backendRes.json().catch(() => ({}));
-    const detail = ((data as { detail?: string }).detail ?? '').toLowerCase();
+    const rawDetail = (data as { detail?: string }).detail ?? '';
+    const detail = rawDetail.toLowerCase();
+
+    // Turnstile (anti-bot) rejection: surface the backend's Spanish message as-is
+    // so the user retries the challenge. Independent of email existence, so this
+    // reveals nothing (no enumeration).
+    if (
+      backendRes.status === 403 &&
+      (detail.includes('robot') || detail.includes('verificación de seguridad'))
+    ) {
+      return NextResponse.json({ error: rawDetail }, { status: 403 });
+    }
+
     const errorMsg = (detail.includes('already') || detail.includes('exist') || detail.includes('duplicate') || detail.includes('registrado'))
       ? 'Ya existe una cuenta con este correo electrónico.'
       : 'No se pudo crear la cuenta. Por favor, intentá de nuevo.';

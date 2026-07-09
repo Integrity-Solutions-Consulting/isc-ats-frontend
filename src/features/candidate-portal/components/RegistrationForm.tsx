@@ -11,8 +11,10 @@ import Link from 'next/link';
 import { Button } from '@/design-system/ui/button';
 import { Input } from '@/design-system/ui/input';
 import { Label } from '@/design-system/ui/label';
+import { Turnstile } from '@/design-system/molecules/Turnstile';
 import { cn } from '@/shared/utils';
 import { ROUTES } from '@/shared/constants/routes';
+import { TURNSTILE_SITE_KEY, isTurnstileEnabled } from '@/shared/constants/turnstile';
 import { PASSWORD_REQUIREMENTS, passwordPolicyError } from '@/shared/utils/ecuadorValidators';
 import { LegalModal } from '@/features/legal/LegalModal';
 import type { LegalDocId } from '@/features/legal/content';
@@ -40,6 +42,10 @@ export function RegistrationForm() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [legalDoc, setLegalDoc] = useState<LegalDocId | null>(null);
+  // Anti-bot token; `captchaKey` remounts the widget for a fresh single-use
+  // token after a failed submit.
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
 
   const {
     register,
@@ -58,11 +64,18 @@ export function RegistrationForm() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: data.email, password: data.password }),
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          turnstile_token: captchaToken,
+        }),
       });
       const resData = await res.json();
       if (!res.ok) {
         setSubmitError(resData.error || 'Error al registrar la cuenta');
+        // The token was consumed by the failed attempt — mint a fresh one.
+        setCaptchaToken(null);
+        setCaptchaKey((k) => k + 1);
         return;
       }
       // Account is created but unverified — send the user to the "check your
@@ -70,6 +83,8 @@ export function RegistrationForm() {
       router.push(`${ROUTES.registroVerificacion}?email=${encodeURIComponent(data.email)}`);
     } catch {
       setSubmitError('No se pudo conectar con el servidor');
+      setCaptchaToken(null);
+      setCaptchaKey((k) => k + 1);
     }
   }
 
@@ -225,7 +240,22 @@ export function RegistrationForm() {
           {errors.terms && <p className="text-xs text-danger">{errors.terms.message}</p>}
         </div>
 
-        <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+        {isTurnstileEnabled && (
+          <Turnstile
+            key={captchaKey}
+            siteKey={TURNSTILE_SITE_KEY}
+            onVerify={setCaptchaToken}
+            onExpire={() => setCaptchaToken(null)}
+            onError={() => setCaptchaToken(null)}
+          />
+        )}
+
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full"
+          disabled={isSubmitting || (isTurnstileEnabled && !captchaToken)}
+        >
           {isSubmitting ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (

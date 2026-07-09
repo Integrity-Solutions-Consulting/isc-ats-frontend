@@ -13,7 +13,10 @@ const CSP_REPORT_ONLY = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
-  "script-src 'self'",
+  // Cloudflare Turnstile loads its api.js and renders its challenge in an iframe
+  // from challenges.cloudflare.com — allow the script and the frame source.
+  "script-src 'self' https://challenges.cloudflare.com",
+  "frame-src 'self' https://challenges.cloudflare.com",
   "connect-src 'self'",
 ].join("; ");
 
