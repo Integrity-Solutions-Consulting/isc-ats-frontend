@@ -9,12 +9,13 @@ export const metadata: Metadata = {
 };
 
 // Read the Turnstile site key at request time (server-side) so it comes from the
-// runtime environment, not the build. This avoids relying on NEXT_PUBLIC_* being
-// present during `next build` (it may only be injected at runtime by the host).
+// runtime environment, not the build. The key is passed down to the client as a
+// prop, so it needs no NEXT_PUBLIC_ prefix — a plain server-only env var is read
+// at runtime by the standalone server and never inlined at build.
 export const dynamic = "force-dynamic";
 
 export default function LoginPage() {
-  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
+  const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY ?? "";
   return (
     <AuthLayout>
       <Suspense fallback={null}>
