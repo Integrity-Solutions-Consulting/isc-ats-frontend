@@ -121,7 +121,7 @@ export async function GET() {
     // Resolve vacancy names for the vacancies this candidate applied to, using
     // the candidate-safe PUBLIC endpoint (candidates are forbidden from the staff
     // `expanded` endpoint). Public returns active vacancies only, so applications
-    // to a now-closed vacancy fall back to "Vacante #id" (handled below). Page
+    // to a now-closed vacancy fall back to "Vacante no disponible" (below). Page
     // through until every needed id is resolved or pages run out.
     const neededIds = new Set(appsData.items.map((a) => a.vacancy_id));
     const vacancyMap = new Map<number, BackendVacancyItem>();
@@ -188,7 +188,7 @@ export async function GET() {
       return {
         id: String(app.id),
         vacancyId: String(app.vacancy_id),
-        vacancyTitle: vacancy?.vacancy_name ?? `Vacante #${app.vacancy_id}`,
+        vacancyTitle: vacancy?.vacancy_name ?? "Vacante no disponible",
         appliedAt: app.applied_at.slice(0, 10),
         lastUpdate,
         status: deriveCandidateStatus(app.status_id, app.current_stage_id, stages, statusCodeById),
