@@ -3,15 +3,14 @@ import type { NextRequest } from "next/server";
 import { backendGet } from "@/lib/backendFetch";
 import { getAppliedVacancyIds } from "../getAppliedVacancyIds";
 
-interface BackendPage<T> { items: T[]; total: number; }
+// Public-safe vacancy shape: no client_company, no staff/pipeline data. The
+// candidate portal must never expose which client a vacancy belongs to.
 interface BackendVacancyItem {
   id: number;
   vacancy_name: string;
-  client_company: string;
   city: string;
   work_mode: string;
   resource_level: string;
-  vacancy_status: string;
   openings: number;
   experience_years: number;
   work_schedule: string | null;
@@ -19,7 +18,6 @@ interface BackendVacancyItem {
   project_duration_months: number;
   description: string | null;
   profile_requirements: Record<string, string[]> | null;
-  is_active: boolean;
   career: string;
   created_at: string;
 }
@@ -45,12 +43,9 @@ function mapVacancy(v: BackendVacancyItem, appliedIds: Set<number>) {
     ? [durYears ? `${durYears} año${durYears !== 1 ? "s" : ""}` : "", durMonths ? `${durMonths} mes${durMonths !== 1 ? "es" : ""}` : ""].filter(Boolean).join(" ")
     : "Indefinido";
   const levelLabel = LEVEL_LABEL[v.resource_level] ?? v.resource_level;
-  const initials = v.client_company.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
   return {
     id: String(v.id),
     title: v.vacancy_name,
-    clientName: v.client_company,
-    clientInitials: initials,
     workMode: WORK_MODE_MAP[v.work_mode] ?? "onsite",
     level: levelLabel,
     experienceYears: v.experience_years ?? 0,
@@ -79,13 +74,11 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
-    const [data, appliedIds] = await Promise.all([
-      backendGet<BackendPage<BackendVacancyItem>>(
-        `/recruitment/vacancies/expanded?size=100`,
-      ),
+    // Public single-vacancy endpoint: candidate-safe, active vacancies only.
+    const [item, appliedIds] = await Promise.all([
+      backendGet<BackendVacancyItem>(`/recruitment/vacancies/public/${id}`),
       getAppliedVacancyIds(),
     ]);
-    const item = data.items.find((v) => String(v.id) === id);
     if (!item) return NextResponse.json(null, { status: 404 });
     return NextResponse.json(mapVacancy(item, appliedIds));
   } catch (error) {

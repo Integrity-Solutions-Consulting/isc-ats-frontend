@@ -5,14 +5,14 @@ import { getAppliedVacancyIds } from "./getAppliedVacancyIds";
 
 interface BackendPage<T> { items: T[]; total: number; }
 
+// Public-safe vacancy shape: no client_company, no staff/pipeline data. The
+// candidate portal must never expose which client a vacancy belongs to.
 interface BackendVacancyItem {
   id: number;
   vacancy_name: string;
-  client_company: string;
   city: string;
   work_mode: string;
   resource_level: string;
-  vacancy_status: string;
   openings: number;
   experience_years: number;
   work_schedule: string | null;
@@ -20,7 +20,6 @@ interface BackendVacancyItem {
   project_duration_months: number;
   description: string | null;
   profile_requirements: Record<string, string[]> | null;
-  is_active: boolean;
   career: string;
   created_at: string;
 }
@@ -65,18 +64,9 @@ function mapVacancy(v: BackendVacancyItem, appliedIds: Set<number>): CandidateVa
 
   const levelLabel = LEVEL_LABEL[v.resource_level] ?? v.resource_level;
 
-  const initials = v.client_company
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
   return {
     id: String(v.id),
     title: v.vacancy_name,
-    clientName: v.client_company,
-    clientInitials: initials,
     workMode: WORK_MODE_MAP[v.work_mode] ?? "onsite",
     level: levelLabel,
     experienceYears: v.experience_years ?? 0,
@@ -106,18 +96,16 @@ function mapVacancy(v: BackendVacancyItem, appliedIds: Set<number>): CandidateVa
 
 export async function GET() {
   try {
+    // Public endpoint: candidate-safe (no client_company) and already filtered
+    // to active, published vacancies server-side — no client-side filter needed.
     const [vacanciesData, appliedIds] = await Promise.all([
       backendGet<BackendPage<BackendVacancyItem>>(
-        "/recruitment/vacancies/expanded?size=100",
+        "/recruitment/vacancies/public?size=100",
       ),
       getAppliedVacancyIds(),
     ]);
 
-    const active = vacanciesData.items.filter(
-      (v) => v.is_active && v.vacancy_status === "active",
-    );
-
-    return NextResponse.json(active.map((v) => mapVacancy(v, appliedIds)));
+    return NextResponse.json(vacanciesData.items.map((v) => mapVacancy(v, appliedIds)));
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }

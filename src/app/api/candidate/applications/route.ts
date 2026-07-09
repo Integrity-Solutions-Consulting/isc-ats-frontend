@@ -118,18 +118,17 @@ export async function GET() {
     const appStatuses = await backendGet<BackendParamPage>("/org/parameters?type=application_status&size=10");
     const statusCodeById = new Map<number, string>(appStatuses.items.map((s) => [s.id, s.code]));
 
-    // Resolve vacancy names for exactly the vacancies this candidate applied to.
-    // The expanded list caps `size` at 100 with no id filter, so a blanket
-    // `expanded?size=100` silently dropped any vacancy beyond the first page and
-    // rendered older applications as "Vacante #id". Page through the list until
-    // every collected id is resolved (or pages run out), keeping only inactive
-    // ones too via include_inactive so closed vacancies still show their name.
+    // Resolve vacancy names for the vacancies this candidate applied to, using
+    // the candidate-safe PUBLIC endpoint (candidates are forbidden from the staff
+    // `expanded` endpoint). Public returns active vacancies only, so applications
+    // to a now-closed vacancy fall back to "Vacante #id" (handled below). Page
+    // through until every needed id is resolved or pages run out.
     const neededIds = new Set(appsData.items.map((a) => a.vacancy_id));
     const vacancyMap = new Map<number, BackendVacancyItem>();
     const PAGE_SIZE = 100;
     for (let page = 1; vacancyMap.size < neededIds.size; page += 1) {
       const vacanciesData = await backendGet<BackendPage<BackendVacancyItem>>(
-        `/recruitment/vacancies/expanded?size=${PAGE_SIZE}&page=${page}&include_inactive=true`,
+        `/recruitment/vacancies/public?size=${PAGE_SIZE}&page=${page}`,
       );
       for (const v of vacanciesData.items) {
         if (neededIds.has(v.id)) vacancyMap.set(v.id, v);

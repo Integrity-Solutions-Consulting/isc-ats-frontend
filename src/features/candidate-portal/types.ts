@@ -1,8 +1,6 @@
 export interface CandidateVacancy {
   id: string;
   title: string;
-  clientName: string;
-  clientInitials: string;
   workMode: 'remote' | 'onsite' | 'hybrid';
   level: string;
   experienceYears: number;

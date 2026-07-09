@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { Header } from '@/design-system/organisms/Header';
 import { NotificationsPanel } from '@/features/notifications/components/NotificationsPanel';
@@ -16,12 +17,16 @@ interface Props {
 
 export function HeaderWithNotifications({ user }: Props) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [showNotifications, setShowNotifications] = useState(false);
   const { data: notifications } = useNotifications();
   const hasUnread = (notifications ?? []).some((n) => !n.read);
 
   const handleLogout = async () => {
     await logout();
+    // Wipe the React Query cache so the next user who logs in on this browser
+    // never sees the previous session's cached data (cross-account leak).
+    queryClient.clear();
     router.push(ROUTES.login);
   };
 

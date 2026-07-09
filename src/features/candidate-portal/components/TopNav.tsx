@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Bell, Check, CheckCheck, ChevronDown, LogOut, User, X } from 'lucide-react';
 import { format, isAfter, isToday, isYesterday, parseISO, startOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -63,6 +64,7 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, onClose: () =
 export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAvatar, setShowAvatar] = useState(false);
   const { data: notifications = [] } = useNotifications();
@@ -103,6 +105,9 @@ export function TopNav() {
 
   const handleLogout = async () => {
     await logout();
+    // Wipe the React Query cache so the next user who logs in on this browser
+    // never sees the previous session's cached data (cross-account leak).
+    queryClient.clear();
     router.push(ROUTES.login);
   };
 
