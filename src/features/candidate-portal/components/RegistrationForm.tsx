@@ -14,7 +14,6 @@ import { Label } from '@/design-system/ui/label';
 import { Turnstile } from '@/design-system/molecules/Turnstile';
 import { cn } from '@/shared/utils';
 import { ROUTES } from '@/shared/constants/routes';
-import { TURNSTILE_SITE_KEY, isTurnstileEnabled } from '@/shared/constants/turnstile';
 import { PASSWORD_REQUIREMENTS, passwordPolicyError } from '@/shared/utils/ecuadorValidators';
 import { LegalModal } from '@/features/legal/LegalModal';
 import type { LegalDocId } from '@/features/legal/content';
@@ -36,7 +35,13 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>;
 
-export function RegistrationForm() {
+interface RegistrationFormProps {
+  /** Turnstile site key from the server env; empty string disables the widget. */
+  turnstileSiteKey?: string;
+}
+
+export function RegistrationForm({ turnstileSiteKey = '' }: RegistrationFormProps) {
+  const captchaEnabled = turnstileSiteKey.length > 0;
   const router = useRouter();
   const [showPw, setShowPw] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -240,10 +245,10 @@ export function RegistrationForm() {
           {errors.terms && <p className="text-xs text-danger">{errors.terms.message}</p>}
         </div>
 
-        {isTurnstileEnabled && (
+        {captchaEnabled && (
           <Turnstile
             key={captchaKey}
-            siteKey={TURNSTILE_SITE_KEY}
+            siteKey={turnstileSiteKey}
             onVerify={setCaptchaToken}
             onExpire={() => setCaptchaToken(null)}
             onError={() => setCaptchaToken(null)}
@@ -254,7 +259,7 @@ export function RegistrationForm() {
           type="submit"
           size="lg"
           className="w-full"
-          disabled={isSubmitting || (isTurnstileEnabled && !captchaToken)}
+          disabled={isSubmitting || (captchaEnabled && !captchaToken)}
         >
           {isSubmitting ? (
             <Loader2 className="size-4 animate-spin" />

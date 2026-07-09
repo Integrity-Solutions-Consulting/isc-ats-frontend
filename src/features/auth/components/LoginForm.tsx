@@ -14,14 +14,19 @@ import { Turnstile } from "@/design-system/molecules/Turnstile";
 import { login } from "../api/authApi";
 import { loginSchema, type LoginInput } from "../types";
 import { ROUTES } from "@/shared/constants/routes";
-import { TURNSTILE_SITE_KEY, isTurnstileEnabled } from "@/shared/constants/turnstile";
 
 // "Remember me" persists only the email — never the password. On the next visit
 // the email is prefilled and the checkbox stays on, so the user just types the
 // password. Clearing the checkbox on login forgets it.
 const REMEMBERED_EMAIL_KEY = "isc.remembered_email";
 
-export function LoginForm() {
+interface LoginFormProps {
+  /** Turnstile site key from the server env; empty string disables the widget. */
+  turnstileSiteKey?: string;
+}
+
+export function LoginForm({ turnstileSiteKey = "" }: LoginFormProps) {
+  const captchaEnabled = turnstileSiteKey.length > 0;
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -201,10 +206,10 @@ export function LoginForm() {
           </Link>
         </div>
 
-        {isTurnstileEnabled && (
+        {captchaEnabled && (
           <Turnstile
             key={captchaKey}
-            siteKey={TURNSTILE_SITE_KEY}
+            siteKey={turnstileSiteKey}
             onVerify={setCaptchaToken}
             onExpire={() => setCaptchaToken(null)}
             onError={() => setCaptchaToken(null)}
@@ -221,7 +226,7 @@ export function LoginForm() {
           type="submit"
           size="lg"
           className="w-full"
-          disabled={isSubmitting || (isTurnstileEnabled && !captchaToken)}
+          disabled={isSubmitting || (captchaEnabled && !captchaToken)}
         >
           {isSubmitting ? (
             <Loader2 className="size-4 animate-spin" />
