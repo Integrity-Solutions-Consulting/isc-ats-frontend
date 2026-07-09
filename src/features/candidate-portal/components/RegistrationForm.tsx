@@ -12,6 +12,7 @@ import { Button } from '@/design-system/ui/button';
 import { Input } from '@/design-system/ui/input';
 import { Label } from '@/design-system/ui/label';
 import { Turnstile } from '@/design-system/molecules/Turnstile';
+import { TurnstileNotice } from '@/design-system/molecules/TurnstileNotice';
 import { cn } from '@/shared/utils';
 import { ROUTES } from '@/shared/constants/routes';
 import { PASSWORD_REQUIREMENTS, passwordPolicyError } from '@/shared/utils/ecuadorValidators';
@@ -277,6 +278,8 @@ export function RegistrationForm({ turnstileSiteKey = '' }: RegistrationFormProp
             Inicia sesión
           </Link>
         </p>
+
+        {captchaEnabled && <TurnstileNotice />}
       </form>
 
       <LegalModal doc={legalDoc} onClose={() => setLegalDoc(null)} />

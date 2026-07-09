@@ -11,6 +11,7 @@ import { Button } from "@/design-system/ui/button";
 import { Input } from "@/design-system/ui/input";
 import { Label } from "@/design-system/ui/label";
 import { Turnstile } from "@/design-system/molecules/Turnstile";
+import { TurnstileNotice } from "@/design-system/molecules/TurnstileNotice";
 import { login } from "../api/authApi";
 import { loginSchema, type LoginInput } from "../types";
 import { ROUTES } from "@/shared/constants/routes";
@@ -244,6 +245,8 @@ export function LoginForm({ turnstileSiteKey = "" }: LoginFormProps) {
             Regístrate aquí
           </Link>
         </p>
+
+        {captchaEnabled && <TurnstileNotice />}
       </form>
     </div>
   );

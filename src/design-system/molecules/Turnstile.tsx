@@ -15,6 +15,9 @@ interface TurnstileRenderOptions {
   "error-callback"?: () => void;
   theme?: "light" | "dark" | "auto";
   action?: string;
+  // "interaction-only" keeps the widget invisible while it verifies in the
+  // background; the box only appears if Cloudflare needs a real interaction.
+  appearance?: "always" | "execute" | "interaction-only";
 }
 
 interface TurnstileApi {
@@ -114,6 +117,8 @@ export function Turnstile({
           callback: (token) => onVerifyRef.current(token),
           "expired-callback": () => onExpireRef.current?.(),
           "error-callback": () => onErrorRef.current?.(),
+          // Verify silently; only reveal the challenge if interaction is needed.
+          appearance: "interaction-only",
         });
       })
       .catch(() => onErrorRef.current?.());
