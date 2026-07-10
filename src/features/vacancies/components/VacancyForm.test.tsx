@@ -75,4 +75,20 @@ describe("VacancyForm — permission-gated save bar", () => {
     await waitFor(() => expect(createVacancy).toHaveBeenCalled());
     expect(createVacancy).toHaveBeenCalledWith(expect.anything(), "solicitud");
   });
+
+  it("persists status 'active' when a publisher submits 'Publicar vacante' with a description filled in", async () => {
+    const user = userEvent.setup();
+    renderForm([PERM.vacanciesPublish], {
+      description: "Descripción completa del puesto",
+      clientCompany: "1",
+      contact: "1",
+      department: "1",
+      city: "1",
+      career: "1",
+      process: "1",
+    });
+    await user.click(screen.getByRole("button", { name: /publicar vacante/i }));
+    await waitFor(() => expect(createVacancy).toHaveBeenCalled());
+    expect(createVacancy).toHaveBeenCalledWith(expect.anything(), "active");
+  });
 });

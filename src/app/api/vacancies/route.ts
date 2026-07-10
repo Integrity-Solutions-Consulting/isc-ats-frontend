@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as {
       values: VacancyFormValues;
-      status: "solicitud" | "active" | "paused" | "closed";
+      status: "solicitud" | "active" | "closed";
     };
     const { values, status } = body;
 

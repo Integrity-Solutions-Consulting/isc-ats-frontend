@@ -84,8 +84,20 @@ describe("StatusSidebar — move gating", () => {
     expect(screen.getByRole("button", { name: /rechazar candidato/i })).toBeInTheDocument();
   });
 
-  it("still shows unrelated actions (Agendar entrevista) without applicationsUpdate", () => {
+  it("still shows unrelated actions (Agendar entrevista) without applicationsUpdate, when interviewsCreate is granted", () => {
+    renderSidebar([PERM.interviewsCreate]);
+    expect(screen.getByRole("button", { name: /agendar entrevista/i })).toBeInTheDocument();
+  });
+});
+
+describe("StatusSidebar — schedule interview gating", () => {
+  it("hides 'Agendar entrevista' without interviewsCreate", () => {
     renderSidebar([]);
+    expect(screen.queryByRole("button", { name: /agendar entrevista/i })).not.toBeInTheDocument();
+  });
+
+  it("shows 'Agendar entrevista' with interviewsCreate", () => {
+    renderSidebar([PERM.interviewsCreate]);
     expect(screen.getByRole("button", { name: /agendar entrevista/i })).toBeInTheDocument();
   });
 });

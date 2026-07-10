@@ -43,6 +43,7 @@ export function StatusSidebar({
   const router = useRouter();
   const { has } = usePermissions();
   const canMove = has(PERM.applicationsUpdate);
+  const canScheduleInterview = has(PERM.interviewsCreate);
 
   const { data: stageStatuses = [] } = useQuery<{ id: number; name: string }[]>({
     queryKey: ['org', 'catalog', 'stage_status'],
@@ -210,10 +211,13 @@ export function StatusSidebar({
             </div>
           )}
 
-          {/* Schedule interview */}
-          <Button variant="outline" className="w-full" onClick={() => setShowScheduleModal(true)}>
-            Agendar entrevista
-          </Button>
+          {/* Schedule interview — gated by interviewsCreate (UX defense-in-depth;
+              the backend is the real boundary). */}
+          {canScheduleInterview && (
+            <Button variant="outline" className="w-full" onClick={() => setShowScheduleModal(true)}>
+              Agendar entrevista
+            </Button>
+          )}
 
           {/* Generate Word */}
           <Button
