@@ -8,6 +8,8 @@ import { useState } from 'react';
 import { Button } from '@/design-system/ui/button';
 import { cn } from '@/shared/utils';
 import { getClientSessionUser } from '@/shared/constants/mockSession';
+import { PERM } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/PermissionsProvider';
 import {
   useAddNote,
   useCandidateNotes,
@@ -20,6 +22,8 @@ interface NotesCardProps {
 
 export function NotesCard({ applicationId, readOnly }: NotesCardProps) {
   const [body, setBody] = useState('');
+  const { has } = usePermissions();
+  const canComment = has(PERM.applicationNotesCreate);
 
   const { data: notes = [], isLoading } = useCandidateNotes(applicationId);
   const addNoteMutation = useAddNote(applicationId);
@@ -71,8 +75,9 @@ export function NotesCard({ applicationId, readOnly }: NotesCardProps) {
         </ul>
       )}
 
-      {/* Add note form */}
-      {!readOnly && (
+      {/* Add note form — gated by applicationNotesCreate (UX defense-in-depth,
+          the backend is the real boundary; see features/auth/permissions.ts) */}
+      {!readOnly && canComment && (
         <form onSubmit={handleSubmit} className="space-y-2">
           <textarea
             value={body}

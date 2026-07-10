@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { backendGet, backendPatch, backendDelete, backendErrorResponse } from "@/lib/backendFetch";
+import type { VacancyFormValues } from "@/features/vacancies/types";
 import {
   mapVacancy, buildCatalogMaps, resolveReferences,
   type BackendVacancyItem, type BackendPage, type BackendParam,
@@ -32,7 +33,11 @@ export async function PATCH(
 ) {
   const { id } = await params;
   try {
-    const body = await request.json() as { values?: any; status?: string; isActive?: boolean };
+    const body = await request.json() as {
+      values?: VacancyFormValues;
+      status?: string;
+      isActive?: boolean;
+    };
 
     if (!body.values && body.isActive !== undefined) {
       await backendPatch(`/recruitment/vacancies/${id}`, { is_active: body.isActive });
@@ -40,13 +45,16 @@ export async function PATCH(
     }
 
     const { values, status } = body;
+    if (!values) {
+      return NextResponse.json({ error: "Missing 'values' in request body" }, { status: 400 });
+    }
 
     let finalStatus = status;
     if (!finalStatus) {
       const current = await backendGet<{ status_id: number }>(`/recruitment/vacancies/${id}`);
       const statusesData = await backendGet<BackendPage<BackendParam>>("/org/parameters?type=vacancy_status&size=10");
       const param = statusesData.items.find((p) => p.id === current.status_id);
-      finalStatus = param?.code ?? "draft";
+      finalStatus = param?.code ?? "solicitud";
     }
 
     const refs = await resolveReferences(values.position, values.workMode, values.level, finalStatus);

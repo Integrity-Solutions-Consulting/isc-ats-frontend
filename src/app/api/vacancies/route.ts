@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { backendGet, backendPost } from "@/lib/backendFetch";
-import type { Vacancy } from "@/features/vacancies/types";
+import type { Vacancy, VacancyFormValues } from "@/features/vacancies/types";
 
 interface BackendVacancyItem {
   id: number;
@@ -57,7 +57,7 @@ function mapVacancy(v: BackendVacancyItem): Vacancy {
     workSchedule: v.work_schedule ?? "",
     durationYears: v.project_duration_years || null,
     durationMonths: v.project_duration_months || null,
-    status: (v.vacancy_status as Vacancy["status"]) ?? "draft",
+    status: (v.vacancy_status as Vacancy["status"]) ?? "solicitud",
     isActive: v.is_active,
     career: v.career,
     process: v.process,
@@ -147,8 +147,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as {
-      values: any;
-      status: "draft" | "active" | "paused" | "closed";
+      values: VacancyFormValues;
+      status: "solicitud" | "active" | "paused" | "closed";
     };
     const { values, status } = body;
 

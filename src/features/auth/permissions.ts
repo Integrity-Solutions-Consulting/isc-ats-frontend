@@ -19,6 +19,16 @@ export const PERM = {
   parameters: 'org.parameters.read',
   users: 'auth.users.read',
   roles: 'auth.roles.read',
+  // Action-level codes — gate specific write actions rather than whole routes.
+  vacanciesPublish: 'recruitment.vacancies.publish',
+  vacanciesUpdate: 'recruitment.vacancies.update',
+  vacanciesDelete: 'recruitment.vacancies.delete',
+  applicationsCreate: 'recruitment.applications.create',
+  applicationsUpdate: 'recruitment.applications.update',
+  applicationsDelete: 'recruitment.applications.delete',
+  applicationNotesCreate: 'recruitment.application_notes.create',
+  interviewsCreate: 'recruitment.interviews.create',
+  filesRead: 'storage.files.read',
 } as const;
 
 export type PermissionCode = (typeof PERM)[keyof typeof PERM];

@@ -97,6 +97,11 @@ function CardBody({ card, onView }: { card: PipelineCard; onView?: () => void })
 interface CandidateCardProps {
   card: PipelineCard;
   onView?: () => void;
+  /** Gated by `has(PERM.applicationsUpdate)` at the board level — a caller who
+   *  cannot move applications between stages gets a static (non-draggable)
+   *  card instead of a broken/no-op drag handle. Defaults to true so existing
+   *  callers keep working until the board wires the permission through. */
+  canDrag?: boolean;
 }
 
 /**
@@ -105,17 +110,18 @@ interface CandidateCardProps {
  * Applying a transform here too would render a second moving copy (visible once
  * the board auto-scrolls horizontally).
  */
-export function CandidateCard({ card, onView }: CandidateCardProps) {
+export function CandidateCard({ card, onView, canDrag = true }: CandidateCardProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: card.id,
+    disabled: !canDrag,
   });
 
   return (
     <div
       ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      className={cn(CARD_CLASS, isDragging && 'opacity-40')}
+      {...(canDrag ? listeners : undefined)}
+      {...(canDrag ? attributes : undefined)}
+      className={cn(CARD_CLASS, !canDrag && 'cursor-default', isDragging && 'opacity-40')}
     >
       <CardBody card={card} onView={onView} />
     </div>

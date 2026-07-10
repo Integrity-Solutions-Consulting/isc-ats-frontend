@@ -14,6 +14,8 @@ interface PipelineColumnProps {
   cards: PipelineCard[];
   rejectionSummary?: RejectionSummary;
   matchFilter: 'all' | 'high' | 'medium';
+  /** Gated by `has(PERM.applicationsUpdate)` at the board level. */
+  canDrag?: boolean;
 }
 
 export function PipelineColumn({
@@ -21,6 +23,7 @@ export function PipelineColumn({
   cards,
   rejectionSummary,
   matchFilter,
+  canDrag = true,
 }: PipelineColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   const router = useRouter();
@@ -112,6 +115,7 @@ export function PipelineColumn({
           <CandidateCard
             key={card.id}
             card={card}
+            canDrag={canDrag}
             onView={() => {
               // The profile derives "X de N" and prev/next from the candidate's
               // current stage, so only the appId needs to travel in the URL.

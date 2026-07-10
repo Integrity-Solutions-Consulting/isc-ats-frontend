@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormProvider, useForm } from "react-hook-form";
@@ -11,8 +11,10 @@ import { vacancyKeys } from "../hooks/useVacancies";
 
 import { Button } from "@/design-system/ui/button";
 import { ROUTES } from "@/shared/constants/routes";
+import { PERM } from "@/features/auth/permissions";
+import { usePermissions } from "@/features/auth/PermissionsProvider";
 import { createVacancy, updateVacancy } from "../api/vacanciesApi";
-import { EMPTY_VACANCY_FORM, vacancyFormSchema } from "../formSchema";
+import { EMPTY_VACANCY_FORM, makeVacancySchema } from "../formSchema";
 import type { VacancyFormValues } from "../types";
 import { BasicInfoSection } from "./vacancy-form/BasicInfoSection";
 import { LocationSection } from "./vacancy-form/LocationSection";
@@ -35,17 +37,24 @@ export function VacancyForm({
 }: VacancyFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [pending, setPending] = useState<null | "draft" | "publish">(null);
+  const { has } = usePermissions();
+  // Whoever can publish also decides the selection process up front; a
+  // solicitud (non-publisher save) has none yet, so the field isn't required
+  // for them. See formSchema.ts.
+  const canPublish = has(PERM.vacanciesPublish);
+  const [pending, setPending] = useState<null | "solicitud" | "publish">(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const schema = useMemo(() => makeVacancySchema(canPublish), [canPublish]);
+
   const methods = useForm<VacancyFormValues>({
-    resolver: zodResolver(vacancyFormSchema),
+    resolver: zodResolver(schema),
     mode: "onTouched",
     defaultValues: initialValues ?? EMPTY_VACANCY_FORM,
   });
   const { handleSubmit, getValues, setError } = methods;
 
-  async function persist(values: VacancyFormValues, status: "draft" | "active") {
+  async function persist(values: VacancyFormValues, status: "solicitud" | "active") {
     if (mode === "edit" && vacancyId) {
       return updateVacancy(vacancyId, values, status);
     }
@@ -53,6 +62,12 @@ export function VacancyForm({
   }
 
   async function onPublish(values: VacancyFormValues) {
+    // Defense in depth: the Publicar button is hidden without vacanciesPublish,
+    // but the form's Enter-key submit still routes here — fall back to the
+    // solicitud save instead of attempting a publish this user can't perform.
+    if (!canPublish) {
+      return onSaveSolicitud();
+    }
     if (!values.description.trim()) {
       setError("description", {
         message: "Agrega una descripción para publicar la vacante",
@@ -77,16 +92,16 @@ export function VacancyForm({
     }
   }
 
-  async function onSaveDraft() {
+  async function onSaveSolicitud() {
     const values = getValues();
     if (!values.position.trim()) {
       setError("position", { message: "Ingresa el nombre del cargo" });
       return;
     }
     setSubmitError(null);
-    setPending("draft");
+    setPending("solicitud");
     try {
-      await persist(values, "draft");
+      await persist(values, "solicitud");
       queryClient.invalidateQueries({ queryKey: vacancyKeys.all });
       if (vacancyId) {
         queryClient.invalidateQueries({ queryKey: vacancyKeys.detail(vacancyId) });
@@ -132,21 +147,23 @@ export function VacancyForm({
           </Button>
           <Button
             type="button"
-            variant="outline"
-            onClick={onSaveDraft}
+            variant={canPublish ? "outline" : "default"}
+            onClick={onSaveSolicitud}
             disabled={pending !== null}
           >
-            {pending === "draft" && <Loader2 className="size-4 animate-spin" />}
-            Guardar borrador
+            {pending === "solicitud" && <Loader2 className="size-4 animate-spin" />}
+            Guardar solicitud
           </Button>
-          <Button type="submit" disabled={pending !== null}>
-            {pending === "publish" ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Send />
-            )}
-            Publicar vacante
-          </Button>
+          {canPublish && (
+            <Button type="submit" disabled={pending !== null}>
+              {pending === "publish" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Send />
+              )}
+              Publicar vacante
+            </Button>
+          )}
         </div>
       </form>
     </FormProvider>

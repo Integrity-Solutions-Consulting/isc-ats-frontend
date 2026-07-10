@@ -67,7 +67,7 @@ export function mapVacancy(v: BackendVacancyItem, catalogs?: CatalogMaps): Vacan
     workSchedule: v.work_schedule ?? "",
     durationYears: v.project_duration_years || null,
     durationMonths: v.project_duration_months || null,
-    status: (v.vacancy_status as Vacancy["status"]) ?? "draft",
+    status: (v.vacancy_status as Vacancy["status"]) ?? "solicitud",
     isActive: v.is_active,
     requirements: {
       knowledge: reqs?.knowledge ?? [],
