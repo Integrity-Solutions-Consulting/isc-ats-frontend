@@ -36,6 +36,7 @@ interface BackendInterviewOffer {
 interface BackendScheduledInterview {
   id: number;
   application_id: number;
+  process_stage_id: number;
   scheduled_at: string | null;
   ends_at: string | null;
   teams_meeting_url: string | null;
@@ -156,7 +157,7 @@ export async function GET() {
     // Open offers (Mode B) and scheduled interviews for this candidate, keyed by
     // application. Best-effort: a failure here must never break the list.
     const offerByApp = new Map<number, InterviewOffer>();
-    const interviewByApp = new Map<number, CandidateApplication["interview"]>();
+    const scheduledByApp = new Map<number, BackendScheduledInterview>();
     const [offersRes, scheduledRes] = await Promise.allSettled([
       backendGet<BackendInterviewOffer[]>("/recruitment/interviews/me/offers"),
       backendGet<BackendScheduledInterview[]>("/recruitment/interviews/me/scheduled"),
@@ -173,7 +174,7 @@ export async function GET() {
     if (scheduledRes.status === "fulfilled") {
       for (const i of scheduledRes.value) {
         if (!i.scheduled_at) continue;
-        interviewByApp.set(i.application_id, formatScheduledInterview(i));
+        scheduledByApp.set(i.application_id, i);
       }
     }
 
@@ -183,7 +184,14 @@ export async function GET() {
       const lastUpdate = daysAgo === 0 ? "hoy" : daysAgo === 1 ? "hace 1 día" : `hace ${daysAgo} días`;
       const stages = stagesMap.get(app.vacancy_id) ?? [];
       const offer = offerByApp.get(app.id);
-      const interview = interviewByApp.get(app.id);
+      // A scheduled interview only stays relevant while the candidate is still
+      // on the stage it was booked for — HR may move them on/back without
+      // formally cancelling the interview (e.g. skipped or deprioritized).
+      const scheduled = scheduledByApp.get(app.id);
+      const interview =
+        scheduled && scheduled.process_stage_id === app.current_stage_id
+          ? formatScheduledInterview(scheduled)
+          : undefined;
 
       return {
         id: String(app.id),
