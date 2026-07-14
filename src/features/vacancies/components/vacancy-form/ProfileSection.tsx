@@ -12,7 +12,11 @@ import type { ProfileTemplateRecord } from "@/features/profile-templates/api/moc
 import type { VacancyFormValues } from "../../types";
 import { Section } from "./FormSection";
 
-export function ProfileSection() {
+interface ProfileSectionProps {
+  readOnly?: boolean;
+}
+
+export function ProfileSection({ readOnly = false }: ProfileSectionProps) {
   const { setValue, watch } = useFormContext<VacancyFormValues>();
 
   const requirements = watch("requirements");
@@ -54,6 +58,7 @@ export function ProfileSection() {
             value={appliedTemplate?.id ?? ""}
             onChange={applyTemplate}
             placeholder="Seleccionar plantilla…"
+            disabled={readOnly}
           />
           {appliedTemplate && (
             <span className="shrink-0 rounded-md bg-primary-50 px-2.5 py-1.5 text-xs text-primary-700">
@@ -78,6 +83,7 @@ export function ProfileSection() {
               setValue("requirements", { ...requirements, knowledge: tags })
             }
             placeholder="+ agregar conocimiento…"
+            disabled={readOnly}
           />
         </div>
         <div>
@@ -89,6 +95,7 @@ export function ProfileSection() {
               setValue("requirements", { ...requirements, tools: tags })
             }
             placeholder="+ herramienta…"
+            disabled={readOnly}
           />
         </div>
         <div>
@@ -100,6 +107,7 @@ export function ProfileSection() {
               setValue("requirements", { ...requirements, skills: tags })
             }
             placeholder="+ habilidad…"
+            disabled={readOnly}
           />
         </div>
         <div className="sm:col-span-2">
@@ -111,6 +119,7 @@ export function ProfileSection() {
               setValue("requirements", { ...requirements, certifications: tags })
             }
             placeholder="+ certificación…"
+            disabled={readOnly}
           />
         </div>
       </div>

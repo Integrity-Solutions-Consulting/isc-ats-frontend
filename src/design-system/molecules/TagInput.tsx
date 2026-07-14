@@ -10,6 +10,7 @@ interface TagInputProps {
   onChange: (tags: string[]) => void;
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 /** Chip-style multi-value input. Enter or comma adds; Backspace removes last. */
@@ -18,6 +19,7 @@ export function TagInput({
   onChange,
   placeholder,
   className,
+  disabled = false,
 }: TagInputProps) {
   const [draft, setDraft] = React.useState("");
 
@@ -39,6 +41,7 @@ export function TagInput({
     <div
       className={cn(
         "flex min-h-11 flex-wrap items-center gap-1.5 rounded-md border border-border bg-surface p-2 shadow-sm focus-within:border-primary-600 focus-within:ring-2 focus-within:ring-ring/30 focus-within:ring-offset-1",
+        disabled && "opacity-60",
         className,
       )}
     >
@@ -52,7 +55,8 @@ export function TagInput({
             type="button"
             onClick={() => removeTag(tag)}
             aria-label={`Quitar ${tag}`}
-            className="text-primary-700/60 transition-colors hover:text-primary-700"
+            disabled={disabled}
+            className="text-primary-700/60 transition-colors hover:text-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <X className="size-3" />
           </button>
@@ -71,7 +75,8 @@ export function TagInput({
         }}
         onBlur={addTag}
         placeholder={placeholder}
-        className="min-w-[140px] flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-subtle"
+        disabled={disabled}
+        className="min-w-[140px] flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-subtle disabled:cursor-not-allowed"
       />
     </div>
   );

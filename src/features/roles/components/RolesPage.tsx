@@ -1,8 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, AlertCircle, X } from 'lucide-react';
+import { Plus, AlertCircle, X, Loader2 } from 'lucide-react';
 import { Button } from '@/design-system/ui/button';
+import { Input } from '@/design-system/ui/input';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/design-system/ui/dialog';
 import {
   buildPermissionTree,
   moduleCodes,
@@ -18,10 +22,12 @@ import {
   useCreateRole,
   useUpdateRole,
   useDeleteRole,
+  useRoleParameterTypes,
+  useSetRoleParameterTypes,
 } from '../hooks/useRoles';
 
 function copyRole(r: Role): Role {
-  return { ...r, permissionIds: new Set(r.permissionIds) };
+  return { ...r, permissionIds: new Set(r.permissionIds), parameterTypes: new Set(r.parameterTypes) };
 }
 
 export function RolesPage() {
@@ -30,6 +36,7 @@ export function RolesPage() {
   const createMutation = useCreateRole();
   const updateMutation = useUpdateRole();
   const deleteMutation = useDeleteRole();
+  const setParameterTypesMutation = useSetRoleParameterTypes();
 
   const modules = useMemo(() => buildPermissionTree(catalog), [catalog]);
   const totalPerms = useMemo(() => countPermissions(modules), [modules]);
@@ -38,6 +45,11 @@ export function RolesPage() {
   const [draftRole, setDraftRole] = useState<Role | null>(null);
   const [dirty, setDirty] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newRoleName, setNewRoleName] = useState('');
+  const [newRoleDescription, setNewRoleDescription] = useState('');
+
+  const { data: currentParameterTypes } = useRoleParameterTypes(selectedId || null);
 
   // Default selection when roles list is loaded. Intentional server→local sync.
   useEffect(() => {
@@ -61,6 +73,22 @@ export function RolesPage() {
       }
     }
   }, [roles, selectedId, dirty]);
+
+  // Populate the draft's writable-catalog-types once GET /auth/roles/{id}/parameter-types
+  // resolves for the selected role. Separate from the roles-list sync above because
+  // parameter types are not part of that payload — mirrors its "don't clobber
+  // in-progress edits" guard via the `!dirty` check.
+  useEffect(() => {
+    if (selectedId && currentParameterTypes && !dirty) {
+      // Intentional server→local sync; not a render derivation.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDraftRole((prev) =>
+        prev && prev.id === selectedId
+          ? { ...prev, parameterTypes: new Set(currentParameterTypes) }
+          : prev,
+      );
+    }
+  }, [currentParameterTypes, selectedId, dirty]);
 
   function updateRoleDraft(patch: Partial<Omit<Role, 'id'>>) {
     if (!draftRole) return;
@@ -89,16 +117,33 @@ export function RolesPage() {
     updateRoleDraft({ permissionIds: next });
   }
 
-  async function createNewRole() {
+  function toggleParameterType(key: string, checked: boolean) {
+    if (!draftRole) return;
+    const next = new Set(draftRole.parameterTypes);
+    if (checked) next.add(key);
+    else next.delete(key);
+    updateRoleDraft({ parameterTypes: next });
+  }
+
+  function openCreateModal() {
+    setErrorMsg(null);
+    setNewRoleName('');
+    setNewRoleDescription('');
+    setShowCreateModal(true);
+  }
+
+  async function submitCreateRole() {
+    if (!newRoleName.trim()) return;
     setErrorMsg(null);
     try {
       const newRole = await createMutation.mutateAsync({
-        name: 'Nuevo rol',
-        description: '',
+        name: newRoleName.trim(),
+        description: newRoleDescription.trim(),
       });
       setSelectedId(newRole.id);
       setDraftRole(newRole);
       setDirty(false);
+      setShowCreateModal(false);
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : 'Error al crear el rol');
     }
@@ -115,6 +160,9 @@ export function RolesPage() {
   async function saveChanges() {
     if (!draftRole || !selectedId) return;
     setErrorMsg(null);
+    const canManageCatalogTypes =
+      draftRole.permissionIds.has('org.parameters.create') ||
+      draftRole.permissionIds.has('org.parameters.update');
     try {
       await updateMutation.mutateAsync({
         id: selectedId,
@@ -124,6 +172,12 @@ export function RolesPage() {
           permissionIds: Array.from(draftRole.permissionIds),
         },
       });
+      if (canManageCatalogTypes) {
+        await setParameterTypesMutation.mutateAsync({
+          id: selectedId,
+          types: Array.from(draftRole.parameterTypes),
+        });
+      }
       setDirty(false);
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : 'Error al guardar el rol');
@@ -185,7 +239,7 @@ export function RolesPage() {
       {/* Page header */}
       <div className="flex items-center gap-4">
         <h1 className="text-2xl font-bold text-ink">Roles y permisos</h1>
-        <Button size="sm" className="ml-auto" onClick={createNewRole} disabled={createMutation.isPending}>
+        <Button size="sm" className="ml-auto" onClick={openCreateModal} disabled={createMutation.isPending}>
           <Plus className="mr-1.5 size-4" />
           Nuevo rol
         </Button>
@@ -217,12 +271,35 @@ export function RolesPage() {
             onUpdate={updateRoleDraft}
             onTogglePerm={togglePerm}
             onToggleModule={toggleModule}
+            onToggleParameterType={toggleParameterType}
             onDiscard={discardChanges}
             onDelete={deleteCurrentRole}
             onSave={saveChanges}
           />
         )}
       </div>
+
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="sm:max-w-md bg-surface-2">
+          <DialogHeader><DialogTitle>Nuevo rol</DialogTitle></DialogHeader>
+          <div className="flex flex-col gap-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-ink">Nombre del rol</label>
+              <Input value={newRoleName} onChange={(e) => setNewRoleName(e.target.value)} className="mt-1.5" />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-ink">Descripción</label>
+              <Input value={newRoleDescription} onChange={(e) => setNewRoleDescription(e.target.value)} className="mt-1.5" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateModal(false)}>Cancelar</Button>
+            <Button onClick={submitCreateRole} disabled={!newRoleName.trim() || createMutation.isPending}>
+              {createMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : 'Crear rol'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

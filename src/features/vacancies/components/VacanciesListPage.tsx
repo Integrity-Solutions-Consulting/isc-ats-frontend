@@ -11,6 +11,8 @@ import { VacanciesTable } from "./VacanciesTable";
 import { useVacancies, useVacancyCatalogs } from "../hooks/useVacancies";
 import type { VacancyFilters as Filters } from "../types";
 import { ROUTES } from "@/shared/constants/routes";
+import { PERM } from "@/features/auth/permissions";
+import { usePermissions } from "@/features/auth/PermissionsProvider";
 
 const INITIAL_FILTERS: Filters = {
   search: "",
@@ -24,6 +26,8 @@ const INITIAL_FILTERS: Filters = {
 export function VacanciesListPage() {
   const { data: vacancies, isLoading, isError } = useVacancies();
   const { data: catalogs } = useVacancyCatalogs();
+  const { has } = usePermissions();
+  const canCreate = has(PERM.vacanciesCreate);
   const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
 
   const onChange = (patch: Partial<Filters>) =>
@@ -57,12 +61,14 @@ export function VacanciesListPage() {
             <Download />
             Exportar
           </Button>
-          <Button asChild>
-            <Link href={ROUTES.vacanteNueva}>
-              <Plus />
-              Nueva vacante
-            </Link>
-          </Button>
+          {canCreate && (
+            <Button asChild>
+              <Link href={ROUTES.vacanteNueva}>
+                <Plus />
+                Nueva vacante
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 

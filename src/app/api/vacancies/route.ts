@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { backendGet, backendPost } from "@/lib/backendFetch";
-import type { Vacancy } from "@/features/vacancies/types";
+import type { Vacancy, VacancyFormValues } from "@/features/vacancies/types";
 
 interface BackendVacancyItem {
   id: number;
@@ -10,7 +10,7 @@ interface BackendVacancyItem {
   client_company: string;
   contact: string;
   department: string;
-  process: string;
+  process: string | null;
   career: string;
   city: string;
   work_mode: string;
@@ -57,7 +57,7 @@ function mapVacancy(v: BackendVacancyItem): Vacancy {
     workSchedule: v.work_schedule ?? "",
     durationYears: v.project_duration_years || null,
     durationMonths: v.project_duration_months || null,
-    status: (v.vacancy_status as Vacancy["status"]) ?? "draft",
+    status: (v.vacancy_status as Vacancy["status"]) ?? "solicitud",
     isActive: v.is_active,
     career: v.career,
     process: v.process,
@@ -147,8 +147,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as {
-      values: any;
-      status: "draft" | "active" | "paused" | "closed";
+      values: VacancyFormValues;
+      status: "solicitud" | "active" | "closed";
     };
     const { values, status } = body;
 
@@ -164,7 +164,10 @@ export async function POST(request: NextRequest) {
       client_company_id: Number(values.clientCompany),
       contact_id: Number(values.contact),
       department_id: Number(values.department),
-      process_id: Number(values.process),
+      // A solicitud (no publish yet) legitimately has no process assigned —
+      // Number("") is 0, which the backend rejects as a nonexistent process
+      // id, so an empty selection must become null, never 0.
+      process_id: values.process ? Number(values.process) : null,
       career_id: Number(values.career),
       city_id: Number(values.city),
       work_mode_id: refs.work_mode_id,

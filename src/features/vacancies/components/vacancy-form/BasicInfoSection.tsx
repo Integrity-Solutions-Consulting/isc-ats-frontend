@@ -8,7 +8,11 @@ import { useVacancyCatalogs, useContactsByClient } from "../../hooks/useVacancie
 import type { VacancyFormValues } from "../../types";
 import { Section, RequiredLabel } from "./FormSection";
 
-export function BasicInfoSection() {
+interface BasicInfoSectionProps {
+  readOnly?: boolean;
+}
+
+export function BasicInfoSection({ readOnly = false }: BasicInfoSectionProps) {
   const { data: catalogs } = useVacancyCatalogs();
   const {
     control,
@@ -52,6 +56,7 @@ export function BasicInfoSection() {
                 value={field.value}
                 onChange={field.onChange}
                 placeholder="Selecciona o escribe un cargo"
+                disabled={readOnly}
                 aria-invalid={!!errors.position}
               />
             )}
@@ -74,6 +79,7 @@ export function BasicInfoSection() {
                 value={field.value}
                 onChange={field.onChange}
                 placeholder="Selecciona…"
+                disabled={readOnly}
                 aria-invalid={!!errors.clientCompany}
               />
             )}
@@ -98,7 +104,7 @@ export function BasicInfoSection() {
                 value={field.value}
                 onChange={field.onChange}
                 placeholder={selectedClient ? "Selecciona…" : "Selecciona un cliente primero"}
-                disabled={!selectedClient}
+                disabled={readOnly || !selectedClient}
                 aria-invalid={!!errors.contact}
               />
             )}
@@ -121,6 +127,7 @@ export function BasicInfoSection() {
                 value={field.value}
                 onChange={field.onChange}
                 placeholder="Selecciona…"
+                disabled={readOnly}
                 aria-invalid={!!errors.department}
               />
             )}

@@ -8,12 +8,20 @@ import { Input } from "@/design-system/ui/input";
 import { Label } from "@/design-system/ui/label";
 import { Combobox } from "@/design-system/molecules/Combobox";
 import { cn } from "@/shared/utils";
+import { PERM } from "@/features/auth/permissions";
+import { usePermissions } from "@/features/auth/PermissionsProvider";
 import { useVacancyCatalogs } from "../../hooks/useVacancies";
 import type { VacancyFormValues } from "../../types";
 import { Section, RequiredLabel } from "./FormSection";
 
-export function SelectionSection() {
+interface SelectionSectionProps {
+  readOnly?: boolean;
+}
+
+export function SelectionSection({ readOnly = false }: SelectionSectionProps) {
   const { data: catalogs } = useVacancyCatalogs();
+  const { has } = usePermissions();
+  const canPublish = has(PERM.vacanciesPublish);
   const {
     control,
     register,
@@ -27,27 +35,32 @@ export function SelectionSection() {
 
   return (
     <Section num={3} title="Proceso de selección y nivel">
-      <div className="mb-4">
-        <RequiredLabel htmlFor="process">Proceso de selección</RequiredLabel>
-        <Controller
-          name="process"
-          control={control}
-          render={({ field }) => (
-            <Combobox
-              id="process"
-              className="mt-1.5"              valueKey="id"
-              options={catalogs?.processes ?? []}
-              value={field.value}
-              onChange={field.onChange}
-              placeholder="Selecciona…"
-              aria-invalid={!!errors.process}
-            />
+      {/* A solicitud (non-publisher save) has no selection process assigned
+          yet — only publishers pick one, so the field must not render at all
+          for anyone else. */}
+      {canPublish && (
+        <div className="mb-4">
+          <RequiredLabel htmlFor="process">Proceso de selección</RequiredLabel>
+          <Controller
+            name="process"
+            control={control}
+            render={({ field }) => (
+              <Combobox
+                id="process"
+                className="mt-1.5"                valueKey="id"
+                options={catalogs?.processes ?? []}
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="Selecciona…"
+                aria-invalid={!!errors.process}
+              />
+            )}
+          />
+          {errors.process && (
+            <p className="mt-1 text-xs text-danger">{errors.process.message}</p>
           )}
-        />
-        {errors.process && (
-          <p className="mt-1 text-xs text-danger">{errors.process.message}</p>
-        )}
-      </div>
+        </div>
+      )}
 
       <Label>Nivel del recurso y cantidad</Label>
       <div className="mt-1.5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -58,8 +71,11 @@ export function SelectionSection() {
               key={lvl.id}
               role="button"
               tabIndex={0}
-              onClick={() => setValue("level", lvl.id)}
+              onClick={() => {
+                if (!readOnly) setValue("level", lvl.id);
+              }}
               onKeyDown={(e) => {
+                if (readOnly) return;
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   setValue("level", lvl.id);
@@ -70,6 +86,7 @@ export function SelectionSection() {
                 active
                   ? "border-primary-600 bg-primary-50"
                   : "border-border hover:bg-surface-2",
+                readOnly && "pointer-events-none opacity-60",
               )}
             >
               <span className="text-sm font-semibold text-ink">
@@ -87,6 +104,7 @@ export function SelectionSection() {
                     size="icon"
                     className="size-7"
                     aria-label="Quitar uno"
+                    disabled={readOnly}
                     onClick={() => setValue("openings", Math.max(1, openings - 1))}
                   >
                     <Minus />
@@ -96,6 +114,7 @@ export function SelectionSection() {
                     inputMode="numeric"
                     className="h-7 w-12 px-1 text-sm text-center font-semibold"
                     value={openings}
+                    disabled={readOnly}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => {
                       const val = parseInt(e.target.value, 10);
@@ -108,6 +127,7 @@ export function SelectionSection() {
                     size="icon"
                     className="size-7"
                     aria-label="Agregar uno"
+                    disabled={readOnly}
                     onClick={() => setValue("openings", openings + 1)}
                   >
                     <Plus />
@@ -129,6 +149,7 @@ export function SelectionSection() {
           inputMode="numeric"
           className="w-20"
           placeholder="0"
+          disabled={readOnly}
           {...register("experienceYears", {
             setValueAs: (v) =>
               v === "" || v === null || v === undefined

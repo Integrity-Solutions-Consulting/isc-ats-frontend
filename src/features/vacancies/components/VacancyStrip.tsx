@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { usePathname, useRouter } from 'next/navigation';
-import { ArrowLeft, RefreshCw, Sparkles } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 
 import { Badge } from '@/design-system/ui/badge';
 import { Button } from '@/design-system/ui/button';
@@ -57,7 +57,6 @@ function StatItem({ label, value }: { label: string; value: React.ReactNode }) {
 
 export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const queryClient = useQueryClient();
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -171,15 +170,6 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
             </Button>
           ) : (
             <>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => router.replace(`${pathname}?tab=imagenes`)}
-              >
-                <Sparkles size={14} />
-                Generar imagen
-              </Button>
               <Button variant="outline" size="sm" onClick={() => router.push(ROUTES.vacanteEditar(vacancy.id))}>
                 Editar
               </Button>

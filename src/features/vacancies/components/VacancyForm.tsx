@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormProvider, useForm } from "react-hook-form";
@@ -11,8 +11,10 @@ import { vacancyKeys } from "../hooks/useVacancies";
 
 import { Button } from "@/design-system/ui/button";
 import { ROUTES } from "@/shared/constants/routes";
+import { PERM } from "@/features/auth/permissions";
+import { usePermissions } from "@/features/auth/PermissionsProvider";
 import { createVacancy, updateVacancy } from "../api/vacanciesApi";
-import { EMPTY_VACANCY_FORM, vacancyFormSchema } from "../formSchema";
+import { EMPTY_VACANCY_FORM, makeVacancySchema } from "../formSchema";
 import type { VacancyFormValues } from "../types";
 import { BasicInfoSection } from "./vacancy-form/BasicInfoSection";
 import { LocationSection } from "./vacancy-form/LocationSection";
@@ -35,17 +37,40 @@ export function VacancyForm({
 }: VacancyFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [pending, setPending] = useState<null | "draft" | "publish">(null);
+  const { has } = usePermissions();
+  // Whoever can publish also decides the selection process up front; a
+  // solicitud (non-publisher save) has none yet, so the field isn't required
+  // for them. See formSchema.ts.
+  const canPublish = has(PERM.vacanciesPublish);
+  const canCreate = has(PERM.vacanciesCreate);
+  // TH (and any future role shaped the same way: can publish/update an existing
+  // solicitud but never originates one) may only touch the recruitment-process
+  // field — everything else was already filled in by Comercial/Proyecto when
+  // they created the solicitud, and TH must not alter it. Admin has both
+  // canPublish and canCreate, so this never locks the form for Admin.
+  const lockedToProcessOnly = canPublish && !canCreate;
+  const [pending, setPending] = useState<null | "solicitud" | "publish">(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const schema = useMemo(() => makeVacancySchema(canPublish), [canPublish]);
+  // Solicitud saves never require `process`, regardless of who's saving
+  // (Admin can both publish AND save a bare solicitud) — see formSchema.ts.
+  const solicitudSchema = useMemo(() => makeVacancySchema(false), []);
+
   const methods = useForm<VacancyFormValues>({
-    resolver: zodResolver(vacancyFormSchema),
+    resolver: zodResolver(schema),
     mode: "onTouched",
     defaultValues: initialValues ?? EMPTY_VACANCY_FORM,
   });
   const { handleSubmit, getValues, setError } = methods;
 
-  async function persist(values: VacancyFormValues, status: "draft" | "active") {
+  // Never surface a raw backend/proxy error message (e.g. internal catalog
+  // ids) in the UI — always a fixed, friendly copy instead. The real error is
+  // still logged for debugging.
+  const FRIENDLY_SAVE_ERROR =
+    "No se pudo guardar la vacante. Verifica los datos e inténtalo de nuevo.";
+
+  async function persist(values: VacancyFormValues, status: "solicitud" | "active") {
     if (mode === "edit" && vacancyId) {
       return updateVacancy(vacancyId, values, status);
     }
@@ -53,11 +78,13 @@ export function VacancyForm({
   }
 
   async function onPublish(values: VacancyFormValues) {
-    if (!values.description.trim()) {
-      setError("description", {
-        message: "Agrega una descripción para publicar la vacante",
-      });
-      return;
+    // Defense in depth: the Publicar button is hidden without vacanciesPublish,
+    // but the form's Enter-key submit still routes here — fall back to the
+    // solicitud save instead of attempting a publish this user can't perform.
+    // (Description and every other field are already enforced by `schema` via
+    // the resolver before onPublish even runs.)
+    if (!canPublish) {
+      return onSaveSolicitud();
     }
     setSubmitError(null);
     setPending("publish");
@@ -70,23 +97,31 @@ export function VacancyForm({
       router.push(ROUTES.vacantes);
       router.refresh();
     } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : "No se pudo guardar",
-      );
+      console.error("Error publishing vacancy:", error);
+      setSubmitError(FRIENDLY_SAVE_ERROR);
       setPending(null);
     }
   }
 
-  async function onSaveDraft() {
+  async function onSaveSolicitud() {
     const values = getValues();
-    if (!values.position.trim()) {
-      setError("position", { message: "Ingresa el nombre del cargo" });
+    // Solicitud saves skip the form's zodResolver (that one requires
+    // `process`), so validate everything else against the process-optional
+    // schema here — every field but process/template must still be filled in.
+    const result = solicitudSchema.safeParse(values);
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const field = issue.path[0];
+        if (typeof field === "string") {
+          setError(field as keyof VacancyFormValues, { message: issue.message });
+        }
+      }
       return;
     }
     setSubmitError(null);
-    setPending("draft");
+    setPending("solicitud");
     try {
-      await persist(values, "draft");
+      await persist(values, "solicitud");
       queryClient.invalidateQueries({ queryKey: vacancyKeys.all });
       if (vacancyId) {
         queryClient.invalidateQueries({ queryKey: vacancyKeys.detail(vacancyId) });
@@ -94,9 +129,8 @@ export function VacancyForm({
       router.push(ROUTES.vacantes);
       router.refresh();
     } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : "No se pudo guardar",
-      );
+      console.error("Error saving vacancy solicitud:", error);
+      setSubmitError(FRIENDLY_SAVE_ERROR);
       setPending(null);
     }
   }
@@ -113,11 +147,11 @@ export function VacancyForm({
           <h1 className="text-2xl font-semibold text-ink">{title}</h1>
         </div>
 
-        <BasicInfoSection />
-        <LocationSection />
-        <SelectionSection />
-        <ProfileSection />
-        <DescriptionSection />
+        <BasicInfoSection readOnly={lockedToProcessOnly} />
+        <LocationSection readOnly={lockedToProcessOnly} />
+        <SelectionSection readOnly={lockedToProcessOnly} />
+        <ProfileSection readOnly={lockedToProcessOnly} />
+        <DescriptionSection readOnly={lockedToProcessOnly} />
 
         {submitError && (
           <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
@@ -130,23 +164,27 @@ export function VacancyForm({
           <Button variant="ghost" asChild>
             <Link href={ROUTES.vacantes}>Cancelar</Link>
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onSaveDraft}
-            disabled={pending !== null}
-          >
-            {pending === "draft" && <Loader2 className="size-4 animate-spin" />}
-            Guardar borrador
-          </Button>
-          <Button type="submit" disabled={pending !== null}>
-            {pending === "publish" ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Send />
-            )}
-            Publicar vacante
-          </Button>
+          {canCreate && (
+            <Button
+              type="button"
+              variant={canPublish ? "outline" : "default"}
+              onClick={onSaveSolicitud}
+              disabled={pending !== null}
+            >
+              {pending === "solicitud" && <Loader2 className="size-4 animate-spin" />}
+              Guardar solicitud
+            </Button>
+          )}
+          {canPublish && (
+            <Button type="submit" disabled={pending !== null}>
+              {pending === "publish" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Send />
+              )}
+              Publicar vacante
+            </Button>
+          )}
         </div>
       </form>
     </FormProvider>

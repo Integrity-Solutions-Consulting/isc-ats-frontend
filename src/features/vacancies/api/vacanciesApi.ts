@@ -48,7 +48,7 @@ export async function getVacancyCatalogs(): Promise<MockCatalogs> {
 
 export async function createVacancy(
   values: VacancyFormValues,
-  status: "draft" | "active",
+  status: "solicitud" | "active",
 ): Promise<Vacancy> {
   const res = await fetch("/api/vacancies", {
     method: "POST",

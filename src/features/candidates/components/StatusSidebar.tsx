@@ -9,6 +9,8 @@ import { Button } from '@/design-system/ui/button';
 import { Select } from '@/design-system/atoms/Select';
 import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
 import type { PipelineStage } from '@/features/pipeline/types';
+import { PERM } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/PermissionsProvider';
 import {
   useAddToTalentPool,
   useMoveToNextStage,
@@ -39,6 +41,9 @@ export function StatusSidebar({
   position,
 }: StatusSidebarProps) {
   const router = useRouter();
+  const { has } = usePermissions();
+  const canMove = has(PERM.applicationsUpdate);
+  const canScheduleInterview = has(PERM.interviewsCreate);
 
   const { data: stageStatuses = [] } = useQuery<{ id: number; name: string }[]>({
     queryKey: ['org', 'catalog', 'stage_status'],
@@ -187,26 +192,32 @@ export function StatusSidebar({
         </p>
 
         <div className="space-y-2">
-          {/* Move to next stage */}
-          <div>
-            <Button
-              className="w-full"
-              onClick={handleMoveNext}
-              disabled={isOnFinalOrRejected || !nextStage || isLoading}
-            >
-              {moveToNextMutation.isPending ? 'Moviendo…' : 'Mover a siguiente etapa'}
-            </Button>
-            {nextStage && !isOnFinalOrRejected && (
-              <p className="mt-1 text-center text-xs text-ink-subtle">
-                → {nextStage.name}
-              </p>
-            )}
-          </div>
+          {/* Move to next stage — gated by applicationsUpdate (UX
+              defense-in-depth; the backend is the real boundary). */}
+          {canMove && (
+            <div>
+              <Button
+                className="w-full"
+                onClick={handleMoveNext}
+                disabled={isOnFinalOrRejected || !nextStage || isLoading}
+              >
+                {moveToNextMutation.isPending ? 'Moviendo…' : 'Mover a siguiente etapa'}
+              </Button>
+              {nextStage && !isOnFinalOrRejected && (
+                <p className="mt-1 text-center text-xs text-ink-subtle">
+                  → {nextStage.name}
+                </p>
+              )}
+            </div>
+          )}
 
-          {/* Schedule interview */}
-          <Button variant="outline" className="w-full" onClick={() => setShowScheduleModal(true)}>
-            Agendar entrevista
-          </Button>
+          {/* Schedule interview — gated by interviewsCreate (UX defense-in-depth;
+              the backend is the real boundary). */}
+          {canScheduleInterview && (
+            <Button variant="outline" className="w-full" onClick={() => setShowScheduleModal(true)}>
+              Agendar entrevista
+            </Button>
+          )}
 
           {/* Generate Word */}
           <Button
@@ -240,19 +251,21 @@ export function StatusSidebar({
             </p>
           )}
 
-          {/* Reject */}
-          <Button
-            variant="destructive"
-            className="w-full"
-            onClick={handleReject}
-            disabled={isLoading || isRejected}
-          >
-            {isRejected
-              ? 'Candidato rechazado'
-              : rejectMutation.isPending
-                ? 'Rechazando…'
-                : 'Rechazar candidato'}
-          </Button>
+          {/* Reject — also an application-update, same gate as "move". */}
+          {canMove && (
+            <Button
+              variant="destructive"
+              className="w-full"
+              onClick={handleReject}
+              disabled={isLoading || isRejected}
+            >
+              {isRejected
+                ? 'Candidato rechazado'
+                : rejectMutation.isPending
+                  ? 'Rechazando…'
+                  : 'Rechazar candidato'}
+            </Button>
+          )}
         </div>
       </div>
 

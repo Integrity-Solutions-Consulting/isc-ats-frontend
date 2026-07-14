@@ -27,9 +27,6 @@ const CATALOG_TYPES: CatalogType[] = [
   { key: 'work_mode',      label: 'Modalidades',         endpoint: 'parameters' },
   { key: 'resource_level', label: 'Niveles de recurso',  endpoint: 'parameters' },
   { key: 'vacancy_name',   label: 'Plantillas de nombre',endpoint: 'parameters' },
-  { key: 'vacancy_status', label: 'Estados de vacante',  endpoint: 'parameters' },
-  { key: 'notification_channel', label: 'Canales notif.',endpoint: 'parameters' },
-  { key: 'email_status',   label: 'Estados de email',    endpoint: 'parameters' },
 ];
 
 type Filter = 'all' | 'active' | 'inactive';
@@ -57,9 +54,18 @@ async function fetchValues(type: CatalogType): Promise<CatalogValue[]> {
   return data.map(toValue);
 }
 
+interface WritableTypes { unrestricted: boolean; types: string[] }
+
+async function fetchWritableTypes(): Promise<WritableTypes> {
+  const res = await fetch('/api/auth/me/parameter-types', { cache: 'no-store' });
+  if (!res.ok) return { unrestricted: false, types: [] };
+  return (await res.json()) as WritableTypes;
+}
+
 export function CatalogosPage() {
   const qc = useQueryClient();
-  const [selectedType, setSelectedType] = useState<string>('department');
+
+  const [selectedType, setSelectedType] = useState<string>(CATALOG_TYPES[0]?.key ?? 'department');
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -78,6 +84,14 @@ export function CatalogosPage() {
     queryKey,
     queryFn: () => fetchValues(currentType),
   });
+
+  const { data: writableTypes = { unrestricted: false, types: [] } } = useQuery<WritableTypes>({
+    queryKey: ['auth', 'me', 'parameter-types'],
+    queryFn: fetchWritableTypes,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const canWriteCurrentType = writableTypes.unrestricted || writableTypes.types.includes(selectedType);
 
   const updateMut = useMutation({
     mutationFn: async ({ id, name, description }: { id: string; name: string; description?: string }) => {
@@ -103,8 +117,14 @@ export function CatalogosPage() {
         : `/api/org/parameters/${id}`;
       const res = await fetch(url, { method: 'DELETE' });
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { detail?: string; error?: string };
-        throw new Error(data.detail || data.error || 'No se pudo eliminar el valor.');
+        // Only the 409 "in use" case has a message meant for the user (already
+        // friendly Spanish copy from the backend). Anything else (403 missing
+        // permission, 404, 500…) must never reach the UI as raw backend text.
+        if (res.status === 409) {
+          const data = (await res.json().catch(() => ({}))) as { detail?: string };
+          throw new Error(data.detail || 'No se puede eliminar: está en uso.');
+        }
+        throw new Error('No se pudo eliminar el valor. Intenta nuevamente.');
       }
     },
     onSuccess: () => {
@@ -221,12 +241,14 @@ export function CatalogosPage() {
                 {f === 'all' ? 'Todos' : f === 'active' ? 'Activos' : 'Inactivos'}
               </button>
             ))}
-            <Button size="sm" onClick={() => setShowAdd(true)} className="ml-auto">
-              <Plus className="mr-1 size-3.5" />Nuevo valor
-            </Button>
+            {canWriteCurrentType && (
+              <Button size="sm" onClick={() => setShowAdd(true)} className="ml-auto">
+                <Plus className="mr-1 size-3.5" />Nuevo valor
+              </Button>
+            )}
           </div>
 
-          {showAdd && (
+          {showAdd && canWriteCurrentType && (
             <div className="mb-2 flex items-center gap-2 rounded-md border border-primary-300 bg-primary-50 px-3 py-2">
               <input autoFocus type="text" value={newValue} onChange={(e) => setNewValue(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') createMut.mutate({ name: newValue.trim(), description: newDescription.trim() }); if (e.key === 'Escape') { setShowAdd(false); setNewValue(''); } }}
@@ -302,7 +324,7 @@ export function CatalogosPage() {
                             <Button size="icon" aria-label="Guardar" className="size-7" onClick={() => saveEdit(v.id)}><Check className="size-3.5" /></Button>
                             <Button variant="ghost" size="icon" aria-label="Cancelar" className="size-7" onClick={() => setEditingId(null)}><X className="size-3.5" /></Button>
                           </>
-                        ) : !v.active ? (
+                        ) : !canWriteCurrentType ? null : !v.active ? (
                           <Button variant="ghost" size="icon" aria-label="Reactivar" className="size-7 text-success hover:bg-success/10"
                             onClick={() => reactivateMut.mutate(v.id)}>
                             <RefreshCw className="size-3.5" />

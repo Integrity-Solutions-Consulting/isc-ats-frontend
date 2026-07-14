@@ -1,4 +1,4 @@
-export type VacancyStatus = "active" | "draft" | "closed" | "cancelled";
+export type VacancyStatus = "active" | "solicitud" | "closed" | "cancelled";
 // WorkMode and SeniorityLevel are backed by editable catalogs (org.parameters
 // types work_mode / resource_level), so they are open strings — staff can add
 // new codes from Configuración → Catálogos without breaking the form or types.
@@ -26,7 +26,8 @@ export interface Vacancy {
   department: string;
   city: string;
   career: string;
-  process: string;
+  /** Null for a solicitud that hasn't been assigned a process yet. */
+  process: string | null;
   // IDs (for edit form selects — populated by the detail endpoint, optional elsewhere)
   clientCompanyId?: string;
   contactId?: string;

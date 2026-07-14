@@ -7,7 +7,7 @@ import type { BadgeProps } from "@/design-system/ui/badge";
 
 export const STATUS_LABEL: Record<VacancyStatus, string> = {
   active: "Publicada",
-  draft: "Borrador",
+  solicitud: "Solicitud",
   closed: "Cerrada",
   cancelled: "Cancelada",
 };
@@ -17,7 +17,7 @@ export const STATUS_BADGE_VARIANT: Record<
   NonNullable<BadgeProps["variant"]>
 > = {
   active: "success",
-  draft: "neutral",
+  solicitud: "neutral",
   closed: "neutral",
   cancelled: "warning",
 };

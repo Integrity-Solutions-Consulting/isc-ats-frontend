@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { backendGet, backendPatch, backendDelete, backendErrorResponse } from "@/lib/backendFetch";
+import type { VacancyFormValues } from "@/features/vacancies/types";
 import {
   mapVacancy, buildCatalogMaps, resolveReferences,
   type BackendVacancyItem, type BackendPage, type BackendParam,
@@ -32,7 +33,11 @@ export async function PATCH(
 ) {
   const { id } = await params;
   try {
-    const body = await request.json() as { values?: any; status?: string; isActive?: boolean };
+    const body = await request.json() as {
+      values?: VacancyFormValues;
+      status?: string;
+      isActive?: boolean;
+    };
 
     if (!body.values && body.isActive !== undefined) {
       await backendPatch(`/recruitment/vacancies/${id}`, { is_active: body.isActive });
@@ -40,13 +45,16 @@ export async function PATCH(
     }
 
     const { values, status } = body;
+    if (!values) {
+      return NextResponse.json({ error: "Missing 'values' in request body" }, { status: 400 });
+    }
 
     let finalStatus = status;
     if (!finalStatus) {
       const current = await backendGet<{ status_id: number }>(`/recruitment/vacancies/${id}`);
       const statusesData = await backendGet<BackendPage<BackendParam>>("/org/parameters?type=vacancy_status&size=10");
       const param = statusesData.items.find((p) => p.id === current.status_id);
-      finalStatus = param?.code ?? "draft";
+      finalStatus = param?.code ?? "solicitud";
     }
 
     const refs = await resolveReferences(values.position, values.workMode, values.level, finalStatus);
@@ -56,7 +64,10 @@ export async function PATCH(
       client_company_id: Number(values.clientCompany),
       contact_id: Number(values.contact),
       department_id: Number(values.department),
-      process_id: Number(values.process),
+      // A solicitud (no publish yet) legitimately has no process assigned —
+      // Number("") is 0, which the backend rejects as a nonexistent process
+      // id, so an empty selection must become null, never 0.
+      process_id: values.process ? Number(values.process) : null,
       career_id: Number(values.career),
       city_id: Number(values.city),
       work_mode_id: refs.work_mode_id,

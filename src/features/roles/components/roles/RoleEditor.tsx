@@ -1,9 +1,14 @@
 import { Save, Trash2 } from 'lucide-react';
 import { Button } from '@/design-system/ui/button';
 import { Input } from '@/design-system/ui/input';
+import { cn } from '@/shared/utils';
+import { CATALOG_TYPE_LABELS } from '@/features/parameters/catalogTypes';
 import { type ModuleGroup } from './permissions';
 import { type Role } from './mockRoles';
 import { PermissionModuleCard } from './PermissionModuleCard';
+
+/** Permission codes whose presence unlocks the writable-catalogs picker. */
+const PARAMETER_WRITE_CODES = ['org.parameters.create', 'org.parameters.update'];
 
 export function RoleEditor({
   role,
@@ -13,6 +18,7 @@ export function RoleEditor({
   onUpdate,
   onTogglePerm,
   onToggleModule,
+  onToggleParameterType,
   onDiscard,
   onDelete,
   onSave,
@@ -24,10 +30,12 @@ export function RoleEditor({
   onUpdate: (patch: Partial<Omit<Role, 'id'>>) => void;
   onTogglePerm: (code: string, checked: boolean) => void;
   onToggleModule: (mod: ModuleGroup, enable: boolean) => void;
+  onToggleParameterType: (key: string, checked: boolean) => void;
   onDiscard: () => void;
   onDelete: () => void;
   onSave: () => void;
 }) {
+  const canManageCatalogTypes = PARAMETER_WRITE_CODES.some((code) => role.permissionIds.has(code));
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Role name + description */}
@@ -67,6 +75,33 @@ export function RoleEditor({
 
       {/* Permissions grid */}
       <div className="flex-1 overflow-y-auto p-5">
+        {canManageCatalogTypes && (
+          <div className="mb-4 rounded-md border border-border bg-surface p-4">
+            <p className="mb-3 text-sm font-semibold text-ink">Catálogos que puede crear/editar</p>
+            <div className="flex flex-wrap gap-1.5">
+              {CATALOG_TYPE_LABELS.map((type) => {
+                const checked = role.parameterTypes.has(type.key);
+                return (
+                  <button
+                    key={type.key}
+                    type="button"
+                    disabled={role.isSystem}
+                    onClick={() => onToggleParameterType(type.key, !checked)}
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors',
+                      role.isSystem && 'cursor-not-allowed opacity-60',
+                      checked
+                        ? 'border-primary-200 bg-primary-100 text-primary-700'
+                        : 'border-border bg-surface text-ink-subtle hover:bg-surface-2',
+                    )}
+                  >
+                    {type.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {modules.map((mod) => (
             <PermissionModuleCard

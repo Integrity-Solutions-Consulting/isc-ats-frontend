@@ -5,6 +5,8 @@ import { useState } from 'react';
 
 import { Button } from '@/design-system/ui/button';
 import { TogglePill } from '@/design-system/molecules/TogglePill';
+import { PERM } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/PermissionsProvider';
 import { useMovePipelineCard, usePipeline } from '../hooks/usePipeline';
 import type { PipelineCard } from '../types';
 import { CandidateCardOverlay } from './CandidateCard';
@@ -40,6 +42,8 @@ function BoardSkeleton() {
 export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
   const { data: pipeline, isLoading, isError, refetch } = usePipeline(vacancyId);
   const { mutate: moveCard } = useMovePipelineCard();
+  const { has } = usePermissions();
+  const canMove = has(PERM.applicationsUpdate);
   const [activeCard, setActiveCard] = useState<PipelineCard | null>(null);
   const [matchFilter, setMatchFilter] = useState<MatchFilter>('all');
 
@@ -67,6 +71,9 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
 
   function handleDragEnd(event: DragEndEvent) {
     setActiveCard(null);
+    // Defense in depth: cards render non-draggable without applicationsUpdate,
+    // so this path shouldn't be reachable — guarded anyway.
+    if (!canMove) return;
     const { active, over } = event;
     if (!over) return;
 
@@ -118,6 +125,7 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
                   stage.type === 'rejected' ? pipeline.rejectionSummary : undefined
                 }
                 matchFilter={matchFilter}
+                canDrag={canMove}
               />
             );
           })}
