@@ -186,6 +186,10 @@ export async function backendPatch<T>(path: string, body: unknown, init?: Reques
   return sendRequest<T>(path, "PATCH", body, init);
 }
 
+export async function backendPut<T>(path: string, body: unknown, init?: RequestInit): Promise<T> {
+  return sendRequest<T>(path, "PUT", body, init);
+}
+
 export async function backendDelete<T>(path: string, init?: RequestInit): Promise<T> {
   return sendRequest<T>(path, "DELETE", undefined, init);
 }

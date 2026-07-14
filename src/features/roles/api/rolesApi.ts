@@ -34,6 +34,9 @@ function mapRole(r: RoleDTO): Role {
   return {
     ...r,
     permissionIds: new Set(r.permissionIds),
+    // Not part of the roles-list payload; populated on demand via
+    // getRoleParameterTypes once a role is selected.
+    parameterTypes: new Set(),
   };
 }
 
@@ -92,4 +95,30 @@ export async function deleteRole(id: string): Promise<void> {
     err.status = res.status;
     throw err;
   }
+}
+
+interface RoleParameterTypesDTO {
+  parameter_types: string[];
+}
+
+export async function getRoleParameterTypes(roleId: string): Promise<string[]> {
+  const res = await fetch(`/api/auth/roles/${roleId}/parameter-types`, { cache: 'no-store' });
+  const data = await res.json().catch(() => ({}));
+  if (res.ok) {
+    return (data as RoleParameterTypesDTO).parameter_types ?? [];
+  }
+  throw new Error((data as { error?: string }).error ?? 'Error al cargar los catálogos del rol');
+}
+
+export async function setRoleParameterTypes(roleId: string, types: string[]): Promise<string[]> {
+  const res = await fetch(`/api/auth/roles/${roleId}/parameter-types`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ parameter_types: types }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.ok) {
+    return (data as RoleParameterTypesDTO).parameter_types ?? [];
+  }
+  throw new Error((data as { error?: string }).error ?? 'Error al guardar los catálogos del rol');
 }

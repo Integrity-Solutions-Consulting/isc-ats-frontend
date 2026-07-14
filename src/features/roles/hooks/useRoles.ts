@@ -5,11 +5,14 @@ import {
   updateRole,
   deleteRole,
   listPermissionCatalog,
+  getRoleParameterTypes,
+  setRoleParameterTypes,
 } from '../api/rolesApi';
 
 export const roleKeys = {
   all: ['roles'] as const,
   catalog: ['permission-catalog'] as const,
+  parameterTypes: (roleId: string) => ['role-parameter-types', roleId] as const,
 };
 
 export function useRoles() {
@@ -54,6 +57,26 @@ export function useDeleteRole() {
     mutationFn: deleteRole,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: roleKeys.all });
+    },
+  });
+}
+
+/** Loads the currently-selected role's writable catalog-parameter-types.
+ *  Disabled when no role is selected — pass `null` in that case. */
+export function useRoleParameterTypes(roleId: string | null) {
+  return useQuery({
+    queryKey: roleKeys.parameterTypes(roleId ?? ''),
+    queryFn: () => getRoleParameterTypes(roleId!),
+    enabled: !!roleId,
+  });
+}
+
+export function useSetRoleParameterTypes() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, types }: { id: string; types: string[] }) => setRoleParameterTypes(id, types),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: roleKeys.parameterTypes(variables.id) });
     },
   });
 }
