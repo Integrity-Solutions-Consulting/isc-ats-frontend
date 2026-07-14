@@ -48,32 +48,46 @@ describe("VacancyForm — permission-gated save bar", () => {
     vi.clearAllMocks();
   });
 
-  it("shows exactly one submit button labeled 'Guardar solicitud' for a non-publisher", () => {
-    renderForm([]);
+  it("shows only 'Guardar solicitud' for a creator without publish (Comercial/Proyecto)", () => {
+    renderForm([PERM.vacanciesCreate]);
     expect(screen.getByRole("button", { name: /guardar solicitud/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /publicar vacante/i })).not.toBeInTheDocument();
   });
 
-  it("shows both 'Guardar solicitud' and 'Publicar vacante' for a publisher", () => {
+  it("hides 'Guardar solicitud' and shows only 'Publicar vacante' for a publisher without create (TH)", () => {
     renderForm([PERM.vacanciesPublish]);
+    expect(screen.queryByRole("button", { name: /guardar solicitud/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /publicar vacante/i })).toBeInTheDocument();
+  });
+
+  it("shows both 'Guardar solicitud' and 'Publicar vacante' for Admin (create + publish)", () => {
+    renderForm([PERM.vacanciesPublish, PERM.vacanciesCreate]);
     expect(screen.getByRole("button", { name: /guardar solicitud/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /publicar vacante/i })).toBeInTheDocument();
   });
 
   it("persists status 'solicitud' (not 'draft') when a non-publisher clicks 'Guardar solicitud'", async () => {
     const user = userEvent.setup();
-    renderForm([]);
+    // Only process/template stay optional for a solicitud save — everything
+    // else (including description) is validated before persist() is called.
+    renderForm([PERM.vacanciesCreate], {
+      description: "Descripción completa del puesto",
+      clientCompany: "1",
+      contact: "1",
+      department: "1",
+      city: "1",
+      career: "1",
+    });
     await user.click(screen.getByRole("button", { name: /guardar solicitud/i }));
     await waitFor(() => expect(createVacancy).toHaveBeenCalled());
     expect(createVacancy).toHaveBeenCalledWith(expect.anything(), "solicitud");
   });
 
-  it("persists status 'solicitud' when a publisher clicks 'Guardar solicitud' too", async () => {
+  it("blocks 'Guardar solicitud' with a friendly field error when required fields are missing", async () => {
     const user = userEvent.setup();
-    renderForm([PERM.vacanciesPublish]);
+    renderForm([PERM.vacanciesCreate]);
     await user.click(screen.getByRole("button", { name: /guardar solicitud/i }));
-    await waitFor(() => expect(createVacancy).toHaveBeenCalled());
-    expect(createVacancy).toHaveBeenCalledWith(expect.anything(), "solicitud");
+    expect(createVacancy).not.toHaveBeenCalled();
   });
 
   it("persists status 'active' when a publisher submits 'Publicar vacante' with a description filled in", async () => {

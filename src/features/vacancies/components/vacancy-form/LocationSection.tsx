@@ -10,7 +10,11 @@ import { useVacancyCatalogs } from "../../hooks/useVacancies";
 import type { VacancyFormValues } from "../../types";
 import { Section, RequiredLabel } from "./FormSection";
 
-export function LocationSection() {
+interface LocationSectionProps {
+  readOnly?: boolean;
+}
+
+export function LocationSection({ readOnly = false }: LocationSectionProps) {
   const { data: catalogs } = useVacancyCatalogs();
   const {
     control,
@@ -44,6 +48,7 @@ export function LocationSection() {
                 value={field.value}
                 onChange={field.onChange}
                 placeholder="Selecciona…"
+                disabled={readOnly}
                 aria-invalid={!!errors.city}
               />
             )}
@@ -61,11 +66,13 @@ export function LocationSection() {
                 key={m.id}
                 type="button"
                 onClick={() => setValue("workMode", m.id)}
+                disabled={readOnly}
                 className={cn(
                   "rounded-md border px-3 py-1.5 text-sm transition-colors",
                   workMode === m.id
                     ? "border-primary-600 bg-primary-50 font-medium text-primary-700"
                     : "border-border bg-surface text-ink-muted hover:border-primary-300",
+                  "disabled:cursor-not-allowed disabled:opacity-50",
                 )}
               >
                 {m.label}
@@ -82,6 +89,7 @@ export function LocationSection() {
               min={0}
               className="w-20"
               aria-label="Años"
+              disabled={readOnly}
               {...numberField("durationYears")}
             />
             <span className="text-sm text-ink-muted">año(s)</span>
@@ -91,6 +99,7 @@ export function LocationSection() {
               max={11}
               className="w-20"
               aria-label="Meses"
+              disabled={readOnly}
               {...numberField("durationMonths")}
             />
             <span className="text-sm text-ink-muted">mes(es)</span>
@@ -110,6 +119,7 @@ export function LocationSection() {
                 value={field.value}
                 onChange={field.onChange}
                 placeholder="Selecciona…"
+                disabled={readOnly}
                 aria-invalid={!!errors.career}
               />
             )}
@@ -130,7 +140,8 @@ export function LocationSection() {
                 const end = (watch("workSchedule") ?? "").split(" - ")[1] ?? "";
                 setValue("workSchedule", `${e.target.value} - ${end}`);
               }}
-              className="h-9 w-32 rounded-md border border-border bg-surface px-3 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1"
+              disabled={readOnly}
+              className="h-9 w-32 rounded-md border border-border bg-surface px-3 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
             />
             <span className="text-sm text-ink-muted">a</span>
             <input
@@ -141,7 +152,8 @@ export function LocationSection() {
                 const start = (watch("workSchedule") ?? "").split(" - ")[0] ?? "";
                 setValue("workSchedule", `${start} - ${e.target.value}`);
               }}
-              className="h-9 w-32 rounded-md border border-border bg-surface px-3 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1"
+              disabled={readOnly}
+              className="h-9 w-32 rounded-md border border-border bg-surface px-3 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
         </div>

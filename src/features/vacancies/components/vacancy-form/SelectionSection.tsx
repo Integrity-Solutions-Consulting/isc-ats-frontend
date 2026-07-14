@@ -14,7 +14,11 @@ import { useVacancyCatalogs } from "../../hooks/useVacancies";
 import type { VacancyFormValues } from "../../types";
 import { Section, RequiredLabel } from "./FormSection";
 
-export function SelectionSection() {
+interface SelectionSectionProps {
+  readOnly?: boolean;
+}
+
+export function SelectionSection({ readOnly = false }: SelectionSectionProps) {
   const { data: catalogs } = useVacancyCatalogs();
   const { has } = usePermissions();
   const canPublish = has(PERM.vacanciesPublish);
@@ -67,8 +71,11 @@ export function SelectionSection() {
               key={lvl.id}
               role="button"
               tabIndex={0}
-              onClick={() => setValue("level", lvl.id)}
+              onClick={() => {
+                if (!readOnly) setValue("level", lvl.id);
+              }}
               onKeyDown={(e) => {
+                if (readOnly) return;
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   setValue("level", lvl.id);
@@ -79,6 +86,7 @@ export function SelectionSection() {
                 active
                   ? "border-primary-600 bg-primary-50"
                   : "border-border hover:bg-surface-2",
+                readOnly && "pointer-events-none opacity-60",
               )}
             >
               <span className="text-sm font-semibold text-ink">
@@ -96,6 +104,7 @@ export function SelectionSection() {
                     size="icon"
                     className="size-7"
                     aria-label="Quitar uno"
+                    disabled={readOnly}
                     onClick={() => setValue("openings", Math.max(1, openings - 1))}
                   >
                     <Minus />
@@ -105,6 +114,7 @@ export function SelectionSection() {
                     inputMode="numeric"
                     className="h-7 w-12 px-1 text-sm text-center font-semibold"
                     value={openings}
+                    disabled={readOnly}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => {
                       const val = parseInt(e.target.value, 10);
@@ -117,6 +127,7 @@ export function SelectionSection() {
                     size="icon"
                     className="size-7"
                     aria-label="Agregar uno"
+                    disabled={readOnly}
                     onClick={() => setValue("openings", openings + 1)}
                   >
                     <Plus />
@@ -138,6 +149,7 @@ export function SelectionSection() {
           inputMode="numeric"
           className="w-20"
           placeholder="0"
+          disabled={readOnly}
           {...register("experienceYears", {
             setValueAs: (v) =>
               v === "" || v === null || v === undefined

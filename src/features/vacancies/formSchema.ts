@@ -10,14 +10,19 @@ const requirementsSchema = z.object({
 });
 
 /**
- * Base form validation. Description is allowed to be empty here so a vacancy
- * can be saved as a solicitud; publishing adds the description requirement on
- * top.
+ * Base form validation. The ONLY two fields that stay optional are the
+ * profile template (a separate "load from template" shortcut, never a form
+ * field of its own) and `process` — a solicitud (non-publisher save) has no
+ * selection process assigned yet, Talento Humano adds it later when
+ * publishing. Every other field, including `description`, must be filled in
+ * regardless of whether this is a solicitud save or a publish.
  *
- * `process` is only required for callers who hold `vacanciesPublish` — a
- * solicitud (non-publisher save) has no selection process assigned yet, so
- * `requireProcess` must be derived from `has(PERM.vacanciesPublish)` at the
- * call site (see VacancyForm).
+ * `requireProcess` must be `true` for a publish submission and `false` for a
+ * solicitud save — it depends on the ACTION being performed, not on the
+ * caller's permissions (a single user, e.g. Admin, can now perform either
+ * action, so this can't be pinned to `has(PERM.vacanciesPublish)` alone; see
+ * VacancyForm, which validates solicitud saves against a `requireProcess:
+ * false` schema instance regardless of the caller's permissions).
  */
 export function makeVacancySchema(requireProcess: boolean) {
   return z.object({
@@ -38,7 +43,7 @@ export function makeVacancySchema(requireProcess: boolean) {
     experienceYears: z.number().int().min(0).nullable(),
     workSchedule: z.string(),
     requirements: requirementsSchema,
-    description: z.string(),
+    description: z.string().min(1, "Agrega una descripción del cargo"),
   });
 }
 

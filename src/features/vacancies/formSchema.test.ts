@@ -13,6 +13,7 @@ const base = {
   career: "1",
   level: "junior",
   openings: 1,
+  description: "Descripción del cargo",
 };
 
 describe("makeVacancySchema", () => {
