@@ -33,7 +33,7 @@ async function authedFetch(path: string, init?: RequestInit) {
 export async function GET() {
   try {
     const data = await backendGet<BackendPage<BackendCompany>>(
-      "/org/client-companies?size=100",
+      "/org/client-companies?size=100&include_inactive=true",
     );
     return NextResponse.json(data.items);
   } catch (error) {
