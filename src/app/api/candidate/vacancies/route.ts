@@ -22,6 +22,7 @@ interface BackendVacancyItem {
   profile_requirements: Record<string, string[]> | null;
   career: string;
   created_at: string;
+  updated_at: string | null;
 }
 
 const WORK_MODE_MAP: Record<string, CandidateVacancy["workMode"]> = {
@@ -88,7 +89,9 @@ function mapVacancy(v: BackendVacancyItem, appliedIds: Set<number>): CandidateVa
       level: `${levelLabel}${v.experience_years ? ` (${v.experience_years}+ años)` : ""}`,
       openings: v.openings,
     },
-    publishedAt: v.created_at,
+    // "active" status is reached via an update (TH publishing a solicitud),
+    // not the original creation — updated_at reflects that moment.
+    publishedAt: v.updated_at ?? v.created_at,
     closingDaysLeft: null,
     applicationStatus: appliedIds.has(v.id) ? "applied" : "none",
   };
