@@ -8,7 +8,7 @@ export interface BackendVacancyItem {
   contact_id: number;
   contact: string;
   department: string;
-  process: string;
+  process: string | null;
   career: string;
   city: string;
   work_mode: string;
@@ -58,7 +58,7 @@ export function mapVacancy(v: BackendVacancyItem, catalogs?: CatalogMaps): Vacan
     departmentId: catalogs?.deptNameToId.get(slugify(v.department)) ?? "",
     cityId: catalogs?.cityNameToId.get(slugify(v.city)) ?? "",
     careerId: catalogs?.careerNameToId.get(slugify(v.career)) ?? "",
-    processId: catalogs?.processNameToId.get(slugify(v.process)) ?? "",
+    processId: (v.process ? catalogs?.processNameToId.get(slugify(v.process)) : undefined) ?? "",
     profileTemplateId: v.profile_template_id ? String(v.profile_template_id) : "",
     workMode: (v.work_mode as Vacancy["workMode"]) ?? "onsite",
     level: (v.resource_level as Vacancy["level"]) ?? "junior",
@@ -118,14 +118,28 @@ export async function resolveReferences(position: string, workMode: string, leve
   };
 }
 
+/**
+ * Fetches a catalog lookup source in isolation so a permission failure
+ * (e.g. Talento Humano lacking read on client-companies/departments) only
+ * empties that one map instead of rejecting the whole buildCatalogMaps call.
+ */
+async function fetchSafe<T>(fetcher: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await fetcher();
+  } catch {
+    return fallback;
+  }
+}
+
 export async function buildCatalogMaps(): Promise<CatalogMaps> {
+  const emptyPage = { items: [], total: 0 };
   const [companies, contacts, departments, processes, cities, careers] = await Promise.all([
-    backendGet<BackendPage<BackendCompany>>("/org/client-companies?size=100"),
-    backendGet<BackendPage<BackendContact>>("/org/contacts?size=100"),
-    backendGet<BackendPage<BackendDept>>("/org/departments?size=100&include_inactive=true"),
-    backendGet<BackendPage<BackendProcess>>("/org/processes?size=100&include_inactive=true"),
-    backendGet<BackendPage<BackendParam>>("/org/parameters?type=city&size=100&include_inactive=true"),
-    backendGet<BackendPage<BackendParam>>("/org/parameters?type=career&size=100&include_inactive=true"),
+    fetchSafe(() => backendGet<BackendPage<BackendCompany>>("/org/client-companies?size=100"), emptyPage),
+    fetchSafe(() => backendGet<BackendPage<BackendContact>>("/org/contacts?size=100"), emptyPage),
+    fetchSafe(() => backendGet<BackendPage<BackendDept>>("/org/departments?size=100&include_inactive=true"), emptyPage),
+    fetchSafe(() => backendGet<BackendPage<BackendProcess>>("/org/processes?size=100&include_inactive=true"), emptyPage),
+    fetchSafe(() => backendGet<BackendPage<BackendParam>>("/org/parameters?type=city&size=100&include_inactive=true"), emptyPage),
+    fetchSafe(() => backendGet<BackendPage<BackendParam>>("/org/parameters?type=career&size=100&include_inactive=true"), emptyPage),
   ]);
   return {
     companyNameToId: new Map(companies.items.map((c) => [slugify(c.name), String(c.id)])),

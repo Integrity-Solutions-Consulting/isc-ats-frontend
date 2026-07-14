@@ -45,11 +45,19 @@ export function ProcesosListPage() {
   });
   const { data: clients = [] } = useQuery<{ id: string; name: string }[]>({
     queryKey: ['org', 'client-companies'],
-    queryFn: () => fetch('/api/org/client-companies').then((r) => r.json()),
+    queryFn: async () => {
+      const res = await fetch('/api/org/client-companies');
+      if (!res.ok) return [];
+      return res.json();
+    },
   });
   const { data: departments = [] } = useQuery<{ id: string; name: string }[]>({
     queryKey: ['org', 'departments'],
-    queryFn: () => fetch('/api/org/departments').then((r) => r.json()),
+    queryFn: async () => {
+      const res = await fetch('/api/org/departments');
+      if (!res.ok) return [];
+      return res.json();
+    },
   });
 
   const [search, setSearch] = useState('');
