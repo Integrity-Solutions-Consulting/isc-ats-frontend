@@ -16,6 +16,8 @@ import { Select } from '@/design-system/atoms/Select';
 import { Input } from '@/design-system/ui/input';
 import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
 import { validateEmail, validateRequiredText } from '@/shared/validation';
+import { PERM } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/PermissionsProvider';
 
 interface Contact {
   id: string; firstName: string; lastName: string;
@@ -31,13 +33,21 @@ type EditForm = { firstName: string; lastName: string; email: string; clientComp
 
 export function ContactosPage() {
   const qc = useQueryClient();
+  const { has } = usePermissions();
+  const canCreate = has(PERM.contactsCreate);
+  const canUpdate = has(PERM.contactsUpdate);
+  const canDelete = has(PERM.contactsDelete);
   const { data: contacts = [], isLoading } = useQuery<Contact[]>({
     queryKey: CONTACTS_KEY,
     queryFn: () => fetch('/api/org/contacts', { cache: 'no-store' }).then((r) => r.json() as Promise<Contact[]>),
   });
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: COMPANIES_KEY,
-    queryFn: () => fetch('/api/org/client-companies', { cache: 'no-store' }).then((r) => r.json() as Promise<Company[]>),
+    queryFn: async () => {
+      const res = await fetch('/api/org/client-companies', { cache: 'no-store' });
+      if (!res.ok) return [];
+      return res.json() as Promise<Company[]>;
+    },
   });
 
   const createMut = useMutation({
@@ -173,26 +183,34 @@ export function ContactosPage() {
       key: 'status', header: 'Estado',
       render: (c) => <Badge variant={c.is_active ? 'success' : 'neutral'}>{c.is_active ? 'Activo' : 'Inactivo'}</Badge>,
     },
-    {
-      key: 'actions', header: '', align: 'right', width: 'w-24',
-      render: (c) => (
-        <div className="flex items-center justify-end gap-1">
-          {c.id === editingId ? (
-            <>
-              <Button variant="ghost" size="icon" aria-label="Guardar" className="size-8" onClick={saveEdit}><Check className="size-4" /></Button>
-              <Button variant="ghost" size="icon" aria-label="Cancelar" className="size-8" onClick={cancelEdit}><X className="size-4" /></Button>
-            </>
-          ) : (
-            <>
-              <Button variant="ghost" size="icon" aria-label="Editar" className="size-8" onClick={() => startEdit(c)}><Pencil className="size-4" /></Button>
-              <Button variant="ghost" size="icon" aria-label="Eliminar" className="size-8 text-danger hover:bg-danger/10 hover:text-danger" onClick={() => setDeleteTarget(c)}>
-                <Trash2 className="size-4" />
-              </Button>
-            </>
-          )}
-        </div>
-      ),
-    },
+    ...((canUpdate || canDelete
+      ? [
+          {
+            key: 'actions', header: '', align: 'right' as const, width: 'w-24',
+            render: (c: Contact) => (
+              <div className="flex items-center justify-end gap-1">
+                {c.id === editingId ? (
+                  <>
+                    <Button variant="ghost" size="icon" aria-label="Guardar" className="size-8" onClick={saveEdit}><Check className="size-4" /></Button>
+                    <Button variant="ghost" size="icon" aria-label="Cancelar" className="size-8" onClick={cancelEdit}><X className="size-4" /></Button>
+                  </>
+                ) : (
+                  <>
+                    {canUpdate && (
+                      <Button variant="ghost" size="icon" aria-label="Editar" className="size-8" onClick={() => startEdit(c)}><Pencil className="size-4" /></Button>
+                    )}
+                    {canDelete && (
+                      <Button variant="ghost" size="icon" aria-label="Eliminar" className="size-8 text-danger hover:bg-danger/10 hover:text-danger" onClick={() => setDeleteTarget(c)}>
+                        <Trash2 className="size-4" />
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            ),
+          },
+        ]
+      : []) satisfies ColumnDef<Contact>[]),
   ];
 
   if (isLoading) {
@@ -203,7 +221,9 @@ export function ContactosPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-ink">Contactos</h1>
-        <Button onClick={openCreate}><Plus className="mr-1.5 size-4" />Nuevo contacto</Button>
+        {canCreate && (
+          <Button onClick={openCreate}><Plus className="mr-1.5 size-4" />Nuevo contacto</Button>
+        )}
       </div>
 
       <FilterBar search={{ value: search, onChange: (v) => { setSearch(v); setPage(0); }, placeholder: 'Buscar por nombre o correo…' }}>
