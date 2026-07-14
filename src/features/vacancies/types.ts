@@ -26,7 +26,8 @@ export interface Vacancy {
   department: string;
   city: string;
   career: string;
-  process: string;
+  /** Null for a solicitud that hasn't been assigned a process yet. */
+  process: string | null;
   // IDs (for edit form selects — populated by the detail endpoint, optional elsewhere)
   clientCompanyId?: string;
   contactId?: string;

@@ -139,7 +139,14 @@ export function DetallesTab({ vacancy }: DetallesTabProps) {
       {/* Proceso y nivel */}
       <SectionCard title="Proceso y nivel">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <InfoRow label="Proceso" value={vacancy.process} />
+          <InfoRow
+            label="Proceso"
+            value={
+              vacancy.process ?? (
+                <span className="text-ink-subtle">Sin proceso asignado aún</span>
+              )
+            }
+          />
           <InfoRow label="Nivel" value={LEVEL_LABEL[vacancy.level] ?? vacancy.level} />
           <InfoRow
             label="Posiciones abiertas"

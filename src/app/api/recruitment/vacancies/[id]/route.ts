@@ -64,7 +64,10 @@ export async function PATCH(
       client_company_id: Number(values.clientCompany),
       contact_id: Number(values.contact),
       department_id: Number(values.department),
-      process_id: Number(values.process),
+      // A solicitud (no publish yet) legitimately has no process assigned —
+      // Number("") is 0, which the backend rejects as a nonexistent process
+      // id, so an empty selection must become null, never 0.
+      process_id: values.process ? Number(values.process) : null,
       career_id: Number(values.career),
       city_id: Number(values.city),
       work_mode_id: refs.work_mode_id,
