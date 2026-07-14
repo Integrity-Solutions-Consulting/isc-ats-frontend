@@ -147,9 +147,7 @@ function InterviewItem({ interview }: { interview: UpcomingInterview }) {
       <Avatar size="sm" initials={interview.candidateInitials} className={cn('text-white', interview.avatarColor)} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-ink">{interview.candidateName}</p>
-        <p className="truncate text-xs text-ink-muted">
-          {interview.position} · {interview.clientCompany}
-        </p>
+        <p className="truncate text-xs text-ink-muted">{interview.position}</p>
       </div>
       <div className="flex shrink-0 items-center gap-1 text-xs text-ink-subtle">
         <Clock className="size-3" />

@@ -64,8 +64,6 @@ export function AgendarEntrevistaModal({
   const [date, setDate] = useState<Date>(startOfToday());
   const [selected, setSelected] = useState<Slot | null>(null); // Mode A — single
   const [offered, setOffered] = useState<OfferedEntry[]>([]); // Mode B — accumulated
-  const [extraEmail, setExtraEmail] = useState('');
-  const [subject, setSubject] = useState(`Entrevista para ${position}`);
 
   const { data: interviewers = [], isLoading: loadingInterviewers } = useInterviewers();
   // Effective interviewer = the explicit choice, else default to the first available.
@@ -127,7 +125,6 @@ export function AgendarEntrevistaModal({
       interviewerId: effectiveInterviewerId,
       start: selected.start,
       end: selected.end,
-      extraEmail: extraEmail || undefined,
     });
   }
 
@@ -138,8 +135,6 @@ export function AgendarEntrevistaModal({
       processStageId,
       interviewerId: effectiveInterviewerId,
       offeredSlots: offered.map((o) => o.slot),
-      extraEmail: extraEmail || undefined,
-      subject: subject || undefined,
     });
   }
 
@@ -352,36 +347,6 @@ export function AgendarEntrevistaModal({
                   </p>
                 </div>
               )}
-
-              {/* Extra fields */}
-              <div className="grid gap-3 sm:grid-cols-2">
-                {tab === 'candidate-chooses' && (
-                  <div>
-                    <label htmlFor="subject" className="mb-1 block text-xs font-medium text-ink">
-                      Asunto del correo
-                    </label>
-                    <input
-                      id="subject"
-                      value={subject}
-                      onChange={(e) => setSubject(e.target.value)}
-                      className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary-300"
-                    />
-                  </div>
-                )}
-                <div>
-                  <label htmlFor="extra-email" className="mb-1 block text-xs font-medium text-ink">
-                    Participante adicional (opcional)
-                  </label>
-                  <input
-                    id="extra-email"
-                    type="email"
-                    value={extraEmail}
-                    onChange={(e) => setExtraEmail(e.target.value)}
-                    placeholder="correo@empresa.com"
-                    className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-ink placeholder:text-ink-subtle focus:outline-none focus:ring-2 focus:ring-primary-300"
-                  />
-                </div>
-              </div>
 
               {error && (
                 <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>

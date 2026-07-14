@@ -20,7 +20,6 @@ export interface UpcomingInterview {
   candidateInitials: string;
   avatarColor: string;
   position: string;
-  clientCompany: string;
   time: string;
   day: 'today' | 'tomorrow';
 }

@@ -158,8 +158,8 @@ export async function GET() {
     const offerByApp = new Map<number, InterviewOffer>();
     const interviewByApp = new Map<number, CandidateApplication["interview"]>();
     const [offersRes, scheduledRes] = await Promise.allSettled([
-      backendGet<BackendInterviewOffer[]>("/interviews/me/offers"),
-      backendGet<BackendScheduledInterview[]>("/interviews/me/scheduled"),
+      backendGet<BackendInterviewOffer[]>("/recruitment/interviews/me/offers"),
+      backendGet<BackendScheduledInterview[]>("/recruitment/interviews/me/scheduled"),
     ]);
     if (offersRes.status === "fulfilled") {
       for (const o of offersRes.value) {

@@ -18,7 +18,6 @@ export interface CreateInterviewPayload {
   interviewerId: number;
   start: string;
   end: string;
-  extraEmail?: string;
 }
 
 /** Mode B — "Candidato elige": offer a set of slots for the candidate to choose. */
@@ -27,8 +26,6 @@ export interface OfferSlotsPayload {
   processStageId: number;
   interviewerId: number;
   offeredSlots: Slot[];
-  extraEmail?: string;
-  subject?: string;
 }
 
 /** A recurring weekly availability window the interviewer offers. */

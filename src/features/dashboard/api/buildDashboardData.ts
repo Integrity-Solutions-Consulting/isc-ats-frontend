@@ -50,6 +50,44 @@ interface BackendInterview {
   teams_meeting_url: string | null;
 }
 
+/** GET /recruitment/interviews/agenda — server computes the Ecuador-local
+ * today/tomorrow boundary and cross-owner visibility; the frontend just renders it. */
+interface BackendAgendaInterview {
+  id: number;
+  scheduled_at: string;
+  ends_at: string | null;
+  candidate_name: string;
+  vacancy_name: string;
+  interviewer_email: string;
+  teams_meeting_url: string | null;
+  day: "today" | "tomorrow";
+}
+
+const AVATAR_COLORS = [
+  "bg-primary-600",
+  "bg-accent-500",
+  "bg-primary-400",
+  "bg-primary-700",
+  "bg-accent-600",
+  "bg-primary-300",
+  "bg-accent-400",
+];
+
+function initialsFromName(name: string): string {
+  const parts = name.split(" ").filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+// Ecuador is a fixed UTC-5 (no DST) — always render agenda times in Ecuador
+// wall-clock time, regardless of the viewer's own browser timezone.
+const EC_TIME_FMT = new Intl.DateTimeFormat("es-EC", {
+  timeZone: "America/Guayaquil",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
 const DEFAULT_STAGES = [
   { name: "CV recibido", color: "bg-primary-200" },
   { name: "Llamada de validación", color: "bg-primary-300" },
@@ -59,9 +97,17 @@ const DEFAULT_STAGES = [
 ];
 
 export async function buildDashboardData(): Promise<DashboardData> {
-  const [vacanciesPage, interviewsPage] = await Promise.all([
+  const [vacanciesPage, interviewsPage, agenda] = await Promise.all([
     backendGet<BackendPage<BackendVacancyItem>>("/recruitment/vacancies/expanded?size=100"),
     backendGet<BackendPage<BackendInterview>>("/recruitment/interviews?size=100"),
+    // R5/R6: server-side Ecuador-local today/tomorrow boundary + Admin/TH gating
+    // (recruitment.interviews.read_agenda). A 403 (caller lacks the permission)
+    // or any other failure must not break the rest of the dashboard — the widget
+    // is simply hidden (empty list), which also acts as defense-in-depth gating
+    // on the frontend without needing new permission plumbing here.
+    backendGet<BackendAgendaInterview[]>("/recruitment/interviews/agenda").catch(
+      () => [] as BackendAgendaInterview[],
+    ),
   ]);
 
   const activeVacancies = vacanciesPage.items.filter(
@@ -169,50 +215,21 @@ export async function buildDashboardData(): Promise<DashboardData> {
     count,
   }));
 
-  const allCardsMap = new Map(pipelines.flatMap((p) => p.cards).map((c) => [c.id, c]));
   const vacanciesMap = new Map(vacanciesPage.items.map((v) => [String(v.id), v]));
 
-  const upcomingInterviews = scheduledInterviews
-    .map((int) => {
-      const card = allCardsMap.get(String(int.application_id));
-      const vacancy = card ? vacanciesMap.get(card.vacancyId) : null;
-
-      const date = new Date(int.scheduled_at);
-      const today = new Date();
-      const tomorrow = new Date();
-      tomorrow.setDate(today.getDate() + 1);
-
-      let day: "today" | "tomorrow" | string = date.toLocaleDateString("es-EC", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-      });
-      if (date.toDateString() === today.toDateString()) {
-        day = "today";
-      } else if (date.toDateString() === tomorrow.toDateString()) {
-        day = "tomorrow";
-      }
-
-      const time = date.toLocaleTimeString("es-EC", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-
-      return {
-        id: `int-${int.id}`,
-        candidateName: card?.candidateName ?? "Candidato",
-        candidateInitials: card?.initials ?? "C",
-        avatarColor: card?.avatarColor ?? "bg-primary-500",
-        position: vacancy?.vacancy_name ?? "Cargo",
-        clientCompany: vacancy?.client_company ?? "Cliente",
-        time,
-        day,
-      };
-    })
-    .filter((i): i is typeof i & { day: "today" | "tomorrow" } =>
-      i.day === "today" || i.day === "tomorrow"
-    )
+  // D5: the today/tomorrow bucket and the Ecuador-local boundary are computed
+  // server-side by GET /interviews/agenda — no client-side Date() derivation,
+  // and it is cross-owner (every interviewer's entries, not just the caller's).
+  const upcomingInterviews = agenda
+    .map((entry) => ({
+      id: `agenda-${entry.id}`,
+      candidateName: entry.candidate_name,
+      candidateInitials: initialsFromName(entry.candidate_name),
+      avatarColor: AVATAR_COLORS[entry.id % AVATAR_COLORS.length],
+      position: entry.vacancy_name,
+      time: EC_TIME_FMT.format(new Date(entry.scheduled_at)),
+      day: entry.day,
+    }))
     .slice(0, 10);
 
   const topCandidates = pipelines
