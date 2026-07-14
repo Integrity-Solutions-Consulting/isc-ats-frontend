@@ -35,6 +35,8 @@ export const PERM = {
   contactsCreate: 'org.contacts.create',
   contactsUpdate: 'org.contacts.update',
   contactsDelete: 'org.contacts.delete',
+  vacancyPromoImagesCreate: 'ai.vacancy_promo_images.create',
+  vacancyPromoImagesDelete: 'ai.vacancy_promo_images.delete',
 } as const;
 
 export type PermissionCode = (typeof PERM)[keyof typeof PERM];

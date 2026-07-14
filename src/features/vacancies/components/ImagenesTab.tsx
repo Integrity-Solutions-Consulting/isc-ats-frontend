@@ -1,33 +1,67 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, ImageOff, Loader2, Sparkles, Trash2, Upload } from 'lucide-react';
 
 import { Button } from '@/design-system/ui/button';
+import { PERM } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/PermissionsProvider';
 import type { Vacancy } from '@/features/vacancies/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
+interface PromoImageItem {
+  id: number;
+  vacancy_id: number;
+  file_id: number;
+  created_at: string;
+}
+
 interface GeneratedImage {
   id: string;
   version: number;
-  blobUrl: string;
+  imageUrl: string;
   generatedAt: string;
+}
+
+function formatGeneratedAt(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const datePart = date.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const timePart = date.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
+  return `${datePart} · ${timePart}`;
+}
+
+// Backend has no version counter — it's derived here from creation order.
+// Oldest first to number versions, then reversed so the newest render first.
+function toGeneratedImages(items: PromoImageItem[]): GeneratedImage[] {
+  const oldestFirst = [...items].sort((a, b) => a.created_at.localeCompare(b.created_at));
+  return oldestFirst
+    .map((item, index) => ({
+      id: String(item.id),
+      version: index + 1,
+      imageUrl: `/api/candidate/cv/${item.file_id}?view=1`,
+      generatedAt: formatGeneratedAt(item.created_at),
+    }))
+    .reverse();
 }
 
 // ─── Image card ───────────────────────────────────────────────────────────
 
 function ImageCard({
   image,
+  canDelete,
   onDelete,
 }: {
   image: GeneratedImage;
+  canDelete: boolean;
   onDelete: (id: string) => void;
 }) {
   return (
     <div className="flex flex-col border border-border rounded-xl overflow-hidden bg-surface shadow-sm w-[220px] shrink-0">
       <img
-        src={image.blobUrl}
+        src={image.imageUrl}
         alt={`Póster versión ${image.version}`}
         className="w-[220px] h-[280px] object-cover"
       />
@@ -38,7 +72,7 @@ function ImageCard({
         </div>
         <div className="flex gap-2">
           <a
-            href={image.blobUrl}
+            href={image.imageUrl}
             download={`poster_v${image.version}.png`}
             className="flex-1"
           >
@@ -47,15 +81,17 @@ function ImageCard({
               Descargar
             </Button>
           </a>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-danger hover:bg-danger/10 hover:text-danger px-2"
-            onClick={() => onDelete(image.id)}
-            aria-label="Eliminar imagen"
-          >
-            <Trash2 size={12} />
-          </Button>
+          {canDelete && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-danger hover:bg-danger/10 hover:text-danger px-2"
+              onClick={() => onDelete(image.id)}
+              aria-label="Eliminar imagen"
+            >
+              <Trash2 size={12} />
+            </Button>
+          )}
         </div>
       </div>
     </div>
@@ -169,20 +205,32 @@ function BaseImageUpload({
 
 // ─── Empty state ──────────────────────────────────────────────────────────
 
-function EmptyState({ onGenerate, loading }: { onGenerate: () => void; loading: boolean }) {
+function EmptyState({
+  canCreate,
+  onGenerate,
+  loading,
+}: {
+  canCreate: boolean;
+  onGenerate: () => void;
+  loading: boolean;
+}) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-border bg-surface/50 p-12 text-center min-h-[300px]">
       <ImageOff size={40} className="text-ink-subtle opacity-40" />
       <div>
         <p className="font-semibold text-ink-muted">No hay imágenes generadas aún</p>
-        <p className="text-sm text-ink-subtle mt-1">
-          Genera la primera imagen publicitaria para esta vacante
-        </p>
+        {canCreate && (
+          <p className="text-sm text-ink-subtle mt-1">
+            Genera la primera imagen publicitaria para esta vacante
+          </p>
+        )}
       </div>
-      <Button onClick={onGenerate} disabled={loading} className="gap-2">
-        {loading ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-        {loading ? 'Generando…' : 'Generar primera imagen'}
-      </Button>
+      {canCreate && (
+        <Button onClick={onGenerate} disabled={loading} className="gap-2">
+          {loading ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+          {loading ? 'Generando…' : 'Generar primera imagen'}
+        </Button>
+      )}
     </div>
   );
 }
@@ -190,21 +238,60 @@ function EmptyState({ onGenerate, loading }: { onGenerate: () => void; loading: 
 // ─── Main component ───────────────────────────────────────────────────────
 
 export function ImagenesTab({ vacancy }: { vacancy: Vacancy }) {
-  const [images, setImages] = useState<GeneratedImage[]>([]);
-  const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const { has } = usePermissions();
+  const canCreate = has(PERM.vacancyPromoImagesCreate);
+  const canDelete = has(PERM.vacancyPromoImagesDelete);
+
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [baseImageName, setBaseImageName] = useState<string | null>(null);
-  const blobUrls = useRef<string[]>([]);
 
-  useEffect(() => {
-    return () => {
-      blobUrls.current.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, []);
+  const queryKey = ['vacancy-promo-images', vacancy.id];
 
-  const nextVersion = images.length > 0 ? Math.max(...images.map((i) => i.version)) + 1 : 1;
+  const { data: images = [], isLoading } = useQuery<GeneratedImage[]>({
+    queryKey,
+    queryFn: async () => {
+      const res = await fetch(`/api/vacancy-promo-images?vacancy_id=${vacancy.id}`, { cache: 'no-store' });
+      if (!res.ok) return [];
+      const items = (await res.json()) as PromoImageItem[];
+      return toGeneratedImages(items);
+    },
+  });
+
+  const generateMut = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/vacancy-promo-images', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vacancyId: vacancy.id }),
+      });
+      if (!res.ok) {
+        let msg = `Error ${res.status}`;
+        try {
+          const body = await res.json();
+          if (body?.detail) msg = String(body.detail);
+        } catch { /* ignore parse errors */ }
+        throw new Error(msg);
+      }
+    },
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey }); },
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/vacancy-promo-images/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        let msg = `Error ${res.status}`;
+        try {
+          const body = await res.json();
+          if (body?.detail) msg = String(body.detail);
+        } catch { /* ignore parse errors */ }
+        throw new Error(msg);
+      }
+    },
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey }); },
+  });
 
   const handleUpload = (name: string | null, err: string | null) => {
     setUploading(false);
@@ -216,73 +303,62 @@ export function ImagenesTab({ vacancy }: { vacancy: Vacancy }) {
     }
   };
 
-  const handleGenerate = async () => {
-    setGenerating(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/recruitment/vacancies/${vacancy.id}/generate-poster`);
-      if (!res.ok) {
-        let msg = `Error ${res.status}`;
-        try {
-          const body = await res.json();
-          if (body?.detail) msg = String(body.detail);
-        } catch { /* ignore parse errors */ }
-        throw new Error(msg);
-      }
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      blobUrls.current.push(blobUrl);
-
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
-      setImages((prev) => [
-        { id: `img-${Date.now()}`, version: nextVersion, blobUrl, generatedAt: `Hoy · ${timeStr}` },
-        ...prev,
-      ]);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error desconocido';
-      setError(`No fue posible generar la imagen: ${msg}`);
-    } finally {
-      setGenerating(false);
-    }
+  const handleGenerate = () => {
+    generateMut.mutate();
   };
 
   const handleDelete = (id: string) => {
-    setImages((prev) => {
-      const removed = prev.find((i) => i.id === id);
-      if (removed) {
-        URL.revokeObjectURL(removed.blobUrl);
-        blobUrls.current = blobUrls.current.filter((u) => u !== removed.blobUrl);
-      }
-      return prev.filter((i) => i.id !== id);
-    });
+    deleteMut.mutate(id);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-16 text-sm text-ink-muted">
+        <Loader2 className="size-4 animate-spin" /> Cargando imágenes…
+      </div>
+    );
+  }
+
+  const generating = generateMut.isPending;
+  const generateError = generateMut.isError
+    ? `No fue posible generar la imagen: ${(generateMut.error as Error).message}`
+    : null;
+  const deleteError = deleteMut.isError
+    ? `No fue posible eliminar la imagen: ${(deleteMut.error as Error).message}`
+    : null;
 
   if (images.length === 0 && !generating) {
     return (
       <div className="flex flex-col gap-4">
-        <BaseImageUpload
-          vacancyId={vacancy.id}
-          baseImageName={baseImageName}
-          uploading={uploading}
-          onUpload={handleUpload}
-        />
+        {canCreate && (
+          <BaseImageUpload
+            vacancyId={vacancy.id}
+            baseImageName={baseImageName}
+            uploading={uploading}
+            onUpload={handleUpload}
+          />
+        )}
         {uploadError && (
           <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{uploadError}</p>
         )}
-        <EmptyState onGenerate={handleGenerate} loading={generating} />
+        {generateError && (
+          <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{generateError}</p>
+        )}
+        <EmptyState canCreate={canCreate} onGenerate={handleGenerate} loading={generating} />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <BaseImageUpload
-        vacancyId={vacancy.id}
-        baseImageName={baseImageName}
-        uploading={uploading}
-        onUpload={handleUpload}
-      />
+      {canCreate && (
+        <BaseImageUpload
+          vacancyId={vacancy.id}
+          baseImageName={baseImageName}
+          uploading={uploading}
+          onUpload={handleUpload}
+        />
+      )}
       {uploadError && (
         <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{uploadError}</p>
       )}
@@ -291,33 +367,33 @@ export function ImagenesTab({ vacancy }: { vacancy: Vacancy }) {
         <div>
           <p className="text-sm text-ink-muted">
             {images.length} imagen{images.length !== 1 ? 'es' : ''} generada{images.length !== 1 ? 's' : ''}
-            {' · '}
-            <span className="font-semibold text-ink">Generar imagen</span> en la barra superior para crear una nueva versión
-          </p>
-          <p className="text-xs text-ink-subtle mt-0.5">
-            Las imágenes se eliminan al salir de la página — descargalas antes.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 shrink-0"
-          onClick={handleGenerate}
-          disabled={generating}
-        >
-          {generating ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
-          {generating ? 'Generando…' : 'Nueva versión'}
-        </Button>
+        {canCreate && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 shrink-0"
+            onClick={handleGenerate}
+            disabled={generating}
+          >
+            {generating ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+            {generating ? 'Generando…' : 'Nueva versión'}
+          </Button>
+        )}
       </div>
 
-      {error && (
-        <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>
+      {generateError && (
+        <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{generateError}</p>
+      )}
+      {deleteError && (
+        <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{deleteError}</p>
       )}
 
       <div className="flex flex-wrap gap-5 items-start">
         {generating && <GeneratingSkeleton />}
         {images.map((image) => (
-          <ImageCard key={image.id} image={image} onDelete={handleDelete} />
+          <ImageCard key={image.id} image={image} canDelete={canDelete} onDelete={handleDelete} />
         ))}
       </div>
     </div>
