@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Plus, Power, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Power, Trash2 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Badge } from '@/design-system/ui/badge';
@@ -28,6 +28,7 @@ import {
   listRoles,
   listUsers,
   setUserActive,
+  setUserRole,
   type CreateUserPayload,
 } from '../api/usersApi';
 import type { PortalUser } from '../types';
@@ -116,6 +117,29 @@ export function UsersPage() {
 
   // Deactivation confirmation dialog
   const [confirmTarget, setConfirmTarget] = useState<PortalUser | null>(null);
+
+  // Edit-role modal
+  const [roleEditTarget, setRoleEditTarget] = useState<PortalUser | null>(null);
+  const [roleEditValue, setRoleEditValue] = useState<number>(0);
+  const [roleEditError, setRoleEditError] = useState<string | null>(null);
+  const roleMutation = useMutation({
+    mutationFn: ({ id, roleId }: { id: string; roleId: number }) => setUserRole(id, roleId),
+    onSuccess: () => {
+      setRoleEditError(null);
+      setRoleEditTarget(null);
+      qc.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (err: Error) => {
+      setRoleEditError(err.message ?? 'No fue posible cambiar el rol.');
+    },
+  });
+
+  const openRoleEdit = (user: PortalUser) => {
+    const currentRoleId = roles.find((r) => r.name === user.role.trim())?.id ?? 0;
+    setRoleEditValue(currentRoleId);
+    setRoleEditError(null);
+    setRoleEditTarget(user);
+  };
 
   const handleToggle = (user: PortalUser) => {
     if (user.status === 'active') {
@@ -209,26 +233,37 @@ export function UsersPage() {
       key: 'actions',
       header: '',
       align: 'right',
-      width: 'w-16',
+      width: 'w-28',
       render: (user) => {
         const isActive = user.status === 'active';
         const isSelf = currentUserId !== null && Number(user.id) === currentUserId;
         return (
-          <div title={isSelf ? 'No podés desactivar tu propia cuenta' : undefined}>
+          <div className="flex items-center justify-end gap-1">
             <Button
               variant="ghost"
               size="icon"
-              aria-label={isActive ? 'Desactivar usuario' : 'Activar usuario'}
-              className={
-                isActive
-                  ? 'size-8 text-danger hover:bg-danger/10 hover:text-danger'
-                  : 'size-8 text-success hover:bg-success/10 hover:text-success'
-              }
-              disabled={toggleMutation.isPending || isSelf}
-              onClick={() => handleToggle(user)}
+              aria-label="Editar rol"
+              className="size-8"
+              onClick={() => openRoleEdit(user)}
             >
-              {isActive ? <Trash2 className="size-4" /> : <Power className="size-4" />}
+              <Pencil className="size-4" />
             </Button>
+            <div title={isSelf ? 'No podés desactivar tu propia cuenta' : undefined}>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={isActive ? 'Desactivar usuario' : 'Activar usuario'}
+                className={
+                  isActive
+                    ? 'size-8 text-danger hover:bg-danger/10 hover:text-danger'
+                    : 'size-8 text-success hover:bg-success/10 hover:text-success'
+                }
+                disabled={toggleMutation.isPending || isSelf}
+                onClick={() => handleToggle(user)}
+              >
+                {isActive ? <Trash2 className="size-4" /> : <Power className="size-4" />}
+              </Button>
+            </div>
           </div>
         );
       },
@@ -334,6 +369,54 @@ export function UsersPage() {
         variant="danger"
         onConfirm={handleConfirmDeactivate}
       />
+
+      {/* Edit role modal */}
+      <Dialog
+        open={roleEditTarget !== null}
+        onOpenChange={(open) => { if (!open) { setRoleEditTarget(null); setRoleEditError(null); } }}
+      >
+        <DialogContent className="sm:max-w-md bg-surface-2">
+          <DialogHeader>
+            <DialogTitle>Editar rol</DialogTitle>
+            <DialogDescription>
+              {roleEditTarget
+                ? `Cambiar el rol de ${roleEditTarget.fullName} (${roleEditTarget.email}). Sus permisos y pantallas se actualizan de inmediato.`
+                : undefined}
+            </DialogDescription>
+          </DialogHeader>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-ink">Rol</label>
+            <Select
+              value={roleEditValue || ''}
+              onChange={(e) => setRoleEditValue(Number(e.target.value))}
+            >
+              <option value="">Seleccionar rol…</option>
+              {/* Staff-only: the candidate role is portal-candidate, never assignable here. */}
+              {roles
+                .filter((r) => !/candidat/i.test(r.name))
+                .map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </Select>
+          </div>
+          {roleEditError && (
+            <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
+              {roleEditError}
+            </p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRoleEditTarget(null)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                if (roleEditTarget && roleEditValue) {
+                  roleMutation.mutate({ id: roleEditTarget.id, roleId: roleEditValue });
+                }
+              }}
+              disabled={roleMutation.isPending || !roleEditValue}
+            >
+              {roleMutation.isPending ? 'Guardando…' : 'Guardar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Create user modal */}
       <Dialog open={showModal} onOpenChange={(open) => { setShowModal(open); if (!open) { setCreateError(null); setTouched({}); } }}>

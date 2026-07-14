@@ -51,3 +51,15 @@ export async function setUserActive(id: string, isActive: boolean): Promise<void
     throw new Error(body.error ?? `Error al actualizar el usuario (${res.status})`);
   }
 }
+
+export async function setUserRole(id: string, roleId: number): Promise<void> {
+  const res = await fetch(`/api/auth/users/${id}/role`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role_id: roleId }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(body.error ?? `Error al cambiar el rol (${res.status})`);
+  }
+}
