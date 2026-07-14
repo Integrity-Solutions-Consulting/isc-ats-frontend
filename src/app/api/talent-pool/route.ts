@@ -48,7 +48,7 @@ const AVATAR_COLORS = [
 export async function GET() {
   try {
     const [entriesPage, candidatesPage, vacanciesPage, applicationsPage] = await Promise.all([
-      backendGet<BackendPage<BackendTalentPoolEntry>>("/talent/talent-pool?size=100"),
+      backendGet<BackendPage<BackendTalentPoolEntry>>("/talent/talent-pool?size=100&include_inactive=true"),
       backendGet<BackendPage<BackendCandidateExpanded>>("/recruitment/candidates/expanded?size=100"),
       backendGet<BackendPage<BackendVacancyListItem>>("/recruitment/vacancies/expanded?size=100"),
       backendGet<BackendPage<BackendApplication>>("/recruitment/applications?size=100"),
