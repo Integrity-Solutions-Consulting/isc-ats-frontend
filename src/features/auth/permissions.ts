@@ -36,6 +36,13 @@ export const PERM = {
   contactsCreate: 'org.contacts.create',
   contactsUpdate: 'org.contacts.update',
   contactsDelete: 'org.contacts.delete',
+  // Admin-only gate for the (now read-only) Clientes page. Clients are a live
+  // mirror of the external TMR system, so no BDE role manages them — every
+  // internal role keeps `clients` (org.client_companies.read) for the vacancy
+  // form's client dropdown, but only Admin holds this write code (granted to no
+  // other role), so gating the page by it makes it Admin-only without touching
+  // the dropdown's read access.
+  clientsManage: 'org.client_companies.create',
   departmentsCreate: 'org.departments.create',
   departmentsUpdate: 'org.departments.update',
   departmentsDelete: 'org.departments.delete',
@@ -56,7 +63,7 @@ export type PermissionCode = (typeof PERM)[keyof typeof PERM];
 const ROUTE_PERMISSIONS: { prefix: string; permission: PermissionCode }[] = [
   { prefix: '/configuracion/plantillas', permission: PERM.profileTemplates },
   { prefix: '/configuracion/procesos', permission: PERM.processes },
-  { prefix: '/configuracion/clientes', permission: PERM.clients },
+  { prefix: '/configuracion/clientes', permission: PERM.clientsManage },
   { prefix: '/configuracion/contactos', permission: PERM.contacts },
   { prefix: '/configuracion/catalogos', permission: PERM.parameters },
   { prefix: '/configuracion/usuarios', permission: PERM.users },

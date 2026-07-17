@@ -47,7 +47,7 @@ export const PORTAL_NAV: NavGroup[] = [
   {
     label: "Configuración",
     items: [
-      { label: "Clientes", href: ROUTES.configuracion.clientes, icon: Building, permission: PERM.clients },
+      { label: "Clientes", href: ROUTES.configuracion.clientes, icon: Building, permission: PERM.clientsManage },
       { label: "Contactos", href: ROUTES.configuracion.contactos, icon: Contact, permission: PERM.contacts },
       { label: "Catálogos", href: ROUTES.configuracion.catalogos, icon: ListChecks, permission: PERM.parameters },
       { label: "Usuarios", href: ROUTES.configuracion.usuarios, icon: UserCog, permission: PERM.users },
