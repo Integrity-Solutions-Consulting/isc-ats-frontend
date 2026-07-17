@@ -166,20 +166,28 @@ export function StatusSidebar({
               stages (hired / rejected) have no internal sub-states. */}
           {!isOnFinalOrRejected && (
             <div>
-              <label htmlFor="sub-estado-select" className="text-xs text-ink-subtle mb-1 block">Sub-estado</label>
-              <Select
-                id="sub-estado-select"
-                value={application.currentStatusId ?? ""}
-                onChange={handleStatusChange}
-                disabled={isLoading || stageStatuses.length === 0}
-              >
-                <option value="">— Sin sub-estado —</option>
-                {stageStatuses.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </Select>
+              <p className="text-xs text-ink-subtle mb-1">Sub-estado</p>
+              {canMove ? (
+                <Select
+                  id="sub-estado-select"
+                  aria-label="Sub-estado"
+                  value={application.currentStatusId ?? ""}
+                  onChange={handleStatusChange}
+                  disabled={isLoading || stageStatuses.length === 0}
+                >
+                  <option value="">— Sin sub-estado —</option>
+                  {stageStatuses.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </Select>
+              ) : (
+                <p className="text-sm font-medium text-ink">
+                  {stageStatuses.find((s) => s.id === application.currentStatusId)?.name ??
+                    '— Sin sub-estado —'}
+                </p>
+              )}
             </div>
           )}
         </div>

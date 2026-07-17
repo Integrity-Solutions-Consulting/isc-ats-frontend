@@ -42,7 +42,7 @@ function formatDate(isoDate: string): string {
 // ─── Card visuals ─────────────────────────────────────────────────────────────
 
 const CARD_CLASS =
-  'relative cursor-grab select-none rounded-md border border-border bg-surface p-3 shadow-sm transition-colors active:cursor-grabbing';
+  'group relative cursor-grab select-none rounded-md border border-border bg-surface p-3 shadow-sm transition-colors active:cursor-grabbing';
 
 /** Presentational card body — no drag wiring. Shared by the draggable source and the overlay. */
 function CardBody({ card, onView }: { card: PipelineCard; onView?: () => void }) {
@@ -59,7 +59,7 @@ function CardBody({ card, onView }: { card: PipelineCard; onView?: () => void })
         aria-label="Ver perfil del candidato"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={handleViewClick}
-        className="absolute right-2 top-2 grid size-6 place-items-center rounded text-ink-subtle opacity-0 transition-opacity hover:bg-surface-2 hover:text-primary-600 group-hover:opacity-100 [.cursor-grab_&]:opacity-100"
+        className="absolute right-2 top-2 grid size-6 place-items-center rounded text-ink-subtle opacity-0 transition-opacity hover:bg-surface-2 hover:text-primary-600 group-hover:opacity-100"
       >
         <Eye className="size-3.5" />
       </button>

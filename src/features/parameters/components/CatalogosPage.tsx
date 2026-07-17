@@ -8,6 +8,8 @@ import { Badge } from '@/design-system/ui/badge';
 import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
 import { Pagination } from '@/design-system/molecules/Pagination';
 import { cn } from '@/shared/utils';
+import { PERM } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/PermissionsProvider';
 
 // Catalogs like cities or careers can grow large; paginate client-side so the
 // table never renders hundreds of rows at once.
@@ -64,6 +66,7 @@ async function fetchWritableTypes(): Promise<WritableTypes> {
 
 export function CatalogosPage() {
   const qc = useQueryClient();
+  const { has } = usePermissions();
 
   const [selectedType, setSelectedType] = useState<string>(CATALOG_TYPES[0]?.key ?? 'department');
   const [filter, setFilter] = useState<Filter>('all');
@@ -91,7 +94,13 @@ export function CatalogosPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const canWriteCurrentType = writableTypes.unrestricted || writableTypes.types.includes(selectedType);
+  // Departamentos is a separate entity/endpoint (org.departments), not an
+  // org.parameters row — its write access is gated by its own RBAC permission
+  // codes, not by the parameter-type allowlist that governs every other catalog
+  // on this page.
+  const canWriteCurrentType = currentType.endpoint === 'departments'
+    ? has(PERM.departmentsCreate) || has(PERM.departmentsUpdate) || has(PERM.departmentsDelete)
+    : writableTypes.unrestricted || writableTypes.types.includes(selectedType);
 
   const updateMut = useMutation({
     mutationFn: async ({ id, name, description }: { id: string; name: string; description?: string }) => {

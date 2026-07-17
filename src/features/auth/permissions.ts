@@ -35,6 +35,10 @@ export const PERM = {
   contactsCreate: 'org.contacts.create',
   contactsUpdate: 'org.contacts.update',
   contactsDelete: 'org.contacts.delete',
+  departmentsCreate: 'org.departments.create',
+  departmentsUpdate: 'org.departments.update',
+  departmentsDelete: 'org.departments.delete',
+  interviewerAvailability: 'recruitment.interviewer_availability.read',
   vacancyPromoImagesCreate: 'ai.vacancy_promo_images.create',
   vacancyPromoImagesDelete: 'ai.vacancy_promo_images.delete',
 } as const;
@@ -54,7 +58,6 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: PermissionCode }[] = [
   { prefix: '/configuracion/clientes', permission: PERM.clients },
   { prefix: '/configuracion/contactos', permission: PERM.contacts },
   { prefix: '/configuracion/catalogos', permission: PERM.parameters },
-  { prefix: '/configuracion/departamentos', permission: PERM.parameters },
   { prefix: '/configuracion/usuarios', permission: PERM.users },
   { prefix: '/configuracion/roles', permission: PERM.roles },
   { prefix: '/vacantes', permission: PERM.vacancies },

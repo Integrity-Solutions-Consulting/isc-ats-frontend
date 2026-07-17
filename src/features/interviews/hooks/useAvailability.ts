@@ -19,8 +19,8 @@ export const availabilityKeys = {
   mine: ['availability', 'mine'] as const,
 };
 
-export function useMyAvailability(): UseQueryResult<AvailabilityWindow[]> {
-  return useQuery({ queryKey: availabilityKeys.mine, queryFn: listMyAvailability });
+export function useMyAvailability(enabled = true): UseQueryResult<AvailabilityWindow[]> {
+  return useQuery({ queryKey: availabilityKeys.mine, queryFn: listMyAvailability, enabled });
 }
 
 export function useCreateAvailability(): UseMutationResult<

@@ -90,6 +90,19 @@ describe("StatusSidebar — move gating", () => {
   });
 });
 
+describe("StatusSidebar — sub-estado gating", () => {
+  it("renders sub-estado as read-only text without applicationsUpdate", () => {
+    renderSidebar([]);
+    expect(screen.queryByRole("combobox", { name: /sub-estado/i })).not.toBeInTheDocument();
+    expect(screen.getByText("— Sin sub-estado —")).toBeInTheDocument();
+  });
+
+  it("renders sub-estado as an editable select with applicationsUpdate", () => {
+    renderSidebar([PERM.applicationsUpdate]);
+    expect(screen.getByRole("combobox", { name: /sub-estado/i })).toBeInTheDocument();
+  });
+});
+
 describe("StatusSidebar — schedule interview gating", () => {
   it("hides 'Agendar entrevista' without interviewsCreate", () => {
     renderSidebar([]);

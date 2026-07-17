@@ -7,6 +7,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/design-system/ui/button';
 import { Select } from '@/design-system/atoms/Select';
 import { cn } from '@/shared/utils';
+import { PERM } from '@/features/auth/permissions';
+import { usePermissions } from '@/features/auth/PermissionsProvider';
 import {
   createAvailability,
   deleteAvailability,
@@ -229,7 +231,11 @@ function DayEditor({
 
 export function MiPerfilPage() {
   const queryClient = useQueryClient();
-  const { data: windows = [], isLoading } = useMyAvailability();
+  const { has } = usePermissions();
+  // Only roles that actually conduct interviews (Talento Humano) manage their
+  // own availability — Comercial/Proyecto only see the password card.
+  const canViewAvailability = has(PERM.interviewerAvailability);
+  const { data: windows = [], isLoading } = useMyAvailability(canViewAvailability);
 
   // Saved state is derived straight from the backend (no local mirror to drift).
   const savedAvailability = useMemo(() => windowsToAvailability(windows), [windows]);
@@ -324,8 +330,9 @@ export function MiPerfilPage() {
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold text-ink">Mi perfil</h1>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className={cn('grid grid-cols-1 gap-6', canViewAvailability && 'lg:grid-cols-2')}>
         {/* ── Availability card ──────────────────────────────────────────── */}
+        {canViewAvailability && (
         <div className="rounded-lg border border-border bg-surface p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm font-semibold text-ink">Disponibilidad para entrevistas</p>
@@ -442,6 +449,7 @@ export function MiPerfilPage() {
             </>
           )}
         </div>
+        )}
 
         {/* ── Security card ─────────────────────────────────────────────── */}
         <div className="rounded-lg border border-border bg-surface p-5 shadow-sm">
