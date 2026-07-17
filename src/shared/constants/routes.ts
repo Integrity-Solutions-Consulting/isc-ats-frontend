@@ -83,7 +83,6 @@ export const ROUTES = {
     clientes: '/configuracion/clientes',
     contactos: '/configuracion/contactos',
     catalogos: '/configuracion/catalogos',
-    departamentos: '/configuracion/departamentos',
     usuarios: '/configuracion/usuarios',
     roles: '/configuracion/roles',
   },

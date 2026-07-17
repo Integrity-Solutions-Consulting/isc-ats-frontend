@@ -21,7 +21,6 @@ const BREADCRUMB_MAP: { pattern: RegExp; crumbs: string[] }[] = [
   // Configuración — resto
   { pattern: /^\/configuracion\/usuarios$/, crumbs: ["Configuración", "Usuarios"] },
   { pattern: /^\/configuracion\/roles$/, crumbs: ["Configuración", "Roles y permisos"] },
-  { pattern: /^\/configuracion\/departamentos$/, crumbs: ["Configuración", "Departamentos"] },
   { pattern: /^\/configuracion\/plantillas\/nueva$/, crumbs: ["Plantillas de cargo", "Nueva plantilla"] },
   { pattern: /^\/configuracion\/plantillas\/[^/]+\/editar$/, crumbs: ["Plantillas de cargo", ":pageTitle", "Editar"] },
   { pattern: /^\/configuracion\/plantillas\/[^/]+$/, crumbs: ["Plantillas de cargo", ":pageTitle"] },
