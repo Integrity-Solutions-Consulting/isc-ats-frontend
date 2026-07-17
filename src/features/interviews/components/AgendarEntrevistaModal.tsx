@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useQueries } from '@tanstack/react-query';
 import { addDays, format, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -16,13 +17,19 @@ import {
 import { Button } from '@/design-system/ui/button';
 import { Select } from '@/design-system/atoms/Select';
 import { cn } from '@/shared/utils';
+import { getAvailableSlots } from '../api/interviewsApi';
 import {
+  interviewKeys,
   useAvailableSlots,
   useCreateInterview,
   useInterviewers,
   useOfferSlots,
 } from '../hooks/useInterviews';
 import type { Slot } from '../types';
+
+// How many upcoming days the "Candidato elige horario" day-picker offers —
+// two work weeks is enough runway without an unbounded list.
+const OFFER_DAYS_AHEAD = 14;
 
 interface Props {
   applicationId: number;
@@ -38,6 +45,7 @@ type Tab = 'candidate-chooses' | 'rh-selects';
 interface OfferedEntry {
   slot: Slot;
   dayLabel: string;
+  dateApi: string;
 }
 
 // Ecuador is a fixed UTC-5 (no DST). Slots arrive as UTC ISO strings; we render
@@ -63,14 +71,14 @@ export function AgendarEntrevistaModal({
   const [interviewerId, setInterviewerId] = useState<number | null>(null);
   const [date, setDate] = useState<Date>(startOfToday());
   const [selected, setSelected] = useState<Slot | null>(null); // Mode A — single
-  const [offered, setOffered] = useState<OfferedEntry[]>([]); // Mode B — accumulated
+  const [selectedDays, setSelectedDays] = useState<string[]>([]); // Mode B — whole days
+  const [removedKeys, setRemovedKeys] = useState<Set<string>>(new Set()); // Mode B — manual exclusions
 
   const { data: interviewers = [], isLoading: loadingInterviewers } = useInterviewers();
   // Effective interviewer = the explicit choice, else default to the first available.
   const effectiveInterviewerId = interviewerId ?? interviewers[0]?.id ?? null;
 
   const dateApi = format(date, 'yyyy-MM-dd');
-  const dayLabel = format(date, 'EEE d MMM', { locale: es });
   const { data: slots = [], isLoading: loadingSlots } = useAvailableSlots(
     effectiveInterviewerId,
     dateApi,
@@ -88,6 +96,53 @@ export function AgendarEntrevistaModal({
     setSelected(null);
   }
 
+  function toggleDay(day: string) {
+    setSelectedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
+    );
+  }
+
+  // Next OFFER_DAYS_AHEAD calendar days, today included — the day-picker options.
+  const upcomingDays = useMemo(
+    () => Array.from({ length: OFFER_DAYS_AHEAD }, (_, i) => addDays(startOfToday(), i)),
+    [],
+  );
+  const dayLabelByApi = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const d of upcomingDays) map.set(format(d, 'yyyy-MM-dd'), format(d, 'EEE d MMM', { locale: es }));
+    return map;
+  }, [upcomingDays]);
+
+  // One slots query per selected day — each selected day auto-contributes ALL of
+  // its free slots, so HR marks days instead of clicking every individual slot.
+  const dayQueries = useQueries({
+    queries: selectedDays.map((d) => ({
+      queryKey: interviewKeys.slots(effectiveInterviewerId ?? 0, d),
+      queryFn: () => getAvailableSlots(effectiveInterviewerId as number, d),
+      enabled: effectiveInterviewerId != null,
+    })),
+  });
+  const loadingDaySlots = dayQueries.some((q) => q.isLoading);
+  const emptyDayLabels = selectedDays
+    .filter((_d, i) => dayQueries[i]?.isSuccess && (dayQueries[i]?.data?.length ?? 0) === 0)
+    .map((d) => dayLabelByApi.get(d) ?? d);
+
+  const offered = useMemo<OfferedEntry[]>(() => {
+    const list: OfferedEntry[] = [];
+    selectedDays.forEach((d, i) => {
+      const daySlots = dayQueries[i]?.data ?? [];
+      const label = dayLabelByApi.get(d) ?? d;
+      for (const s of daySlots) {
+        if (!removedKeys.has(slotKey(s))) list.push({ slot: s, dayLabel: label, dateApi: d });
+      }
+    });
+    return list;
+  }, [selectedDays, dayQueries, dayLabelByApi, removedKeys]);
+
+  function removeOffered(slot: Slot) {
+    setRemovedKeys((prev) => new Set(prev).add(slotKey(slot)));
+  }
+
   const createMutation = useCreateInterview();
   const offerMutation = useOfferSlots();
   const submitting = createMutation.isPending || offerMutation.isPending;
@@ -100,22 +155,8 @@ export function AgendarEntrevistaModal({
     return () => clearTimeout(t);
   }, [isSuccess, onClose]);
 
-  const offeredKeys = useMemo(
-    () => new Set(offered.map((o) => slotKey(o.slot))),
-    [offered],
-  );
-
   const noStage = processStageId === undefined;
   const canPrev = date > startOfToday();
-
-  function toggleOffered(slot: Slot) {
-    const key = slotKey(slot);
-    setOffered((prev) =>
-      prev.some((o) => slotKey(o.slot) === key)
-        ? prev.filter((o) => slotKey(o.slot) !== key)
-        : [...prev, { slot, dayLabel }],
-    );
-  }
 
   function handleConfirmModeA() {
     if (!effectiveInterviewerId || !selected || processStageId === undefined) return;
@@ -205,7 +246,7 @@ export function AgendarEntrevistaModal({
           ) : (
             <div className="space-y-4">
               {/* Interviewer + date controls */}
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className={cn('grid gap-3', tab === 'rh-selects' && 'sm:grid-cols-2')}>
                 <div>
                   <label
                     htmlFor="interviewer-select"
@@ -232,78 +273,115 @@ export function AgendarEntrevistaModal({
                   </Select>
                 </div>
 
-                <div>
-                  <span className="mb-1 block text-xs font-medium text-ink">Día</span>
-                  <div className="flex items-center justify-between rounded-md border border-border bg-bg px-2 py-1.5">
-                    <button
-                      type="button"
-                      onClick={() => changeDate(-1)}
-                      disabled={!canPrev}
-                      className="rounded p-1 text-ink-muted hover:bg-primary-50 disabled:opacity-30"
-                      aria-label="Día anterior"
-                    >
-                      <ChevronLeft className="size-4" />
-                    </button>
-                    <span className="text-sm font-medium capitalize text-ink">
-                      {format(date, "EEE d 'de' MMM", { locale: es })}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => changeDate(1)}
-                      className="rounded p-1 text-ink-muted hover:bg-primary-50"
-                      aria-label="Día siguiente"
-                    >
-                      <ChevronRight className="size-4" />
-                    </button>
+                {tab === 'rh-selects' && (
+                  <div>
+                    <span className="mb-1 block text-xs font-medium text-ink">Día</span>
+                    <div className="flex items-center justify-between rounded-md border border-border bg-bg px-2 py-1.5">
+                      <button
+                        type="button"
+                        onClick={() => changeDate(-1)}
+                        disabled={!canPrev}
+                        className="rounded p-1 text-ink-muted hover:bg-primary-50 disabled:opacity-30"
+                        aria-label="Día anterior"
+                      >
+                        <ChevronLeft className="size-4" />
+                      </button>
+                      <span className="text-sm font-medium capitalize text-ink">
+                        {format(date, "EEE d 'de' MMM", { locale: es })}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => changeDate(1)}
+                        className="rounded p-1 text-ink-muted hover:bg-primary-50"
+                        aria-label="Día siguiente"
+                      >
+                        <ChevronRight className="size-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
-              {/* Slots grid */}
-              <div className="rounded-lg border border-border bg-surface-2 p-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                  {tab === 'rh-selects' ? 'Elegí un horario' : 'Sumá los horarios a ofrecer'}
-                </p>
-                {loadingSlots ? (
-                  <p className="py-6 text-center text-sm text-ink-muted">
-                    <Loader2 className="mr-2 inline size-4 animate-spin" />
-                    Cargando horarios…
+              {tab === 'rh-selects' ? (
+                /* Mode A — single slot in a single day */
+                <div className="rounded-lg border border-border bg-surface-2 p-4">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                    Elegí un horario
                   </p>
-                ) : slots.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-ink-muted">
-                    Sin horarios disponibles para este día.
+                  {loadingSlots ? (
+                    <p className="py-6 text-center text-sm text-ink-muted">
+                      <Loader2 className="mr-2 inline size-4 animate-spin" />
+                      Cargando horarios…
+                    </p>
+                  ) : slots.length === 0 ? (
+                    <p className="py-6 text-center text-sm text-ink-muted">
+                      Sin horarios disponibles para este día.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2">
+                      {slots.map((s) => {
+                        const key = slotKey(s);
+                        const active = selected !== null && slotKey(selected) === key;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setSelected(active ? null : s)}
+                            className={cn(
+                              'rounded-md border px-2 py-1.5 text-xs transition-colors',
+                              active
+                                ? 'border-primary-600 bg-primary-600 font-medium text-white'
+                                : 'border-border bg-bg text-ink-muted hover:bg-primary-50',
+                            )}
+                          >
+                            {ecTime(s.start)}–{ecTime(s.end)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Mode B — pick whole days; every free slot in each picked day
+                   is offered automatically, so HR doesn't click slot-by-slot. */
+                <div className="rounded-lg border border-border bg-surface-2 p-4">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                    Elegí los días a ofrecer
                   </p>
-                ) : (
-                  <div className="grid grid-cols-4 gap-2">
-                    {slots.map((s) => {
-                      const key = slotKey(s);
-                      const active =
-                        tab === 'rh-selects'
-                          ? selected !== null && slotKey(selected) === key
-                          : offeredKeys.has(key);
+                  <div className="flex flex-wrap gap-1.5">
+                    {upcomingDays.map((d) => {
+                      const dApi = format(d, 'yyyy-MM-dd');
+                      const active = selectedDays.includes(dApi);
                       return (
                         <button
-                          key={key}
+                          key={dApi}
                           type="button"
-                          onClick={() =>
-                            tab === 'rh-selects'
-                              ? setSelected(active ? null : s)
-                              : toggleOffered(s)
-                          }
+                          onClick={() => toggleDay(dApi)}
                           className={cn(
-                            'rounded-md border px-2 py-1.5 text-xs transition-colors',
+                            'rounded-md border px-2.5 py-1.5 text-xs capitalize transition-colors',
                             active
                               ? 'border-primary-600 bg-primary-600 font-medium text-white'
                               : 'border-border bg-bg text-ink-muted hover:bg-primary-50',
                           )}
                         >
-                          {ecTime(s.start)}–{ecTime(s.end)}
+                          {format(d, 'EEE d', { locale: es })}
                         </button>
                       );
                     })}
                   </div>
-                )}
-              </div>
+                  {loadingDaySlots && (
+                    <p className="mt-3 text-xs text-ink-subtle">
+                      <Loader2 className="mr-1.5 inline size-3.5 animate-spin" />
+                      Cargando horarios de los días elegidos…
+                    </p>
+                  )}
+                  {emptyDayLabels.length > 0 && (
+                    <p className="mt-3 text-xs text-ink-subtle">
+                      Sin horarios disponibles: {emptyDayLabels.join(', ')}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Mode B — accumulated selection */}
               {tab === 'candidate-chooses' && offered.length > 0 && (
@@ -322,7 +400,7 @@ export function AgendarEntrevistaModal({
                         </span>
                         <button
                           type="button"
-                          onClick={() => toggleOffered(o.slot)}
+                          onClick={() => removeOffered(o.slot)}
                           className="rounded p-0.5 text-ink-muted hover:text-danger"
                           aria-label="Quitar horario"
                         >
