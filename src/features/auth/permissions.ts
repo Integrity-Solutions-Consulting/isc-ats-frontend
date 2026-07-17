@@ -11,6 +11,7 @@
  */
 export const PERM = {
   vacancies: 'recruitment.vacancies.read',
+  interviewsAgenda: 'recruitment.interviews.read_agenda',
   talentPool: 'talent.talent_pool.read',
   profileTemplates: 'org.profile_templates.read',
   processes: 'org.processes.read',
@@ -61,6 +62,7 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: PermissionCode }[] = [
   { prefix: '/configuracion/usuarios', permission: PERM.users },
   { prefix: '/configuracion/roles', permission: PERM.roles },
   { prefix: '/vacantes', permission: PERM.vacancies },
+  { prefix: '/entrevistas', permission: PERM.interviewsAgenda },
   { prefix: '/banco-talento', permission: PERM.talentPool },
   { prefix: '/reportes', permission: PERM.vacancies },
 ];

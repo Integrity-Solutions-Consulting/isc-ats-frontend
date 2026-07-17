@@ -1,6 +1,7 @@
 import {
   Home,
   Briefcase,
+  CalendarClock,
   Users2,
   UserCog,
   Shield,
@@ -37,6 +38,7 @@ export const PORTAL_NAV: NavGroup[] = [
     items: [
       { label: "Inicio", href: ROUTES.dashboard, icon: Home, exact: true },
       { label: "Vacantes", href: ROUTES.vacantes, icon: Briefcase, permission: PERM.vacancies },
+      { label: "Entrevistas", href: ROUTES.entrevistas, icon: CalendarClock, permission: PERM.interviewsAgenda },
       { label: "Banco de talento", href: ROUTES.bancoTalento, icon: Users2, permission: PERM.talentPool },
       { label: "Plantillas de cargo", href: ROUTES.configuracion.plantillas, icon: FileText, permission: PERM.profileTemplates },
       { label: "Procesos", href: ROUTES.configuracion.procesos, icon: Workflow, permission: PERM.processes },

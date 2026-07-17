@@ -60,6 +60,7 @@ export const ROUTES = {
   vacante: (id: string) => `/vacantes/${id}`,
   vacanteEditar: (id: string) => `/vacantes/${id}/editar`,
   candidatoEnVacante: candidateInVacancy,
+  entrevistas: '/entrevistas',
   bancoTalento: '/banco-talento',
   bancoTalentoCandidate: (candidateId: string, opts?: { pos?: number; total?: number; tpId?: string }) => {
     const base = `/banco-talento/${candidateId}`;

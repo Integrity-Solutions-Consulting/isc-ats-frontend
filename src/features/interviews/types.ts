@@ -45,3 +45,40 @@ export interface AvailabilityCreatePayload {
   slotDurationMin: number;
   bufferMin: number;
 }
+
+/** Interview lifecycle code, as returned by GET /recruitment/interviews/all. */
+export type InterviewStatus =
+  | 'scheduled'
+  | 'offered'
+  | 'confirmed'
+  | 'cancelled'
+  | 'completed';
+
+/** A single row of the global "Entrevistas" list — all interviews, all vacancies. */
+export interface InterviewListItem {
+  id: number;
+  /** Null for an open Mode B offer the candidate hasn't picked a slot for yet. */
+  scheduledAt: string | null;
+  endsAt: string | null;
+  candidateName: string;
+  vacancyName: string;
+  vacancyId: number;
+  interviewerEmail: string;
+  teamsMeetingUrl: string | null;
+  status: InterviewStatus;
+}
+
+/** Optional server-side filters for the global interviews list. */
+export interface InterviewListParams {
+  page?: number;
+  size?: number;
+  vacancyId?: number;
+  statusId?: number;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface InterviewListPage {
+  items: InterviewListItem[];
+  total: number;
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  keepPreviousData,
   useMutation,
   useQuery,
   type UseMutationResult,
@@ -10,11 +11,14 @@ import {
 import {
   createInterview,
   getAvailableSlots,
+  listAllInterviews,
   listInterviewers,
   offerSlots,
 } from '../api/interviewsApi';
 import type {
   CreateInterviewPayload,
+  InterviewListPage,
+  InterviewListParams,
   Interviewer,
   OfferSlotsPayload,
   Slot,
@@ -24,6 +28,7 @@ export const interviewKeys = {
   interviewers: ['interviews', 'interviewers'] as const,
   slots: (interviewerId: number, date: string) =>
     ['interviews', 'slots', interviewerId, date] as const,
+  all: (params: InterviewListParams) => ['interviews', 'all', params] as const,
 };
 
 export function useInterviewers(): UseQueryResult<Interviewer[]> {
@@ -43,6 +48,17 @@ export function useAvailableSlots(
     queryKey: interviewKeys.slots(interviewerId ?? 0, targetDate),
     queryFn: () => getAvailableSlots(interviewerId as number, targetDate),
     enabled: interviewerId != null && targetDate.length > 0,
+  });
+}
+
+/** Talento Humano / Admin: paginated list of ALL interviews across vacancies. */
+export function useAllInterviews(params: InterviewListParams): UseQueryResult<InterviewListPage> {
+  return useQuery({
+    queryKey: interviewKeys.all(params),
+    queryFn: () => listAllInterviews(params),
+    // Keep the previous page's rows visible while the next page loads, instead
+    // of flashing the table's loading state on every click.
+    placeholderData: keepPreviousData,
   });
 }
 
