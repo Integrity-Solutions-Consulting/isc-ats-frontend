@@ -88,12 +88,16 @@ const EC_TIME_FMT = new Intl.DateTimeFormat("es-EC", {
   hour12: false,
 });
 
-const DEFAULT_STAGES = [
-  { name: "CV recibido", color: "bg-primary-200" },
-  { name: "Llamada de validación", color: "bg-primary-300" },
-  { name: "Prueba técnica", color: "bg-primary-400" },
-  { name: "Entrevista cliente", color: "bg-primary-500" },
-  { name: "Contratados", color: "bg-primary-700" },
+// Chart color assigned by position — the stage set itself is derived from each
+// org's actual configured process stages (see `orderedStages` below), never
+// hardcoded, so it reflects whatever pipeline the org has set up.
+const STAGE_COLOR_PALETTE = [
+  "bg-primary-200",
+  "bg-primary-300",
+  "bg-primary-400",
+  "bg-primary-500",
+  "bg-primary-600",
+  "bg-primary-700",
 ];
 
 export async function buildDashboardData(): Promise<DashboardData> {
@@ -161,11 +165,26 @@ export async function buildDashboardData(): Promise<DashboardData> {
     { label: "Contratados", value: hiredCards.length },
   ];
 
+  // Union of every stage that appears in any active vacancy's real pipeline,
+  // in first-seen order — this is the org's actual configured process, so an
+  // org with no vacancies/stages yet correctly gets an empty chart instead of
+  // a fixed placeholder legend.
+  const orderedStages: PipelineStage[] = [];
+  const seenStageIds = new Set<string>();
+  pipelines.forEach((p) => {
+    p.stages.forEach((s) => {
+      if (!seenStageIds.has(s.id)) {
+        seenStageIds.add(s.id);
+        orderedStages.push(s);
+      }
+    });
+  });
+
   const stageCounts = new Map<string, number>();
   const stageColors = new Map<string, string>();
-  DEFAULT_STAGES.forEach((s) => {
+  orderedStages.forEach((s, i) => {
     stageCounts.set(s.name, 0);
-    stageColors.set(s.name, s.color);
+    stageColors.set(s.name, STAGE_COLOR_PALETTE[i % STAGE_COLOR_PALETTE.length]);
   });
 
   pipelines.forEach((p) => {
@@ -188,7 +207,7 @@ export async function buildDashboardData(): Promise<DashboardData> {
   pipelines.forEach((p) => {
     const stageMap = new Map(p.stages.map((s) => [s.id, s.name]));
     const localCounts = new Map<string, number>();
-    DEFAULT_STAGES.forEach((s) => localCounts.set(s.name, 0));
+    orderedStages.forEach((s) => localCounts.set(s.name, 0));
 
     p.cards.forEach((c) => {
       const name = stageMap.get(c.stageId);
