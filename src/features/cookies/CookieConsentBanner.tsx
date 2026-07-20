@@ -82,9 +82,9 @@ export function CookieConsentBanner() {
                   key={cookie.name}
                   className="flex flex-col gap-0.5 px-3 py-2 sm:flex-row sm:items-baseline sm:gap-3"
                 >
-                  <code className="shrink-0 font-mono text-xs font-semibold text-ink sm:w-32">
-                    {cookie.name}
-                  </code>
+                  <span className="shrink-0 text-xs font-semibold text-ink sm:w-32">
+                    {cookie.label}
+                  </span>
                   <span className="flex-1 text-xs text-ink-muted">{cookie.purpose}</span>
                   <span className="shrink-0 text-xs text-ink-subtle">{cookie.duration}</span>
                 </li>
