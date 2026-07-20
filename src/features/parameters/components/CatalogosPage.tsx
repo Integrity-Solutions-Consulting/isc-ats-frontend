@@ -20,7 +20,7 @@ type CatalogValue = { id: string; code?: string; name: string; description?: str
 
 const CATALOG_TYPES: CatalogType[] = [
   { key: 'department',     label: 'Departamentos',       endpoint: 'departments',  hasDescription: true },
-  { key: 'stage',          label: 'Etapas de proceso',   endpoint: 'parameters', hiddenCodes: ['offer'] },
+  { key: 'stage',          label: 'Etapas de proceso',   endpoint: 'parameters', hiddenCodes: ['offer', 'applicants'] },
   { key: 'stage_status',   label: 'Sub-estados de etapa',endpoint: 'parameters' },
   { key: 'city',           label: 'Ciudades',            endpoint: 'parameters' },
   { key: 'career',         label: 'Carreras',            endpoint: 'parameters' },

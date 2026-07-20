@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Calendar, Clock } from 'lucide-react';
 import { DataTable, type ColumnDef } from '@/design-system/organisms/DataTable';
-import { Select } from '@/design-system/atoms/Select';
+import { Combobox } from '@/design-system/molecules/Combobox';
 import { Avatar } from '@/design-system/atoms/Avatar';
 import { cn } from '@/shared/utils';
 import { ROUTES } from '@/shared/constants/routes';
@@ -47,19 +47,14 @@ function CandidatesByStage({ stages, byVacancy, options }: CandidatesByStageProp
     <div className="rounded-lg border border-border bg-surface p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <p className="text-sm font-semibold text-ink">Candidatos por etapa</p>
-        <Select
+        <Combobox
+          valueKey="id"
           aria-label="Filtrar por vacante"
           className="w-auto min-w-[180px]"
           value={selectedVacancy}
-          onChange={(e) => setSelectedVacancy(e.target.value)}
-        >
-          <option value="">Todas las vacantes</option>
-          {options.map((o) => (
-            <option key={o.id} value={o.id}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
+          onChange={setSelectedVacancy}
+          options={[{ id: '', label: 'Todas las vacantes' }, ...options]}
+        />
       </div>
       <div className="space-y-3">
         {data.map((stage) => (
