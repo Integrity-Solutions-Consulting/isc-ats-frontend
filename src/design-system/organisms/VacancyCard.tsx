@@ -21,14 +21,18 @@ interface VacancyCardProps {
 
 /**
  * Shared vacancy card used in both the candidate portal list and the public
- * job board. Tags come exclusively from `vacancy.skills` (knowledge items).
+ * job board. Tags show only "conocimientos" and "herramientas" — general
+ * skills/certifications are still searchable (via `vacancy.skills`, the
+ * search bar's superset) but not relevant enough to a candidate to take up
+ * card space.
  *
  * Tag container has a fixed 2-row height so all cards align vertically
- * regardless of how many knowledge tags a vacancy has.
+ * regardless of how many tags a vacancy has.
  */
 export function VacancyCard({ vacancy, onClick, footer, applied = false }: VacancyCardProps) {
-  const tags = vacancy.skills.slice(0, MAX_VISIBLE_TAGS);
-  const overflow = vacancy.skills.length - MAX_VISIBLE_TAGS;
+  const allTags = [...vacancy.requirements.knowledge, ...vacancy.requirements.tools];
+  const tags = allTags.slice(0, MAX_VISIBLE_TAGS);
+  const overflow = allTags.length - MAX_VISIBLE_TAGS;
 
   return (
     <article

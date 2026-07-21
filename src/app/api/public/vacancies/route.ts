@@ -46,11 +46,15 @@ const LEVEL_LABEL: Record<string, string> = {
 
 function mapVacancy(v: BackendPublicVacancyItem) {
   const reqs = v.profile_requirements ?? {};
+  // Full searchable set — the card only ever renders knowledge + tools as
+  // pills (see VacancyCard), but the search bar must still match on skills
+  // and certifications even though they aren't shown.
   const allSkills = [
-    ...(reqs.skills ?? []),
-    ...(reqs.tools ?? []),
     ...(reqs.knowledge ?? []),
-  ].slice(0, 5);
+    ...(reqs.tools ?? []),
+    ...(reqs.skills ?? []),
+    ...(reqs.certifications ?? []),
+  ];
 
   const durYears = v.project_duration_years ?? 0;
   const durMonths = v.project_duration_months ?? 0;
