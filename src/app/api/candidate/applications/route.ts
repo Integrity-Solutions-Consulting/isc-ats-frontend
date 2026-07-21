@@ -114,6 +114,12 @@ export async function GET() {
     );
     if (!appsData.items.length) return NextResponse.json([]);
 
+    // Newest application first, so a candidate who just applied sees it at the
+    // top of every tab (Todas/En proceso/Finalizadas) without having to scroll.
+    appsData.items.sort(
+      (a, b) => new Date(b.applied_at).getTime() - new Date(a.applied_at).getTime(),
+    );
+
     // Fetch application_status catalog to resolve status codes (reuse same pattern as POST)
     interface BackendParamPage { items: { id: number; code: string }[]; }
     const appStatuses = await backendGet<BackendParamPage>("/org/parameters?type=application_status&size=10");
