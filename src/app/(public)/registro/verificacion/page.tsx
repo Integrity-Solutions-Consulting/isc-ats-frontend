@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { EmailVerificationPage } from '@/features/candidate-portal/components/EmailVerificationPage';
 
 export const metadata: Metadata = {
-  title: 'Verifica tu correo · Bolsa de Empleo',
+  title: 'Verifica tu correo · Mi Chamba',
 };
 
 export default async function VerificationPage({

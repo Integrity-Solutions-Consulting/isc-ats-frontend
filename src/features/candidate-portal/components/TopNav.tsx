@@ -118,7 +118,7 @@ export function TopNav() {
 
         {/* Logo — same corporate lockup as the public header */}
         <div className="shrink-0">
-          <Brand tone="header" subtitle="Mi Camello" />
+          <Brand tone="header" subtitle="Mi Chamba" />
         </div>
 
         {/* Divider + inline nav: desktop only. On mobile these live in BottomNav. */}

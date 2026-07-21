@@ -4,7 +4,7 @@ import { AuthLayout } from '@/design-system/templates/AuthLayout';
 import { ForgotPasswordForm } from '@/features/auth/components/ForgotPasswordForm';
 
 export const metadata: Metadata = {
-  title: 'Recuperar contraseña · Bolsa de Empleo',
+  title: 'Recuperar contraseña · Mi Chamba',
 };
 
 export default function ForgotPasswordPage() {

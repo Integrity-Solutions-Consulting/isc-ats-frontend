@@ -4,7 +4,7 @@ import { listVacancies } from '@/features/candidate-portal/api/candidateApi';
 import { VacancyListPage } from '@/features/candidate-portal/components/VacancyListPage';
 
 export const metadata: Metadata = {
-  title: 'Completa tu perfil · Bolsa de Empleo',
+  title: 'Completa tu perfil · Mi Chamba',
 };
 
 export default async function Page() {

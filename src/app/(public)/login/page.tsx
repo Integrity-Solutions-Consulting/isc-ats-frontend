@@ -5,7 +5,7 @@ import { AuthLayout } from "@/design-system/templates/AuthLayout";
 import { LoginForm } from "@/features/auth/components/LoginForm";
 
 export const metadata: Metadata = {
-  title: "Iniciar sesión · Bolsa de Empleo",
+  title: "Iniciar sesión · Mi Chamba",
 };
 
 // Read the Turnstile site key at request time (server-side) so it comes from the

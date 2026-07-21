@@ -6,7 +6,7 @@ import { PublicVacancyListPage } from '@/features/public/components/PublicVacanc
 import { listPublicVacancies } from '@/features/public/api/publicVacanciesApi';
 
 export const metadata: Metadata = {
-  title: 'Vacantes · Mi Camello',
+  title: 'Vacantes · Mi Chamba',
 };
 
 // Force dynamic rendering so cookies are read per-request (not statically
