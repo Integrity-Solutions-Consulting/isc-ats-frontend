@@ -12,6 +12,7 @@ import { formatTimeAgoEs } from '@/shared/utils';
 import type { CandidateVacancy } from '@/features/candidate-portal/types';
 import { VacancyCard } from '@/features/candidate-portal/components/VacancyCard';
 import { MascotWidget } from './MascotWidget';
+import { SocialFloatingBar } from './SocialFloatingBar';
 
 interface PublicVacancyListPageProps {
   vacancies: CandidateVacancy[];
@@ -149,6 +150,7 @@ export function PublicVacancyListPage({ vacancies }: PublicVacancyListPageProps)
 
       {/* Robot Mascot floating helper */}
       <MascotWidget />
+      <SocialFloatingBar />
     </div>
   );
 }
