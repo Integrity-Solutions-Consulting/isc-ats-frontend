@@ -141,7 +141,7 @@ export function LocationSection({ readOnly = false }: LocationSectionProps) {
                 setValue("workSchedule", `${e.target.value} - ${end}`);
               }}
               disabled={readOnly}
-              className="h-9 w-32 rounded-md border border-border bg-surface px-3 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-9 w-32 rounded-md border border-border bg-surface px-3 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
             />
             <span className="text-sm text-ink-muted">a</span>
             <input
@@ -153,7 +153,7 @@ export function LocationSection({ readOnly = false }: LocationSectionProps) {
                 setValue("workSchedule", `${start} - ${e.target.value}`);
               }}
               disabled={readOnly}
-              className="h-9 w-32 rounded-md border border-border bg-surface px-3 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-9 w-32 rounded-md border border-border bg-surface px-3 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
         </div>

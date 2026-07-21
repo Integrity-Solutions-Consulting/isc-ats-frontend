@@ -158,9 +158,9 @@ export function Combobox({
         className={cn(
           "h-9 w-full rounded-md border border-border bg-surface px-3 py-1 pr-9 text-sm text-ink shadow-sm outline-none transition-colors",
           "placeholder:text-ink-subtle",
-          "focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1",
+          "focus-visible:border-primary-600",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          ariaInvalid && "border-danger focus-visible:ring-danger/50",
+          ariaInvalid && "border-danger",
           inputClassName,
         )}
       />

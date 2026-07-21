@@ -73,7 +73,7 @@ export function Tabs({ items, value, onValueChange, className }: TabsProps) {
             onClick={() => onValueChange(item.value)}
             onKeyDown={(e) => handleKeyDown(e, index)}
             className={cn(
-              "relative px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+              "relative px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               isSelected
                 ? "text-primary-700 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary-600"
                 : "text-ink-muted hover:text-ink"

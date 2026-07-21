@@ -181,7 +181,7 @@ function DayEditor({
                   value={slot.from}
                   onChange={(e) => onUpdateSlot(i, 'from', e.target.value)}
                   className={cn(
-                    'h-8 rounded-md border bg-surface px-2 text-xs text-ink shadow-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1',
+                    'h-8 rounded-md border bg-surface px-2 text-xs text-ink shadow-sm outline-none transition-colors',
                     invalid ? 'border-danger' : 'border-border focus-visible:border-primary-600',
                   )}
                 />
@@ -197,7 +197,7 @@ function DayEditor({
                   value={slot.to}
                   onChange={(e) => onUpdateSlot(i, 'to', e.target.value)}
                   className={cn(
-                    'h-8 rounded-md border bg-surface px-2 text-xs text-ink shadow-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1',
+                    'h-8 rounded-md border bg-surface px-2 text-xs text-ink shadow-sm outline-none transition-colors',
                     invalid ? 'border-danger' : 'border-border focus-visible:border-primary-600',
                   )}
                 />
@@ -473,7 +473,7 @@ export function MiPerfilPage() {
                       <label htmlFor={fieldId} className="mb-1 block text-xs text-ink-muted">
                         {label}
                       </label>
-                      <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-surface px-3 shadow-sm transition-colors focus-within:border-primary-600 focus-within:ring-2 focus-within:ring-ring/30 focus-within:ring-offset-1">
+                      <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-surface px-3 shadow-sm transition-colors focus-within:border-primary-600">
                         <input
                           id={fieldId}
                           type={show ? 'text' : 'password'}

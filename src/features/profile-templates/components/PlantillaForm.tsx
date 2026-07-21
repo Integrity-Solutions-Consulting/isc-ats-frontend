@@ -106,7 +106,7 @@ export function PlantillaForm({ mode, initialValues }: PlantillaFormProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ej. Desarrollador Backend Python"
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1"
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600"
           />
         </div>
       </section>

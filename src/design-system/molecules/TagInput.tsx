@@ -40,7 +40,7 @@ export function TagInput({
   return (
     <div
       className={cn(
-        "flex min-h-11 flex-wrap items-center gap-1.5 rounded-md border border-border bg-surface p-2 shadow-sm focus-within:border-primary-600 focus-within:ring-2 focus-within:ring-ring/30 focus-within:ring-offset-1",
+        "flex min-h-11 flex-wrap items-center gap-1.5 rounded-md border border-border bg-surface p-2 shadow-sm focus-within:border-primary-600",
         disabled && "opacity-60",
         className,
       )}

@@ -27,7 +27,7 @@ interface Company { id: number; name: string; is_active: boolean; }
 
 const CONTACTS_KEY = ['org', 'contacts'];
 const COMPANIES_KEY = ['org', 'client-companies'];
-const INLINE = 'w-full rounded-md border border-border bg-surface px-2 py-1 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1';
+const INLINE = 'w-full rounded-md border border-border bg-surface px-2 py-1 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600';
 
 type EditForm = { firstName: string; lastName: string; email: string; clientCompanyId: string };
 

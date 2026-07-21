@@ -238,7 +238,7 @@ export function CatalogosPage() {
         {/* Editor */}
         <div className="flex flex-1 flex-col p-4">
           <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-2 p-3">
-            <div className="flex h-8 flex-1 items-center gap-2 rounded-full border border-border bg-surface px-3 text-xs focus-within:border-primary-600 focus-within:ring-2 focus-within:ring-ring/30 focus-within:ring-offset-1">
+            <div className="flex h-8 flex-1 items-center gap-2 rounded-full border border-border bg-surface px-3 text-xs focus-within:border-primary-600">
               <Search className="size-3.5 shrink-0 text-ink-subtle" />
               <input type="search" placeholder="Buscar…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }}
                 className="flex-1 bg-transparent text-ink outline-none placeholder:text-ink-subtle" />
@@ -306,7 +306,7 @@ export function CatalogosPage() {
                       {editingId === v.id ? (
                         <input autoFocus value={editingName} onChange={(e) => setEditingName(e.target.value)}
                           onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(v.id); if (e.key === 'Escape') setEditingId(null); }}
-                          className="w-full rounded-md border border-border bg-surface px-2 py-1 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1" />
+                          className="w-full rounded-md border border-border bg-surface px-2 py-1 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600" />
                       ) : (
                         <span className={cn('text-sm', !v.active && 'text-ink-subtle line-through')}>{v.name}</span>
                       )}
@@ -317,7 +317,7 @@ export function CatalogosPage() {
                           <input value={editingDescription} onChange={(e) => setEditingDescription(e.target.value)}
                             onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(v.id); if (e.key === 'Escape') setEditingId(null); }}
                             placeholder="Descripción…"
-                            className="w-full rounded-md border border-border bg-surface px-2 py-1 text-sm text-ink shadow-sm outline-none transition-colors placeholder:text-ink-subtle focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-1" />
+                            className="w-full rounded-md border border-border bg-surface px-2 py-1 text-sm text-ink shadow-sm outline-none transition-colors placeholder:text-ink-subtle focus-visible:border-primary-600" />
                         ) : (
                           <span className="text-sm text-ink-muted">{v.description || '—'}</span>
                         )}

@@ -45,7 +45,7 @@ export function TogglePill({
             aria-pressed={isActive}
             onClick={() => onValueChange(item.value)}
             className={cn(
-              "rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+              "rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               isActive
                 ? "bg-primary-600 text-white"
                 : "bg-surface-2 text-ink-muted hover:bg-primary-50 hover:text-primary-700"
