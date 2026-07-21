@@ -208,7 +208,11 @@ export function TopNav() {
                         <button
                           key={n.id}
                           type="button"
-                          onClick={() => markRead(n.id)}
+                          onClick={() => {
+                            markRead(n.id);
+                            setShowNotifications(false);
+                            router.push(ROUTES.candidato.misPostulaciones);
+                          }}
                           className={cn(
                             'flex w-full items-start gap-3 border-b border-border px-4 py-3 text-left transition-colors last:border-0 hover:bg-surface-2',
                             n.read ? 'bg-card/50' : 'bg-primary/8',
