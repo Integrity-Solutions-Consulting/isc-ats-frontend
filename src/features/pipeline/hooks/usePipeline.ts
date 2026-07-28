@@ -44,12 +44,13 @@ export function usePipeline(vacancyId: string): UseQueryResult<VacancyPipeline> 
 export function useMovePipelineCard(): UseMutationResult<
   void,
   Error,
-  { cardId: string; toStageId: string; fromStageId: string }
+  { cardId: string; toStageId: string; fromStageId: string; rejectionReason?: string }
 > {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ cardId, toStageId }) => movePipelineCard(cardId, toStageId),
+    mutationFn: ({ cardId, toStageId, rejectionReason }) =>
+      movePipelineCard(cardId, toStageId, rejectionReason),
 
     onMutate: async ({ cardId, toStageId, fromStageId }) => {
       // Find which vacancy this card belongs to by looking through cached pipelines

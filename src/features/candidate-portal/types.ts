@@ -71,6 +71,8 @@ export interface CandidateApplication {
   currentStageId: number | null;
   /** The stage the candidate had reached when rejected (current_stage_id is nulled on rejection). */
   rejectedAtStageId: number | null;
+  /** HR's free-text feedback for the rejection, or the fixed system copy when the vacancy itself closed/was deleted. Null until rejected. */
+  rejectionReason: string | null;
   salaryExpectation: number;
   slotStatus: 'pending_selection' | 'confirmed' | null;
   /** Present when the candidate has an open interview offer to respond to. */

@@ -149,12 +149,12 @@ export function useUpdateStageStatus(): UseMutationResult<
 export function useRejectCandidate(): UseMutationResult<
   void,
   Error,
-  { applicationId: string; vacancyId: string }
+  { applicationId: string; vacancyId: string; rejectionReason: string }
 > {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ applicationId }) => rejectCandidate(applicationId),
+    mutationFn: ({ applicationId, rejectionReason }) => rejectCandidate(applicationId, rejectionReason),
     onSuccess: (_data, { applicationId, vacancyId }) => {
       queryClient.invalidateQueries({
         queryKey: pipelineKeys.pipeline(vacancyId),

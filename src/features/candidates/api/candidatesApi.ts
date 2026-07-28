@@ -121,13 +121,23 @@ export async function updateStageStatus(
   });
 }
 
-export async function rejectCandidate(applicationId: string): Promise<void> {
+export async function rejectCandidate(applicationId: string, rejectionReason: string): Promise<void> {
   // A rejected candidate is out of the pipeline, so it carries no sub-status.
-  await fetch(`/api/recruitment/applications/${applicationId}`, {
+  // rejection_reason is required — the backend answers 400 (RejectionReasonRequiredError)
+  // when this move sets current_stage_id to null with no reason attached.
+  const res = await fetch(`/api/recruitment/applications/${applicationId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ current_stage_id: null, current_status_id: null }),
+    body: JSON.stringify({
+      current_stage_id: null,
+      current_status_id: null,
+      rejection_reason: rejectionReason,
+    }),
   });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+    throw new Error(body.error ?? body.detail ?? `No se pudo rechazar al candidato (${res.status})`);
+  }
 }
 
 // ─── Talent pool ────────────────────────────────────────────────────────────

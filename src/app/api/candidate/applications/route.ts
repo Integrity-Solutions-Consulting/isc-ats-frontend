@@ -76,6 +76,11 @@ interface BackendApplication {
   status_id: number;
   current_stage_id: number | null;
   rejected_at_stage_id: number | null;
+  rejection_reason: string | null;
+  // Resolved by the backend regardless of the vacancy's current status (draft/
+  // active/closed/paused) — see ApplicationService._attach_vacancy_names.
+  // Only null when the vacancy itself was hard-deleted.
+  vacancy_name: string | null;
   match_score: number | null;
   applied_at: string;
   is_active: boolean;
@@ -84,12 +89,6 @@ interface BackendApplication {
 interface BackendCandidateExpanded {
   id: number;
   user_id: number;
-}
-
-/** Only safe fields — no client_company, no contact. */
-interface BackendVacancyItem {
-  id: number;
-  vacancy_name: string;
 }
 
 export async function GET() {
@@ -125,25 +124,13 @@ export async function GET() {
     const appStatuses = await backendGet<BackendParamPage>("/org/parameters?type=application_status&size=10");
     const statusCodeById = new Map<number, string>(appStatuses.items.map((s) => [s.id, s.code]));
 
-    // Resolve vacancy names for the vacancies this candidate applied to, using
-    // the candidate-safe PUBLIC endpoint (candidates are forbidden from the staff
-    // `expanded` endpoint). Public returns active vacancies only, so applications
-    // to a now-closed vacancy fall back to "Vacante no disponible" (below). Page
-    // through until every needed id is resolved or pages run out.
-    const neededIds = new Set(appsData.items.map((a) => a.vacancy_id));
-    const vacancyMap = new Map<number, BackendVacancyItem>();
-    const PAGE_SIZE = 100;
-    for (let page = 1; vacancyMap.size < neededIds.size; page += 1) {
-      const vacanciesData = await backendGet<BackendPage<BackendVacancyItem>>(
-        `/recruitment/vacancies/public?size=${PAGE_SIZE}&page=${page}`,
-      );
-      for (const v of vacanciesData.items) {
-        if (neededIds.has(v.id)) vacancyMap.set(v.id, v);
-      }
-      // Last page reached (fewer than a full page returned) → stop.
-      if (vacanciesData.items.length < PAGE_SIZE) break;
-    }
-    const vacancyIds = [...neededIds];
+    // Vacancy names now come straight from each application record (backend
+    // resolves them regardless of vacancy status — see BackendApplication above),
+    // so no separate catalog lookup is needed here. Previously this cross-
+    // referenced the candidate-safe PUBLIC endpoint, which only lists ACTIVE
+    // vacancies — an application to a vacancy that later closed would drop out of
+    // that list and permanently fall back to "Vacante no disponible" (BUG-24).
+    const vacancyIds = [...new Set(appsData.items.map((a) => a.vacancy_id))];
 
     // Fetch process stages per unique vacancy (parallel)
     const stagesMap = new Map<number, VacancyStage[]>();
@@ -185,7 +172,6 @@ export async function GET() {
     }
 
     const result: CandidateApplication[] = appsData.items.map((app) => {
-      const vacancy = vacancyMap.get(app.vacancy_id);
       const daysAgo = Math.floor((Date.now() - new Date(app.applied_at).getTime()) / 86_400_000);
       const lastUpdate = daysAgo === 0 ? "hoy" : daysAgo === 1 ? "hace 1 día" : `hace ${daysAgo} días`;
       const stages = stagesMap.get(app.vacancy_id) ?? [];
@@ -202,13 +188,14 @@ export async function GET() {
       return {
         id: String(app.id),
         vacancyId: String(app.vacancy_id),
-        vacancyTitle: vacancy?.vacancy_name ?? "Vacante no disponible",
+        vacancyTitle: app.vacancy_name ?? "Vacante no disponible",
         appliedAt: app.applied_at.slice(0, 10),
         lastUpdate,
         status: deriveCandidateStatus(app.status_id, app.current_stage_id, stages, statusCodeById),
         stages,
         currentStageId: app.current_stage_id,
         rejectedAtStageId: app.rejected_at_stage_id,
+        rejectionReason: app.rejection_reason,
         salaryExpectation: 0,
         slotStatus: offer
           ? ("pending_selection" as const)
