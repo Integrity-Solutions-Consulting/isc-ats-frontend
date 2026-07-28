@@ -1,30 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { cookies } from "next/headers";
 
-import { backendGet } from "@/lib/backendFetch";
+import { backendErrorResponse, backendGet, backendPatch } from "@/lib/backendFetch";
 import type { CandidateApplication } from "@/features/candidates/types";
-
-const BACKEND = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000/api/v1";
 
 interface BackendApplication {
   id: number; vacancy_id: number; candidate_id: number;
   current_stage_id: number | null; current_status_id: number | null;
   match_score: string | null;
   applied_at: string; updated_at: string | null; is_active: boolean;
-}
-
-async function authedFetch(path: string, init?: RequestInit) {
-  const store = await cookies();
-  const token = store.get("access-token")?.value;
-  return fetch(`${BACKEND}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(init?.headers ?? {}),
-    },
-  });
 }
 
 export async function GET(
@@ -58,11 +42,17 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const body = await request.json() as { current_stage_id?: number | null; current_status_id?: number | null };
-  const res = await authedFetch(`/recruitment/applications/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) return NextResponse.json(await res.json().catch(() => ({})), { status: res.status });
-  return NextResponse.json(await res.json());
+  const body = await request.json() as {
+    current_stage_id?: number | null;
+    current_status_id?: number | null;
+    // Required by the backend when this move results in current_stage_id=null
+    // (a move into the virtual Rechazados column) — see RejectionReasonRequiredError.
+    rejection_reason?: string | null;
+  };
+  try {
+    const updated = await backendPatch(`/recruitment/applications/${id}`, body);
+    return NextResponse.json(updated);
+  } catch (error) {
+    return backendErrorResponse(error);
+  }
 }

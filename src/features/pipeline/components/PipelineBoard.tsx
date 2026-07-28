@@ -7,15 +7,24 @@ import { Button } from '@/design-system/ui/button';
 import { TogglePill } from '@/design-system/molecules/TogglePill';
 import { PERM } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/PermissionsProvider';
+import { resolveDropAction } from '../dropAction';
 import { useMovePipelineCard, usePipeline } from '../hooks/usePipeline';
 import type { PipelineCard } from '../types';
 import { CandidateCardOverlay } from './CandidateCard';
 import { PipelineColumn } from './PipelineColumn';
+import { RejectReasonDialog } from './RejectReasonDialog';
 
 type MatchFilter = 'all' | 'high' | 'medium';
 
 interface PipelineBoardProps {
   vacancyId: string;
+}
+
+interface PendingReject {
+  cardId: string;
+  toStageId: string;
+  fromStageId: string;
+  candidateName: string;
 }
 
 // ─── Loading skeleton ─────────────────────────────────────────────────────────
@@ -41,11 +50,13 @@ function BoardSkeleton() {
 
 export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
   const { data: pipeline, isLoading, isError, refetch } = usePipeline(vacancyId);
-  const { mutate: moveCard } = useMovePipelineCard();
+  const { mutate: moveCard, isPending: isMoving } = useMovePipelineCard();
   const { has } = usePermissions();
   const canMove = has(PERM.applicationsUpdate);
   const [activeCard, setActiveCard] = useState<PipelineCard | null>(null);
   const [matchFilter, setMatchFilter] = useState<MatchFilter>('all');
+  const [pendingReject, setPendingReject] = useState<PendingReject | null>(null);
+  const [rejectError, setRejectError] = useState<string | null>(null);
 
   if (isLoading) return <BoardSkeleton />;
 
@@ -81,17 +92,52 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
     if (!fromCard) return;
 
     const toStageId = over.id as string;
-    if (fromCard.stageId === toStageId) return;
+    const action = resolveDropAction(pipeline!.stages, fromCard.stageId, toStageId);
+    if (action.type === 'noop') return;
 
-    // Check that the drop target is a valid stage
-    const isValidStage = pipeline!.stages.some((s) => s.id === toStageId);
-    if (!isValidStage) return;
+    if (action.type === 'reject') {
+      // Prompt for a required reason before moving. The card's stageId is left
+      // untouched until the user confirms, so it simply renders back in its
+      // original column once the drag overlay clears — no explicit "revert" of
+      // drag/optimistic state is needed on cancel.
+      setRejectError(null);
+      setPendingReject({
+        cardId: fromCard.id,
+        toStageId: action.toStageId,
+        fromStageId: fromCard.stageId,
+        candidateName: fromCard.candidateName,
+      });
+      return;
+    }
 
     moveCard({
       cardId: fromCard.id,
-      toStageId,
+      toStageId: action.toStageId,
       fromStageId: fromCard.stageId,
     });
+  }
+
+  function handleCancelReject() {
+    setPendingReject(null);
+    setRejectError(null);
+  }
+
+  function handleConfirmReject(reason: string) {
+    if (!pendingReject) return;
+    setRejectError(null);
+    moveCard(
+      {
+        cardId: pendingReject.cardId,
+        toStageId: pendingReject.toStageId,
+        fromStageId: pendingReject.fromStageId,
+        rejectionReason: reason,
+      },
+      {
+        onSuccess: () => setPendingReject(null),
+        onError: (err) =>
+          setRejectError(err instanceof Error ? err.message : 'No se pudo rechazar al candidato.'),
+      },
+    );
   }
 
   return (
@@ -135,6 +181,15 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
           {activeCard ? <CandidateCardOverlay card={activeCard} /> : null}
         </DragOverlay>
       </DndContext>
+
+      <RejectReasonDialog
+        open={pendingReject !== null}
+        candidateName={pendingReject?.candidateName}
+        isSubmitting={isMoving}
+        submitError={rejectError}
+        onCancel={handleCancelReject}
+        onConfirm={handleConfirmReject}
+      />
     </div>
   );
 }

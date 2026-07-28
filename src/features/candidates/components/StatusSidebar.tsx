@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/design-system/ui/badge';
 import { Button } from '@/design-system/ui/button';
 import { Select } from '@/design-system/atoms/Select';
-import { ConfirmDialog } from '@/design-system/molecules/ConfirmDialog';
+import { RejectReasonDialog } from '@/features/pipeline/components/RejectReasonDialog';
 import type { PipelineStage } from '@/features/pipeline/types';
 import { PERM } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/PermissionsProvider';
@@ -93,6 +93,7 @@ export function StatusSidebar({
     }
   }
   const [confirmRejectOpen, setConfirmRejectOpen] = useState(false);
+  const [rejectError, setRejectError] = useState<string | null>(null);
 
   const currentStage = stages.find((s) => s.id === application.stageId);
   const normalStages = stages
@@ -123,7 +124,28 @@ export function StatusSidebar({
   };
 
   const handleReject = () => {
+    setRejectError(null);
     setConfirmRejectOpen(true);
+  };
+
+  const handleCancelReject = () => {
+    setConfirmRejectOpen(false);
+    setRejectError(null);
+  };
+
+  const handleConfirmReject = (reason: string) => {
+    setRejectError(null);
+    rejectMutation.mutate(
+      { applicationId: application.id, vacancyId, rejectionReason: reason },
+      {
+        onSuccess: () => {
+          setConfirmRejectOpen(false);
+          router.refresh();
+        },
+        onError: (err) =>
+          setRejectError(err instanceof Error ? err.message : 'No se pudo rechazar al candidato.'),
+      },
+    );
   };
 
   const handleAddToTalentPool = () => {
@@ -309,19 +331,13 @@ export function StatusSidebar({
       />
     )}
 
-    <ConfirmDialog
+    <RejectReasonDialog
       open={confirmRejectOpen}
-      onOpenChange={setConfirmRejectOpen}
-      title="¿Rechazar candidato?"
-      description="El candidato será movido a la columna de rechazados. Esta acción puede deshacerse cambiando el estado manualmente."
-      confirmLabel="Rechazar"
-      variant="danger"
-      onConfirm={() =>
-        rejectMutation.mutate(
-          { applicationId: application.id, vacancyId },
-          { onSuccess: () => { setConfirmRejectOpen(false); router.refresh(); } },
-        )
-      }
+      candidateName={candidateName}
+      isSubmitting={rejectMutation.isPending}
+      submitError={rejectError}
+      onCancel={handleCancelReject}
+      onConfirm={handleConfirmReject}
     />
     </>
   );

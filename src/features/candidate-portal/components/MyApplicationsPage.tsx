@@ -273,10 +273,15 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
       {isRejected && (
         <div className="bg-danger/10 border border-danger/30 rounded-md px-4 py-3 flex items-start gap-3 text-sm text-ink">
           <X size={16} className="text-danger shrink-0 mt-0.5" />
-          <span>
-            En esta ocasión tu perfil no fue seleccionado para esta posición.
-            Agradecemos tu interés y te invitamos a postularte a otras vacantes.
-          </span>
+          <div className="flex flex-col gap-1">
+            <span>
+              En esta ocasión tu perfil no fue seleccionado para esta posición.
+              Agradecemos tu interés y te invitamos a postularte a otras vacantes.
+            </span>
+            {app.rejectionReason && (
+              <span className="text-ink-muted">{app.rejectionReason}</span>
+            )}
+          </div>
         </div>
       )}
     </div>
