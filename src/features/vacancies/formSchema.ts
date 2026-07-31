@@ -40,7 +40,18 @@ export function makeVacancySchema(requireProcess: boolean) {
       : z.string(),
     level: z.string().min(1, "Selecciona un nivel"),
     openings: z.number().int().min(1, "Mínimo 1"),
-    experienceYears: z.number().int().min(0).nullable(),
+    // Kept `.nullable()` so the schema's input/output type still matches
+    // VacancyFormValues (`number | null`, the "not typed yet" sentinel) —
+    // `.refine` (not a type-narrowing one) enforces "required" at runtime
+    // without collapsing that type.
+    experienceYears: z
+      .number()
+      .int()
+      .min(0)
+      .nullable()
+      .refine((v) => v !== null, {
+        message: "Ingresa los años mínimos de experiencia",
+      }),
     workSchedule: z.string(),
     requirements: requirementsSchema,
     description: z.string().min(1, "Agrega una descripción del cargo"),

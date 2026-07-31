@@ -50,7 +50,13 @@ export const LEVEL_ORDER: SeniorityLevel[] = [
   "specialist",
 ];
 
-/** Format a project duration into Spanish, e.g. "1 año 6 meses" or "—". */
+/**
+ * Format a project duration into Spanish, e.g. "1 año 6 meses" or "Indefinido".
+ * A vacancy with no duration entered is treated as an indefinite-length
+ * project — the same label candidates see on the public listing (see
+ * durationLabel in app/api/public/vacancies/[id]/route.ts), so internal
+ * staff read the same meaning instead of a bare "—".
+ */
 export function formatDuration(
   years: number | null,
   months: number | null,
@@ -59,5 +65,5 @@ export function formatDuration(
   if (years && years > 0) parts.push(`${years} ${years === 1 ? "año" : "años"}`);
   if (months && months > 0)
     parts.push(`${months} ${months === 1 ? "mes" : "meses"}`);
-  return parts.length > 0 ? parts.join(" ") : "—";
+  return parts.length > 0 ? parts.join(" ") : "Indefinido";
 }

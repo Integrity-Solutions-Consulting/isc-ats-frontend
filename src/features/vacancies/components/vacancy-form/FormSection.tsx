@@ -26,13 +26,15 @@ export function Section({
 /** Label with a required-field asterisk. */
 export function RequiredLabel({
   htmlFor,
+  className,
   children,
 }: {
   htmlFor?: string;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <Label htmlFor={htmlFor}>
+    <Label htmlFor={htmlFor} className={className}>
       {children} <span className="text-danger">*</span>
     </Label>
   );
