@@ -138,7 +138,7 @@ export function LocationSection({ readOnly = false }: LocationSectionProps) {
               value={(watch("workSchedule") ?? "").split(" - ")[0] ?? ""}
               onChange={(e) => {
                 const end = (watch("workSchedule") ?? "").split(" - ")[1] ?? "";
-                setValue("workSchedule", `${e.target.value} - ${end}`);
+                setValue("workSchedule", e.target.value || end ? `${e.target.value} - ${end}` : "");
               }}
               disabled={readOnly}
               className="h-9 w-32 rounded-md border border-border bg-surface px-3 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
@@ -150,7 +150,7 @@ export function LocationSection({ readOnly = false }: LocationSectionProps) {
               value={(watch("workSchedule") ?? "").split(" - ")[1] ?? ""}
               onChange={(e) => {
                 const start = (watch("workSchedule") ?? "").split(" - ")[0] ?? "";
-                setValue("workSchedule", `${start} - ${e.target.value}`);
+                setValue("workSchedule", start || e.target.value ? `${start} - ${e.target.value}` : "");
               }}
               disabled={readOnly}
               className="h-9 w-32 rounded-md border border-border bg-surface px-3 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 disabled:cursor-not-allowed disabled:opacity-50"

@@ -140,9 +140,9 @@ export function SelectionSection({ readOnly = false }: SelectionSectionProps) {
       </div>
 
       <div className="mt-4 flex items-center gap-3">
-        <Label htmlFor="experienceYears" className="shrink-0">
+        <RequiredLabel htmlFor="experienceYears" className="shrink-0">
           Años mínimos de experiencia
-        </Label>
+        </RequiredLabel>
         <Input
           id="experienceYears"
           type="text"

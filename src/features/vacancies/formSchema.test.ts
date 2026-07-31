@@ -13,6 +13,7 @@ const base = {
   career: "1",
   level: "junior",
   openings: 1,
+  experienceYears: 2,
   description: "Descripción del cargo",
 };
 
@@ -38,6 +39,12 @@ describe("makeVacancySchema", () => {
   it("still requires position regardless of requireProcess", () => {
     const schema = makeVacancySchema(false);
     const result = schema.safeParse({ ...base, position: "", process: "" });
+    expect(result.success).toBe(false);
+  });
+
+  it("requires experienceYears — a null (unfilled) value must not silently become 0", () => {
+    const schema = makeVacancySchema(false);
+    const result = schema.safeParse({ ...base, experienceYears: null });
     expect(result.success).toBe(false);
   });
 });
