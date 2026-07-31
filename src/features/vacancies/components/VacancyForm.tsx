@@ -50,6 +50,7 @@ export function VacancyForm({
   // derived combination of create/publish. Create mode is unaffected (the
   // create route already requires vacanciesCreate to be reached at all).
   const readOnly = mode === "edit" && !canUpdate;
+  // Retrigger deploy (deploy pipeline verification).
   const [pending, setPending] = useState<null | "solicitud" | "publish">(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
