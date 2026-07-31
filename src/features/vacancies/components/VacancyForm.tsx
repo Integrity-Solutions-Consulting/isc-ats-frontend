@@ -43,12 +43,13 @@ export function VacancyForm({
   // for them. See formSchema.ts.
   const canPublish = has(PERM.vacanciesPublish);
   const canCreate = has(PERM.vacanciesCreate);
-  // TH (and any future role shaped the same way: can publish/update an existing
-  // solicitud but never originates one) may only touch the recruitment-process
-  // field — everything else was already filled in by Comercial/Proyecto when
-  // they created the solicitud, and TH must not alter it. Admin has both
-  // canPublish and canCreate, so this never locks the form for Admin.
-  const lockedToProcessOnly = canPublish && !canCreate;
+  const canUpdate = has(PERM.vacanciesUpdate);
+  // Field editability mirrors the backend's own gate: PATCH /vacancies/{id}
+  // requires recruitment.vacancies.update (vacancies_routes.py), so that's the
+  // permission that decides whether an edit-mode form is writable — not some
+  // derived combination of create/publish. Create mode is unaffected (the
+  // create route already requires vacanciesCreate to be reached at all).
+  const readOnly = mode === "edit" && !canUpdate;
   const [pending, setPending] = useState<null | "solicitud" | "publish">(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -147,11 +148,11 @@ export function VacancyForm({
           <h1 className="text-2xl font-semibold text-ink">{title}</h1>
         </div>
 
-        <BasicInfoSection readOnly={lockedToProcessOnly} />
-        <LocationSection readOnly={lockedToProcessOnly} />
-        <SelectionSection readOnly={lockedToProcessOnly} />
-        <ProfileSection readOnly={lockedToProcessOnly} />
-        <DescriptionSection readOnly={lockedToProcessOnly} />
+        <BasicInfoSection readOnly={readOnly} />
+        <LocationSection readOnly={readOnly} />
+        <SelectionSection readOnly={readOnly} />
+        <ProfileSection readOnly={readOnly} />
+        <DescriptionSection readOnly={readOnly} />
 
         {submitError && (
           <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
