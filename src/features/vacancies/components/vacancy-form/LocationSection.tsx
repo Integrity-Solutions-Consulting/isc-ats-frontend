@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { useFormContext, Controller } from "react-hook-form";
 
 import { Input } from "@/design-system/ui/input";
-import { Label } from "@/design-system/ui/label";
 import { Combobox } from "@/design-system/molecules/Combobox";
 import { cn } from "@/shared/utils";
 import { useVacancyCatalogs } from "../../hooks/useVacancies";
@@ -22,20 +20,11 @@ export function LocationSection({ readOnly = false }: LocationSectionProps) {
     register,
     setValue,
     watch,
-    getValues,
     formState: { errors },
   } = useFormContext<VacancyFormValues>();
 
-  // No dedicated "is indefinite" field exists in the data model — an empty
-  // duration already reads as "Indefinido" everywhere it's displayed (see
-  // formatDuration in labels.ts). This checkbox just makes that behavior
-  // visible instead of silent: checking it clears both fields, and staff no
-  // longer leave duration blank without realizing what that means downstream.
-  const [isIndefiniteDuration, setIsIndefiniteDuration] = useState(
-    () => !getValues("durationYears") && !getValues("durationMonths"),
-  );
-
   const workMode = watch("workMode");
+  const isIndefiniteDuration = watch("isIndefiniteDuration");
 
   const numberField = (name: "durationYears" | "durationMonths") =>
     register(name, {
@@ -70,7 +59,7 @@ export function LocationSection({ readOnly = false }: LocationSectionProps) {
         </div>
 
         <div>
-          <Label>Modalidad de servicio</Label>
+          <RequiredLabel>Modalidad de servicio</RequiredLabel>
           <div className="mt-1.5 flex flex-wrap gap-2">
             {(catalogs?.workModes ?? []).map((m) => (
               <button
@@ -93,26 +82,8 @@ export function LocationSection({ readOnly = false }: LocationSectionProps) {
         </div>
 
         <div>
-          <div className="flex items-center justify-between">
-            <Label>Duración del proyecto</Label>
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-muted">
-              <input
-                type="checkbox"
-                className="size-4 rounded border-border accent-primary-600"
-                checked={isIndefiniteDuration}
-                disabled={readOnly}
-                onChange={(e) => {
-                  setIsIndefiniteDuration(e.target.checked);
-                  if (e.target.checked) {
-                    setValue("durationYears", null);
-                    setValue("durationMonths", null);
-                  }
-                }}
-              />
-              Duración indefinida
-            </label>
-          </div>
-          <div className="mt-1.5 flex items-center gap-2">
+          <RequiredLabel>Duración del proyecto</RequiredLabel>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <Input
               type="number"
               min={0}
@@ -132,7 +103,28 @@ export function LocationSection({ readOnly = false }: LocationSectionProps) {
               {...numberField("durationMonths")}
             />
             <span className="text-sm text-ink-muted">mes(es)</span>
+            <label className="ml-2 flex cursor-pointer items-center gap-2 text-sm text-ink-muted">
+              <input
+                type="checkbox"
+                className="size-4 rounded border-border accent-primary-600"
+                checked={isIndefiniteDuration}
+                disabled={readOnly}
+                onChange={(e) => {
+                  setValue("isIndefiniteDuration", e.target.checked);
+                  if (e.target.checked) {
+                    setValue("durationYears", null);
+                    setValue("durationMonths", null);
+                  }
+                }}
+              />
+              Duración indefinida
+            </label>
           </div>
+          {errors.durationYears && (
+            <p className="mt-1 text-xs text-danger">
+              {errors.durationYears.message}
+            </p>
+          )}
         </div>
 
         <div>
@@ -159,7 +151,7 @@ export function LocationSection({ readOnly = false }: LocationSectionProps) {
         </div>
 
         <div className="sm:col-span-2">
-          <Label>Horario de trabajo</Label>
+          <RequiredLabel>Horario de trabajo</RequiredLabel>
           <div className="mt-1.5 flex items-center gap-2">
             <input
               type="time"
@@ -185,6 +177,11 @@ export function LocationSection({ readOnly = false }: LocationSectionProps) {
               className="h-9 w-32 rounded-md border border-border bg-surface px-3 text-sm text-ink shadow-sm outline-none transition-colors focus-visible:border-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
+          {errors.workSchedule && (
+            <p className="mt-1 text-xs text-danger">
+              {errors.workSchedule.message}
+            </p>
+          )}
         </div>
       </div>
     </Section>

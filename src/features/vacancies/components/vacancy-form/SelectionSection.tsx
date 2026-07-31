@@ -5,7 +5,6 @@ import { Minus, Plus } from "lucide-react";
 
 import { Button } from "@/design-system/ui/button";
 import { Input } from "@/design-system/ui/input";
-import { Label } from "@/design-system/ui/label";
 import { Combobox } from "@/design-system/molecules/Combobox";
 import { cn } from "@/shared/utils";
 import { PERM } from "@/features/auth/permissions";
@@ -62,7 +61,7 @@ export function SelectionSection({ readOnly = false }: SelectionSectionProps) {
         </div>
       )}
 
-      <Label>Nivel del recurso y cantidad</Label>
+      <RequiredLabel>Nivel del recurso y cantidad</RequiredLabel>
       <div className="mt-1.5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {(catalogs?.resourceLevels ?? []).map((lvl) => {
           const active = level === lvl.id;

@@ -17,6 +17,7 @@ function toFormValues(v: Vacancy): VacancyFormValues {
     workMode: v.workMode,
     durationYears: v.durationYears,
     durationMonths: v.durationMonths,
+    isIndefiniteDuration: !v.durationYears && !v.durationMonths,
     career: v.careerId ?? "",
     process: v.processId ?? "",
     level: v.level,
