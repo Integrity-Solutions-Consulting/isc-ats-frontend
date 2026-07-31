@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useFormContext, Controller } from "react-hook-form";
 
 import { Input } from "@/design-system/ui/input";
@@ -21,8 +22,18 @@ export function LocationSection({ readOnly = false }: LocationSectionProps) {
     register,
     setValue,
     watch,
+    getValues,
     formState: { errors },
   } = useFormContext<VacancyFormValues>();
+
+  // No dedicated "is indefinite" field exists in the data model — an empty
+  // duration already reads as "Indefinido" everywhere it's displayed (see
+  // formatDuration in labels.ts). This checkbox just makes that behavior
+  // visible instead of silent: checking it clears both fields, and staff no
+  // longer leave duration blank without realizing what that means downstream.
+  const [isIndefiniteDuration, setIsIndefiniteDuration] = useState(
+    () => !getValues("durationYears") && !getValues("durationMonths"),
+  );
 
   const workMode = watch("workMode");
 
@@ -82,14 +93,32 @@ export function LocationSection({ readOnly = false }: LocationSectionProps) {
         </div>
 
         <div>
-          <Label>Duración del proyecto</Label>
+          <div className="flex items-center justify-between">
+            <Label>Duración del proyecto</Label>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-muted">
+              <input
+                type="checkbox"
+                className="size-4 rounded border-border accent-primary-600"
+                checked={isIndefiniteDuration}
+                disabled={readOnly}
+                onChange={(e) => {
+                  setIsIndefiniteDuration(e.target.checked);
+                  if (e.target.checked) {
+                    setValue("durationYears", null);
+                    setValue("durationMonths", null);
+                  }
+                }}
+              />
+              Duración indefinida
+            </label>
+          </div>
           <div className="mt-1.5 flex items-center gap-2">
             <Input
               type="number"
               min={0}
               className="w-20"
               aria-label="Años"
-              disabled={readOnly}
+              disabled={readOnly || isIndefiniteDuration}
               {...numberField("durationYears")}
             />
             <span className="text-sm text-ink-muted">año(s)</span>
@@ -99,7 +128,7 @@ export function LocationSection({ readOnly = false }: LocationSectionProps) {
               max={11}
               className="w-20"
               aria-label="Meses"
-              disabled={readOnly}
+              disabled={readOnly || isIndefiniteDuration}
               {...numberField("durationMonths")}
             />
             <span className="text-sm text-ink-muted">mes(es)</span>
