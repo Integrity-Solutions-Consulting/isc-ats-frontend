@@ -78,6 +78,8 @@ describe("VacancyForm — permission-gated save bar", () => {
       city: "1",
       career: "1",
       experienceYears: 2,
+      workSchedule: "08:00 - 17:00",
+      isIndefiniteDuration: true,
     });
     await user.click(screen.getByRole("button", { name: /guardar solicitud/i }));
     await waitFor(() => expect(createVacancy).toHaveBeenCalled());
@@ -102,6 +104,8 @@ describe("VacancyForm — permission-gated save bar", () => {
       career: "1",
       process: "1",
       experienceYears: 2,
+      workSchedule: "08:00 - 17:00",
+      isIndefiniteDuration: true,
     });
     await user.click(screen.getByRole("button", { name: /publicar vacante/i }));
     await waitFor(() => expect(createVacancy).toHaveBeenCalled());

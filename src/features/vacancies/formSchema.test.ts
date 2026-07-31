@@ -14,6 +14,8 @@ const base = {
   level: "junior",
   openings: 1,
   experienceYears: 2,
+  workSchedule: "08:00 - 17:00",
+  isIndefiniteDuration: true,
   description: "Descripción del cargo",
 };
 
@@ -46,5 +48,33 @@ describe("makeVacancySchema", () => {
     const schema = makeVacancySchema(false);
     const result = schema.safeParse({ ...base, experienceYears: null });
     expect(result.success).toBe(false);
+  });
+
+  it("requires workSchedule to be filled in", () => {
+    const schema = makeVacancySchema(false);
+    const result = schema.safeParse({ ...base, workSchedule: "" });
+    expect(result.success).toBe(false);
+  });
+
+  it("requires a duration unless isIndefiniteDuration is checked", () => {
+    const schema = makeVacancySchema(false);
+    const result = schema.safeParse({
+      ...base,
+      isIndefiniteDuration: false,
+      durationYears: null,
+      durationMonths: null,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts a blank duration when isIndefiniteDuration is checked", () => {
+    const schema = makeVacancySchema(false);
+    const result = schema.safeParse({
+      ...base,
+      isIndefiniteDuration: true,
+      durationYears: null,
+      durationMonths: null,
+    });
+    expect(result.success).toBe(true);
   });
 });

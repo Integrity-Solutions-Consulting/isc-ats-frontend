@@ -59,6 +59,8 @@ export interface VacancyFormValues {
   workMode: WorkMode;
   durationYears: number | null;
   durationMonths: number | null;
+  /** Client-only — never sent to the backend. See formSchema.ts. */
+  isIndefiniteDuration: boolean;
   career: string;
   process: string;
   level: SeniorityLevel;
