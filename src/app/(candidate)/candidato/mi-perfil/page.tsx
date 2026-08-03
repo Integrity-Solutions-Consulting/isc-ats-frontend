@@ -6,7 +6,7 @@ export default async function Page() {
   if (!profile) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
-        <p className="text-sm text-ink-muted">No se encontró tu perfil. Completá tu registro primero.</p>
+        <p className="text-sm text-ink-muted">No se encontró tu perfil. Completa tu registro primero.</p>
       </div>
     );
   }

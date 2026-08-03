@@ -13,6 +13,7 @@ import {
   countPermissions,
   type ModuleGroup,
 } from './roles/permissions';
+import { toUserMessage } from '@/lib/userMessage';
 import { type Role } from './roles/mockRoles';
 import { RoleList } from './roles/RoleList';
 import { RoleEditor } from './roles/RoleEditor';
@@ -145,7 +146,7 @@ export function RolesPage() {
       setDirty(false);
       setShowCreateModal(false);
     } catch (e) {
-      setErrorMsg(e instanceof Error ? e.message : 'Error al crear el rol');
+      setErrorMsg(toUserMessage(e, 'No fue posible crear el rol.'));
     }
   }
 
@@ -180,7 +181,7 @@ export function RolesPage() {
       }
       setDirty(false);
     } catch (e) {
-      setErrorMsg(e instanceof Error ? e.message : 'Error al guardar el rol');
+      setErrorMsg(toUserMessage(e, 'No fue posible guardar el rol.'));
     }
   }
 
@@ -199,7 +200,7 @@ export function RolesPage() {
       }
       setDirty(false);
     } catch (e) {
-      setErrorMsg(e instanceof Error ? e.message : 'Error al eliminar el rol');
+      setErrorMsg(toUserMessage(e, 'No fue posible eliminar el rol.'));
     }
   }
 
@@ -228,7 +229,7 @@ export function RolesPage() {
       <div className="flex h-full items-center justify-center p-10">
         <div className="flex items-center gap-3 rounded-md border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">
           <AlertCircle className="size-4 shrink-0" />
-          No se pudo cargar los roles. Verificá tu conexión e intentá de nuevo.
+          No se pudo cargar los roles. Verifica tu conexión e intenta de nuevo.
         </div>
       </div>
     );

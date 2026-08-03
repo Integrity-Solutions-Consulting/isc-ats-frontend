@@ -33,16 +33,19 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (!backendRes.ok) {
       const err = await backendRes.json().catch(() => ({}));
       return NextResponse.json(
-        { error: (err as { detail?: string }).detail ?? "Error al analizar el CV" },
+        { error: (err as { detail?: string }).detail ?? "No se pudo analizar tu hoja de vida." },
         { status: backendRes.status },
       );
     }
 
     const data = await backendRes.json();
     return NextResponse.json(data);
-  } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : "Error inesperado al analizar el CV";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    // Never echo the server-side failure text: a Node fetch error ("fetch
+    // failed", "ECONNREFUSED") is English and exposes infrastructure.
+    return NextResponse.json(
+      { error: "No se pudo analizar tu hoja de vida. Intenta de nuevo en unos minutos." },
+      { status: 500 },
+    );
   }
 }

@@ -136,7 +136,7 @@ export async function rejectCandidate(applicationId: string, rejectionReason: st
   });
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
-    throw new Error(body.error ?? body.detail ?? `No se pudo rechazar al candidato (${res.status})`);
+    throw new Error(body.error ?? body.detail ?? 'No se pudo rechazar al candidato.');
   }
 }
 

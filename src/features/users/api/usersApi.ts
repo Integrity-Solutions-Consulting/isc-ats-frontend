@@ -35,7 +35,9 @@ export async function createUser(payload: CreateUserPayload): Promise<PortalUser
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({})) as { error?: string };
-    throw new Error(body.error ?? `Error al crear el usuario (${res.status})`);
+    // No HTTP status in the text: it means nothing to the user and the real
+    // status is already one click away in the browser's Network tab.
+    throw new Error(body.error ?? 'No fue posible crear el usuario.');
   }
   return res.json() as Promise<PortalUser>;
 }
@@ -48,7 +50,7 @@ export async function setUserActive(id: string, isActive: boolean): Promise<void
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({})) as { error?: string };
-    throw new Error(body.error ?? `Error al actualizar el usuario (${res.status})`);
+    throw new Error(body.error ?? 'No fue posible actualizar el usuario.');
   }
 }
 
@@ -60,6 +62,6 @@ export async function setUserRole(id: string, roleId: number): Promise<void> {
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({})) as { error?: string };
-    throw new Error(body.error ?? `Error al cambiar el rol (${res.status})`);
+    throw new Error(body.error ?? 'No fue posible cambiar el rol.');
   }
 }

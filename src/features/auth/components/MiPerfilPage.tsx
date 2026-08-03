@@ -399,11 +399,11 @@ export function MiPerfilPage() {
 
               {hasInvalidBlock && (
                 <p className="mt-2 text-xs text-danger">
-                  Revisá los bloques: la hora de fin debe ser posterior a la de inicio.
+                  Revisa los bloques: la hora de fin debe ser posterior a la de inicio.
                 </p>
               )}
               {saveMutation.isError && (
-                <p className="mt-2 text-xs text-danger">No se pudo guardar. Intentá de nuevo.</p>
+                <p className="mt-2 text-xs text-danger">No se pudo guardar. Intenta de nuevo.</p>
               )}
 
               <div className="mt-4 flex justify-end gap-2">

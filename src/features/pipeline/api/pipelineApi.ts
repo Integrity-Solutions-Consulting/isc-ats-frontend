@@ -42,7 +42,7 @@ export async function movePipelineCard(
   });
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
-    throw new Error(body.error ?? body.detail ?? `No se pudo mover la postulación (${res.status})`);
+    throw new Error(body.error ?? body.detail ?? 'No se pudo mover la postulación.');
   }
 }
 

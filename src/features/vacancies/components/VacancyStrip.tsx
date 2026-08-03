@@ -76,7 +76,7 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
       setActionError(
         error instanceof Error
           ? error.message
-          : 'No fue posible actualizar el estado de la vacante. Intentá de nuevo.',
+          : 'No fue posible actualizar el estado de la vacante. Intenta de nuevo.',
       );
     },
   });
@@ -91,7 +91,7 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
       setActionError(
         error instanceof Error
           ? error.message
-          : 'No fue posible eliminar la vacante. Intentá de nuevo.',
+          : 'No fue posible eliminar la vacante. Intenta de nuevo.',
       );
     },
   });
@@ -108,7 +108,7 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
       setActionError(
         error instanceof Error
           ? error.message
-          : 'No fue posible reactivar la vacante. Intentá de nuevo.',
+          : 'No fue posible reactivar la vacante. Intenta de nuevo.',
       );
     },
   });

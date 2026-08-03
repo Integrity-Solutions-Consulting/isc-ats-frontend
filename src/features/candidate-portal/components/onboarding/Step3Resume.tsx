@@ -27,7 +27,7 @@ export function Step3Resume({ data, onChange, onNext, onBack, onSkip, isSubmitti
   const fileSizeKB = data.file ? Math.round(data.file.size / 1024) : 0;
 
   const buttonLabel = isUploading
-    ? 'Subiendo CV…'
+    ? 'Subiendo hoja de vida…'
     : isSubmitting
     ? 'Guardando perfil…'
     : 'Finalizar registro →';
@@ -48,7 +48,7 @@ export function Step3Resume({ data, onChange, onNext, onBack, onSkip, isSubmitti
           )}
           <button
             type="button"
-            aria-label="Quitar CV seleccionado"
+            aria-label="Quitar la hoja de vida seleccionada"
             onClick={() => onChange({ file: null })}
             disabled={isSubmitting}
             className="text-ink-subtle hover:text-danger transition-colors disabled:opacity-40"

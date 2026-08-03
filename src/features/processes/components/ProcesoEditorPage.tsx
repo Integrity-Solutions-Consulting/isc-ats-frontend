@@ -310,7 +310,7 @@ export function ProcesoEditorPage({ id }: Props) {
                 <ArrowRight className="size-4 shrink-0 text-ink-subtle" />
                 {editing && (
                   <div className="flex min-h-[52px] min-w-[140px] items-center justify-center rounded-lg border border-dashed border-border">
-                    <p className="text-xs text-ink-subtle px-2 text-center">Añadí etapas desde el panel</p>
+                    <p className="text-xs text-ink-subtle px-2 text-center">Añade etapas desde el panel</p>
                   </div>
                 )}
               </div>

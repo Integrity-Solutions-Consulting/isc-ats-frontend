@@ -6,6 +6,7 @@ import { Button } from '@/design-system/ui/button';
 import { Input } from '@/design-system/ui/input';
 import { Label } from '@/design-system/ui/label';
 import { cn } from '@/shared/utils';
+import { toUserMessage } from '@/lib/userMessage';
 
 export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
   const [confirm, setConfirm] = useState('');
@@ -24,7 +25,7 @@ export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
       // Full navigation so session cookies are dropped by the browser
       window.location.href = '/login';
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ocurrió un error inesperado');
+      setError(toUserMessage(err, 'No fue posible cerrar tu cuenta.'));
       setDeleting(false);
     }
   };
@@ -47,10 +48,10 @@ export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
         <div className="rounded-lg bg-danger/5 border border-danger/20 p-4 mb-5">
           <p className="text-sm text-ink font-medium mb-1">Al cerrar tu cuenta:</p>
           <ul className="text-sm text-ink-muted space-y-1 list-disc list-inside">
-            <li>Tu cuenta se desactiva y perdés el acceso al portal</li>
+            <li>Tu cuenta se desactiva y pierdes el acceso al portal</li>
             <li>Se cierran tus postulaciones activas</li>
             <li>Conservamos tu perfil e historial conforme a nuestra Política de Privacidad</li>
-            <li>Podés reactivar tu cuenta más adelante registrándote con el mismo correo</li>
+            <li>Puedes reactivar tu cuenta más adelante registrándote con el mismo correo</li>
           </ul>
         </div>
 

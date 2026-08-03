@@ -79,7 +79,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
     setAvatarError(null);
 
     if (!ACCEPTED_AVATAR_TYPES.includes(file.type)) {
-      setAvatarError('Formato no válido. Usá una imagen PNG, JPG o WEBP.');
+      setAvatarError('Formato no válido. Usa una imagen PNG, JPG o WEBP.');
       e.target.value = '';
       return;
     }
@@ -167,7 +167,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
       router.refresh();
       setEditing(false);
     } catch {
-      setSaveError('No fue posible guardar los cambios. Por favor, intentá de nuevo.');
+      setSaveError('No fue posible guardar los cambios. Por favor, intenta de nuevo.');
     } finally {
       setSaving(false);
     }
@@ -376,7 +376,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
                     options={[...catalogs.careers.map((c) => ({ id: String(c.id), label: c.name })), { id: 'other', label: 'Otros' }]}
                   />
                   {form.careerId === 'other' && (
-                    <p className="text-xs text-ink-subtle mt-1">Si tu carrera no está en la lista, podés dejar este campo sin seleccionar.</p>
+                    <p className="text-xs text-ink-subtle mt-1">Si tu carrera no está en la lista, puedes dejar este campo sin seleccionar.</p>
                   )}
                 </>
               ) : (
@@ -399,7 +399,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
                   options={[...catalogs.titles.map((t) => ({ id: String(t.id), label: t.name })), { id: 'other', label: 'Otros' }]}
                 />
                 {form.titleId === 'other' && (
-                  <p className="text-xs text-ink-subtle mt-1">Si tu título no está en la lista, podés dejar este campo sin seleccionar.</p>
+                  <p className="text-xs text-ink-subtle mt-1">Si tu título no está en la lista, puedes dejar este campo sin seleccionar.</p>
                 )}
               </>
             ) : (
@@ -421,7 +421,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
                   options={[...catalogs.universities.map((u) => ({ id: String(u.id), label: u.name })), { id: 'other', label: 'Otros' }]}
                 />
                 {form.universityId === 'other' && (
-                  <p className="text-xs text-ink-subtle mt-1">Si tu universidad no está en la lista, podés dejar este campo sin seleccionar.</p>
+                  <p className="text-xs text-ink-subtle mt-1">Si tu universidad no está en la lista, puedes dejar este campo sin seleccionar.</p>
                 )}
               </>
             ) : (

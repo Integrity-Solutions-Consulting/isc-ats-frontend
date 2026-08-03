@@ -98,7 +98,7 @@ export function VacancyDetail({
       await onApply(Number(salary));
       setApplied(true);
     } catch {
-      setApplyError('No fue posible enviar tu postulación. Por favor, intentá de nuevo.');
+      setApplyError('No fue posible enviar tu postulación. Por favor, intenta de nuevo.');
     } finally {
       setSubmitting(false);
     }

@@ -43,7 +43,9 @@ export async function POST(request: NextRequest) {
     ]);
     if (!statusId || !schedulerId) {
       return NextResponse.json(
-        { error: 'Faltan parámetros de entrevista (corré la migración de seed)' },
+        // The missing seed migration is an ops problem, not something the user
+        // did or can fix — keep the actionable detail out of the UI.
+        { error: 'No se puede agendar la entrevista en este momento. Comunícate con el administrador del sistema.' },
         { status: 422 },
       );
     }

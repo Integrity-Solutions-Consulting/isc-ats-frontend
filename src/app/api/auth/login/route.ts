@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     if (backendRes.status === 429) {
       const retryAfter = backendRes.headers.get("Retry-After");
       return NextResponse.json(
-        { error: detail || "Demasiados intentos. Intentá nuevamente más tarde." },
+        { error: detail || "Demasiados intentos. Intenta nuevamente más tarde." },
         { status: 429, headers: retryAfter ? { "Retry-After": retryAfter } : undefined },
       );
     }
@@ -71,9 +71,9 @@ export async function POST(request: NextRequest) {
 
     let errorMsg = "Credenciales incorrectas";
     if (low.includes("not verified") || low.includes("verify") || low.includes("verificado")) {
-      errorMsg = "Tu correo no está verificado. Revisá tu bandeja de entrada y hacé clic en el enlace de confirmación.";
+      errorMsg = "Tu correo no está verificado. Revisa tu bandeja de entrada y haz clic en el enlace de confirmación.";
     } else if (low.includes("inactive") || low.includes("not active") || low.includes("disabled")) {
-      errorMsg = "Tu cuenta no está activa. Contactá al soporte.";
+      errorMsg = "Tu cuenta no está activa. Comunícate con soporte.";
     }
     return NextResponse.json(
       { error: errorMsg },

@@ -18,7 +18,7 @@ export function VacancyDetailPage({ vacancy }: VacancyDetailPageProps) {
       vacancy={vacancy}
       backHref={ROUTES.candidato.vacantes}
       salaryLabel="Aspiración salarial"
-      applyHint={{ icon: User, text: 'Tu CV y perfil serán enviados automáticamente' }}
+      applyHint={{ icon: User, text: 'Tu hoja de vida y tu perfil se enviarán automáticamente' }}
       appliedHref={ROUTES.candidato.misPostulaciones}
       onApply={(salary) => applyToVacancy(vacancy.id, salary)}
     />

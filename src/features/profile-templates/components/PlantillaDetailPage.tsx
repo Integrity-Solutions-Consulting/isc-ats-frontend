@@ -54,7 +54,7 @@ export function PlantillaDetailPage({ id }: PlantillaDetailPageProps) {
     },
     onError: (err) => {
       setTemplateError(
-        err instanceof Error ? err.message : 'No fue posible eliminar la plantilla. Intentá de nuevo.',
+        err instanceof Error ? err.message : 'No fue posible eliminar la plantilla. Intenta de nuevo.',
       );
     },
   });
@@ -66,7 +66,7 @@ export function PlantillaDetailPage({ id }: PlantillaDetailPageProps) {
       queryClient.removeQueries({ queryKey: ['profile-templates'] });
     },
     onError: () => {
-      setTemplateError('No fue posible reactivar la plantilla. Intentá de nuevo.');
+      setTemplateError('No fue posible reactivar la plantilla. Intenta de nuevo.');
     },
   });
 
@@ -81,7 +81,7 @@ export function PlantillaDetailPage({ id }: PlantillaDetailPageProps) {
       if (copy) router.push(ROUTES.configuracion.plantilla(copy.id));
     },
     onError: () => {
-      setTemplateError('No fue posible duplicar la plantilla. Intentá de nuevo.');
+      setTemplateError('No fue posible duplicar la plantilla. Intenta de nuevo.');
     },
   });
 

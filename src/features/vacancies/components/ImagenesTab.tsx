@@ -146,7 +146,7 @@ function BaseImageUpload({
         body: form,
       });
       if (!res.ok) {
-        let msg = `Error ${res.status}`;
+        let msg = 'No se pudo subir la imagen.';
         try {
           const body = await res.json();
           if (body?.detail) msg = String(body.detail);
@@ -267,7 +267,7 @@ export function ImagenesTab({ vacancy }: { vacancy: Vacancy }) {
         body: JSON.stringify({ vacancyId: vacancy.id }),
       });
       if (!res.ok) {
-        let msg = `Error ${res.status}`;
+        let msg = 'No se pudo generar la imagen.';
         try {
           const body = await res.json();
           if (body?.detail) msg = String(body.detail);
@@ -282,7 +282,7 @@ export function ImagenesTab({ vacancy }: { vacancy: Vacancy }) {
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/vacancy-promo-images/${id}`, { method: 'DELETE' });
       if (!res.ok) {
-        let msg = `Error ${res.status}`;
+        let msg = 'No se pudo eliminar la imagen.';
         try {
           const body = await res.json();
           if (body?.detail) msg = String(body.detail);
