@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/design-system/ui/dialog';
+import { toUserMessage } from '@/lib/userMessage';
 import { DataTable, type ColumnDef } from '@/design-system/organisms/DataTable';
 import { FilterBar } from '@/design-system/molecules/FilterBar';
 import { Combobox } from '@/design-system/molecules/Combobox';
@@ -97,7 +98,7 @@ export function UsersPage() {
       setTouched({});
     },
     onError: (err: Error) => {
-      setCreateError(err.message ?? 'No fue posible crear el usuario. Verificá los datos e intentá de nuevo.');
+      setCreateError(toUserMessage(err, 'No fue posible crear el usuario. Verifica los datos e intenta de nuevo.'));
     },
   });
 
@@ -248,7 +249,7 @@ export function UsersPage() {
             >
               <Pencil className="size-4" />
             </Button>
-            <div title={isSelf ? 'No podés desactivar tu propia cuenta' : undefined}>
+            <div title={isSelf ? 'No puedes desactivar tu propia cuenta' : undefined}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -275,7 +276,7 @@ export function UsersPage() {
   const errors: { email?: string; role?: string } = {};
   const emailError = validateEmail(form.email);
   if (emailError) errors.email = emailError;
-  if (!form.role_id) errors.role = 'Seleccioná un rol.';
+  if (!form.role_id) errors.role = 'Selecciona un rol.';
 
   const showError = (field: 'email' | 'role') =>
     touched[field] ? errors[field] : undefined;
@@ -424,7 +425,7 @@ export function UsersPage() {
           <DialogHeader>
             <DialogTitle>Nuevo usuario</DialogTitle>
             <DialogDescription>
-              Definí el correo y el rol. Se generará una contraseña aleatoria que se
+              Define el correo y el rol. Se generará una contraseña aleatoria que se
               enviará por correo al usuario.
             </DialogDescription>
           </DialogHeader>

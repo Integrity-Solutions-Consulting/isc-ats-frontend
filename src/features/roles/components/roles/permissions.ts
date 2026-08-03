@@ -78,7 +78,7 @@ const RESOURCE_LABELS: Record<string, string> = {
   // storage
   files: 'Archivos',
   // ai
-  cv_parse_jobs: 'Procesamiento de CV',
+  cv_parse_jobs: 'Procesamiento de hojas de vida',
   vacancy_promo_images: 'Imágenes promocionales',
   ai_usage_logs: 'Registro de uso de IA',
 };

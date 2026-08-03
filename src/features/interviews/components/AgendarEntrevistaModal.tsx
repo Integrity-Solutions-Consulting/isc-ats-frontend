@@ -306,7 +306,7 @@ export function AgendarEntrevistaModal({
                 /* Mode A — single slot in a single day */
                 <div className="rounded-lg border border-border bg-surface-2 p-4">
                   <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                    Elegí un horario
+                    Elige un horario
                   </p>
                   {loadingSlots ? (
                     <p className="py-6 text-center text-sm text-ink-muted">
@@ -346,7 +346,7 @@ export function AgendarEntrevistaModal({
                    is offered automatically, so HR doesn't click slot-by-slot. */
                 <div className="rounded-lg border border-border bg-surface-2 p-4">
                   <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                    Elegí los días a ofrecer
+                    Elige los días a ofrecer
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {upcomingDays.map((d) => {

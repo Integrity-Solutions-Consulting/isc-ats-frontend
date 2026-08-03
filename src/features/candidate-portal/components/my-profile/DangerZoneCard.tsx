@@ -17,7 +17,7 @@ export function DangerZoneCard() {
             <div>
               <p className="text-[14px] text-ink font-medium mb-0.5">Cerrar mi cuenta</p>
               <p className="text-[12px] text-ink-subtle">
-                Se desactiva tu cuenta y se cierran tus postulaciones activas. Podés reactivarla más adelante.
+                Se desactiva tu cuenta y se cierran tus postulaciones activas. Puedes reactivarla más adelante.
               </p>
             </div>
           </div>

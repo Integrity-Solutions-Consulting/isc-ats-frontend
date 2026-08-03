@@ -109,7 +109,7 @@ export function AIAnalysisSectionClient({ applicationId, initialAnalysis }: Prop
         <div className="flex flex-col items-start gap-3">
           <p className="text-sm text-ink-muted">
             {status === 'error'
-              ? 'No se pudo iniciar el análisis. Intentá de nuevo.'
+              ? 'No se pudo iniciar el análisis. Intenta de nuevo.'
               : 'No hay análisis disponible para esta postulación.'}
           </p>
           <Button size="sm" variant="outline" onClick={handleAnalyze}>

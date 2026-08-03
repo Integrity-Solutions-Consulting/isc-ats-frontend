@@ -15,10 +15,10 @@ export function AccessDenied() {
         <ShieldAlert className="size-8 text-danger" />
       </div>
       <div className="space-y-1.5">
-        <h1 className="text-xl font-semibold text-ink">No tenés acceso a esta sección</h1>
+        <h1 className="text-xl font-semibold text-ink">No tienes acceso a esta sección</h1>
         <p className="max-w-md text-sm text-ink-muted">
-          Tu rol no incluye permiso para ver esta página. Si creés que deberías
-          tener acceso, contactá a un administrador.
+          Tu rol no incluye permiso para ver esta página. Si crees que deberías
+          tener acceso, contacta a un administrador.
         </p>
       </div>
       <Button asChild className="mt-2">

@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     const errorMsg = (detail.includes('already') || detail.includes('exist') || detail.includes('duplicate') || detail.includes('registrado'))
       ? 'Ya existe una cuenta con este correo electrónico.'
-      : 'No se pudo crear la cuenta. Por favor, intentá de nuevo.';
+      : 'No se pudo crear la cuenta. Por favor, intenta de nuevo.';
     return NextResponse.json({ error: errorMsg }, { status: backendRes.status });
   }
 

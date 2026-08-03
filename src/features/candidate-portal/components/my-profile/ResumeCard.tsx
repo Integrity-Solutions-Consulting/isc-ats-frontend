@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, Download, Eye, FileText, Loader2, Upload } from 'lucide-react';
+import { toUserMessage } from '@/lib/userMessage';
 import type { CandidateProfile } from '../../types';
 
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;
@@ -59,7 +60,7 @@ export function ResumeCard({ profile }: { profile: CandidateProfile }) {
 
       router.refresh();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error inesperado');
+      setError(toUserMessage(err, 'No fue posible actualizar tu hoja de vida.'));
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = '';
@@ -101,7 +102,7 @@ export function ResumeCard({ profile }: { profile: CandidateProfile }) {
               <button
                 type="button"
                 onClick={handleView}
-                title="Ver CV"
+                title="Ver hoja de vida"
                 className="p-1.5 rounded-md text-ink-subtle hover:text-primary hover:bg-primary/10 transition-colors"
               >
                 <Eye className="w-4 h-4" />
@@ -109,7 +110,7 @@ export function ResumeCard({ profile }: { profile: CandidateProfile }) {
               <button
                 type="button"
                 onClick={handleDownload}
-                title="Descargar CV"
+                title="Descargar hoja de vida"
                 className="p-1.5 rounded-md text-ink-subtle hover:text-primary hover:bg-primary/10 transition-colors"
               >
                 <Download className="w-4 h-4" />

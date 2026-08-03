@@ -99,7 +99,7 @@ function ApplicationCard({ app }: { app: CandidateApplication }) {
       });
       setSelectedSlot(null);
     } catch {
-      setError('No fue posible confirmar el horario. Por favor, intentá de nuevo.');
+      setError('No fue posible confirmar el horario. Por favor, intenta de nuevo.');
     } finally {
       setConfirming(false);
     }

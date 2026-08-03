@@ -115,7 +115,7 @@ export function OnboardingPage() {
       setError(
         err instanceof Error && err.message
           ? err.message
-          : 'Ocurrió un error al guardar tus datos. Por favor, intentá de nuevo.',
+          : 'Ocurrió un error al guardar tus datos. Por favor, intenta de nuevo.',
       );
       setSubmitting(false);
     }

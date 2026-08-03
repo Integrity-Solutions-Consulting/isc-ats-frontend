@@ -20,7 +20,7 @@ export async function login(
     // Network-level failure (offline, server unreachable, dropped connection).
     // Never surface the raw browser "Failed to fetch" — keep the UI Spanish-only.
     throw new Error(
-      "No se pudo conectar con el servidor. Verificá tu conexión e intentá nuevamente.",
+      "No se pudo conectar con el servidor. Verifica tu conexión e intenta nuevamente.",
     );
   }
 

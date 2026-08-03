@@ -66,7 +66,7 @@ export function Step0CvUpload({
       onComplete(prefillData, file);
     } catch {
       setLoading(false);
-      setError('No pudimos analizar tu hoja de vida. Podés continuar sin pre-llenado.');
+      setError('No pudimos analizar tu hoja de vida. Puedes continuar sin el pre-llenado.');
       // Keep going with the file so it still gets stored when registration ends.
       onComplete({}, file);
     }
@@ -94,7 +94,7 @@ export function Step0CvUpload({
           ) : (
             <button
               type="button"
-              aria-label="Quitar CV seleccionado"
+              aria-label="Quitar la hoja de vida seleccionada"
               onClick={() => setFile(null)}
               className="text-ink-subtle hover:text-danger transition-colors"
             >

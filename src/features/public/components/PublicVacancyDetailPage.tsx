@@ -38,7 +38,7 @@ export function PublicVacancyDetailPage({ vacancy, isAuthenticated }: PublicVaca
       salaryLabel="Aspiración salarial"
       applyHint={
         isAuthenticated
-          ? { icon: User, text: 'Tu CV y perfil serán enviados automáticamente' }
+          ? { icon: User, text: 'Tu hoja de vida y tu perfil se enviarán automáticamente' }
           : { icon: LogIn, text: 'Para postular necesitas iniciar sesión. Te llevaremos de vuelta a esta vacante.' }
       }
       onApply={handleApply}

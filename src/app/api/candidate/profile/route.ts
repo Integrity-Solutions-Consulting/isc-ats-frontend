@@ -226,7 +226,7 @@ export async function POST(request: Request) {
       if (postError instanceof BackendError && postError.status === 422) {
         const reason = postError.detail.replace(/^Value error,\s*/i, "");
         return NextResponse.json(
-          { error: reason || "Revisá los datos ingresados." },
+          { error: reason || "Revisa los datos ingresados." },
           { status: 422 },
         );
       }
@@ -282,6 +282,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result, { status: responseStatus });
   } catch {
-    return NextResponse.json({ error: 'Ocurrió un error inesperado. Por favor, intentá de nuevo.' }, { status: 500 });
+    return NextResponse.json({ error: 'Ocurrió un error inesperado. Por favor, intenta de nuevo.' }, { status: 500 });
   }
 }
