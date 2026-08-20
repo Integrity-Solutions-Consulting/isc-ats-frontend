@@ -47,6 +47,22 @@ export async function GET() {
     const candidate = data.items[0];
     if (!candidate) return NextResponse.json(null, { status: 404 });
 
+    // Second backend call, kept here deliberately rather than folded into the
+    // recruitment DTO above (design D5) — marketing consent is an auth-module
+    // concern, not a recruitment one. Defaults to "not decided" if the call
+    // fails, so a transient error never blocks the rest of the profile.
+    let marketingConsentDecided = false;
+    let marketingConsentSubscribed = false;
+    try {
+      const consent = await backendGet<{ decided: boolean; subscribed: boolean }>(
+        "/auth/me/consents/marketing",
+      );
+      marketingConsentDecided = consent.decided;
+      marketingConsentSubscribed = consent.subscribed;
+    } catch {
+      // Leave the "not decided" defaults — the modal will simply show again.
+    }
+
     let cvFileName = "";
     let cvSizeKb = 0;
     let cvUpdatedDaysAgo = 0;
@@ -93,6 +109,8 @@ export async function GET() {
       cvFileName,
       cvSizeKb,
       cvUpdatedDaysAgo,
+      marketingConsentDecided,
+      marketingConsentSubscribed,
       stats: {
         vacanciesViewed: 0,
         applicationsCount: 0,
