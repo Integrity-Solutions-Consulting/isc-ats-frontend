@@ -24,11 +24,12 @@ const CATALOG_TYPES: CatalogType[] = [
   { key: 'stage_status',   label: 'Sub-estados de etapa',endpoint: 'parameters' },
   { key: 'city',           label: 'Ciudades',            endpoint: 'parameters' },
   { key: 'career',         label: 'Carreras',            endpoint: 'parameters' },
+  { key: 'university',     label: 'Universidades',       endpoint: 'parameters' },
   { key: 'title',          label: 'Títulos',             endpoint: 'parameters' },
   { key: 'education_level',label: 'Niveles de educación',endpoint: 'parameters' },
   { key: 'work_mode',      label: 'Modalidades',         endpoint: 'parameters' },
   { key: 'resource_level', label: 'Niveles de recurso',  endpoint: 'parameters' },
-  { key: 'vacancy_name',   label: 'Plantillas de nombre',endpoint: 'parameters' },
+  { key: 'vacancy_name',   label: 'Cargos',              endpoint: 'parameters' },
 ];
 
 type Filter = 'all' | 'active' | 'inactive';
