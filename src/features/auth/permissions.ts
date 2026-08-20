@@ -21,6 +21,7 @@ export const PERM = {
   departments: 'org.departments.read',
   users: 'auth.users.read',
   roles: 'auth.roles.read',
+  subscribers: 'auth.subscribers.read',
   // Action-level codes — gate specific write actions rather than whole routes.
   vacanciesCreate: 'recruitment.vacancies.create',
   processStagesCreate: 'org.process_stages.create',
@@ -68,6 +69,7 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: PermissionCode }[] = [
   { prefix: '/configuracion/catalogos', permission: PERM.parameters },
   { prefix: '/configuracion/usuarios', permission: PERM.users },
   { prefix: '/configuracion/roles', permission: PERM.roles },
+  { prefix: '/configuracion/suscriptores', permission: PERM.subscribers },
   { prefix: '/vacantes', permission: PERM.vacancies },
   { prefix: '/entrevistas', permission: PERM.interviewsAgenda },
   { prefix: '/banco-talento', permission: PERM.talentPool },
