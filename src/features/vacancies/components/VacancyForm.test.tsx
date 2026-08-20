@@ -46,7 +46,7 @@ const COMPLETE_VALUES = {
 function renderForm(
   codes: string[],
   overrides: Partial<typeof EMPTY_VACANCY_FORM> = {},
-  opts: { mode?: "create" | "edit"; vacancyId?: string } = {},
+  opts: { mode?: "create" | "edit"; vacancyId?: string; currentStatus?: "active" | "solicitud" } = {},
 ) {
   const queryClient = new QueryClient();
   const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
@@ -56,6 +56,7 @@ function renderForm(
         <VacancyForm
           mode={opts.mode ?? "create"}
           vacancyId={opts.vacancyId}
+          currentStatus={opts.currentStatus}
           title="Nueva vacante"
           initialValues={{ ...EMPTY_VACANCY_FORM, position: "Dev", ...overrides }}
         />
@@ -168,5 +169,48 @@ describe("VacancyForm — cache invalidation after an edit", () => {
     await waitFor(() => expect(updateVacancy).toHaveBeenCalled());
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: pipelineKeys.pipeline("7") });
+  });
+});
+
+describe("VacancyForm — submit button label reflects what it actually does", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("says 'Publicar vacante' when creating a new vacancy", () => {
+    renderForm([PERM.vacanciesPublish]);
+    expect(screen.getByRole("button", { name: /publicar vacante/i })).toBeInTheDocument();
+  });
+
+  it("says 'Publicar vacante' when editing a 'solicitud' that has never gone live", () => {
+    renderForm([PERM.vacanciesPublish], {}, {
+      mode: "edit",
+      vacancyId: "7",
+      currentStatus: "solicitud",
+    });
+    expect(screen.getByRole("button", { name: /publicar vacante/i })).toBeInTheDocument();
+  });
+
+  it("says 'Guardar cambios' instead of 'Publicar vacante' when editing an already-active vacancy", () => {
+    renderForm([PERM.vacanciesPublish], {}, {
+      mode: "edit",
+      vacancyId: "7",
+      currentStatus: "active",
+    });
+    expect(screen.getByRole("button", { name: /guardar cambios/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /publicar vacante/i })).not.toBeInTheDocument();
+  });
+
+  it("still persists status 'active' when clicking 'Guardar cambios' on a live vacancy", async () => {
+    const user = userEvent.setup();
+    renderForm([PERM.vacanciesPublish], COMPLETE_VALUES, {
+      mode: "edit",
+      vacancyId: "7",
+      currentStatus: "active",
+    });
+
+    await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+    await waitFor(() => expect(updateVacancy).toHaveBeenCalled());
+    expect(updateVacancy).toHaveBeenCalledWith("7", expect.anything(), "active");
   });
 });

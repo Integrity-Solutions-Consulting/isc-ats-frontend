@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Loader2, Send } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Send } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { vacancyKeys } from "../hooks/useVacancies";
 
@@ -16,7 +16,7 @@ import { usePermissions } from "@/features/auth/PermissionsProvider";
 import { pipelineKeys } from "@/features/pipeline/hooks/usePipeline";
 import { createVacancy, updateVacancy } from "../api/vacanciesApi";
 import { EMPTY_VACANCY_FORM, makeVacancySchema } from "../formSchema";
-import type { VacancyFormValues } from "../types";
+import type { VacancyFormValues, VacancyStatus } from "../types";
 import { BasicInfoSection } from "./vacancy-form/BasicInfoSection";
 import { LocationSection } from "./vacancy-form/LocationSection";
 import { SelectionSection } from "./vacancy-form/SelectionSection";
@@ -28,6 +28,8 @@ interface VacancyFormProps {
   title: string;
   vacancyId?: string;
   initialValues?: VacancyFormValues;
+  /** The vacancy's status as it was BEFORE this edit — decides the submit button's label. */
+  currentStatus?: VacancyStatus;
 }
 
 export function VacancyForm({
@@ -35,6 +37,7 @@ export function VacancyForm({
   title,
   vacancyId,
   initialValues,
+  currentStatus,
 }: VacancyFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -51,6 +54,13 @@ export function VacancyForm({
   // derived combination of create/publish. Create mode is unaffected (the
   // create route already requires vacanciesCreate to be reached at all).
   const readOnly = mode === "edit" && !canUpdate;
+  // Editing a vacancy that is already live is a save, not a publish action —
+  // "Publicar vacante" read as if it were about to go live for the first time,
+  // when persist() below just PATCHes it. Only the 'active' case is relabeled:
+  // 'solicitud' really is being published for the first time, and 'closed'/
+  // 'cancelled' vacancies never reach this form (VacancyStrip only offers
+  // "Editar" while a vacancy is active).
+  const isEditingLiveVacancy = mode === "edit" && currentStatus === "active";
   const [pending, setPending] = useState<null | "solicitud" | "publish">(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -190,10 +200,12 @@ export function VacancyForm({
             <Button type="submit" disabled={pending !== null}>
               {pending === "publish" ? (
                 <Loader2 className="size-4 animate-spin" />
+              ) : isEditingLiveVacancy ? (
+                <Save />
               ) : (
                 <Send />
               )}
-              Publicar vacante
+              {isEditingLiveVacancy ? "Guardar cambios" : "Publicar vacante"}
             </Button>
           )}
         </div>
