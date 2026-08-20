@@ -18,10 +18,14 @@ interface BackendPage<T> { items: T[]; total: number; }
  * silent coercions the old `Number(body.vacancyId)` / `salaryExpectation || null`
  * path allowed: NaN vacancy ids, negative ids, and salaryExpectation 0 being
  * turned into null or negative/non-finite values reaching the backend.
+ *
+ * `salaryExpectation` is required, mirroring the backend's ApplicationCreate.
+ * Rejecting it here turns what would be a raw 422 from FastAPI into the proxy's
+ * own Spanish message. 0 stays valid — it is a declared answer.
  */
 const createApplicationSchema = z.object({
   vacancyId: z.coerce.number().int().positive(),
-  salaryExpectation: z.coerce.number().finite().nonnegative().optional().nullable(),
+  salaryExpectation: z.coerce.number().finite().nonnegative(),
 });
 
 /** Subset of the backend InterviewRead we need for the candidate offer picker. */
@@ -246,8 +250,7 @@ export async function POST(request: NextRequest) {
       vacancy_id: body.vacancyId,
       candidate_id: candidate.id,
       status_id: activeStatus.id,
-      // Preserve an explicit 0; only absent/null becomes null.
-      salary_expectation: body.salaryExpectation ?? null,
+      salary_expectation: body.salaryExpectation,
     });
 
     return NextResponse.json(created, { status: 201 });
