@@ -7,7 +7,14 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
   error?: boolean;
 }
 
-/** Styled native <select>. Works directly with react-hook-form register(). */
+/**
+ * Styled native <select>. Works directly with react-hook-form register().
+ *
+ * `className` applies to the inner `<select>`, while the chevron is positioned
+ * against the outer wrapper — so do NOT pass a width here. A select narrower
+ * than its container leaves the arrow floating outside the box. Size the parent
+ * instead and let the select keep its `w-full`.
+ */
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, children, error, ...props }, ref) => (
     <div className="relative">

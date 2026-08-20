@@ -17,6 +17,8 @@ const card: PipelineCard = {
   matchPercent: 80,
   matchStatus: "done",
   stageStatus: "pending_review",
+  city: "Guayaquil",
+  isStudying: false,
   salaryExpectation: 1200,
   updatedAt: new Date().toISOString(),
 };
@@ -49,5 +51,26 @@ describe("CandidateCard — move (drag) gating", () => {
       </DndContext>,
     );
     expect(screen.getByLabelText("Ver perfil del candidato")).toBeInTheDocument();
+  });
+});
+
+describe("CandidateCard — salary expectation", () => {
+  it("renders the declared amount", () => {
+    render(
+      <DndContext>
+        <CandidateCard card={card} />
+      </DndContext>,
+    );
+    expect(screen.getByText("$ 1.200")).toBeInTheDocument();
+  });
+
+  it("says 'Sin aspiración' instead of $ 0 when none was declared", () => {
+    render(
+      <DndContext>
+        <CandidateCard card={{ ...card, salaryExpectation: null }} />
+      </DndContext>,
+    );
+    expect(screen.getByText("Sin aspiración")).toBeInTheDocument();
+    expect(screen.queryByText("$ 0")).not.toBeInTheDocument();
   });
 });

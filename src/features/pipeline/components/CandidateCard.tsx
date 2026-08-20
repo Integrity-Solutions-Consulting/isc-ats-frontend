@@ -28,7 +28,10 @@ export const STAGE_STATUS_LABEL: Record<CandidateStageStatus, string> = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function formatSalary(amount: number): string {
+function formatSalary(amount: number | null): string {
+  // Undeclared is shown as such instead of "$ 0", which read as if the
+  // candidate had asked for nothing.
+  if (amount === null) return 'Sin aspiración';
   return '$ ' + amount.toLocaleString('es-EC');
 }
 

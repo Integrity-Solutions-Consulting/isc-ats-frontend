@@ -27,7 +27,11 @@ export interface PipelineCard {
   matchPercent: number | null;
   matchStatus: MatchStatus;
   stageStatus: CandidateStageStatus;
-  salaryExpectation: number;
+  /** Candidate's city of residence; null when not on record. */
+  city: string | null;
+  isStudying: boolean;
+  /** null = never declared an expectation (distinct from a declared 0). */
+  salaryExpectation: number | null;
   updatedAt: string;     // ISO date
 }
 
