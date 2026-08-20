@@ -13,6 +13,7 @@ import { Button } from "@/design-system/ui/button";
 import { ROUTES } from "@/shared/constants/routes";
 import { PERM } from "@/features/auth/permissions";
 import { usePermissions } from "@/features/auth/PermissionsProvider";
+import { pipelineKeys } from "@/features/pipeline/hooks/usePipeline";
 import { createVacancy, updateVacancy } from "../api/vacanciesApi";
 import { EMPTY_VACANCY_FORM, makeVacancySchema } from "../formSchema";
 import type { VacancyFormValues } from "../types";
@@ -78,6 +79,21 @@ export function VacancyForm({
     return createVacancy(values, status);
   }
 
+  /**
+   * Queries holding a copy of this vacancy, invalidated together after a save.
+   *
+   * The pipeline query is not optional: the vacancy header strip reads
+   * `openings` from it rather than from the server-rendered stats, and with the
+   * global 60s staleTime it would keep serving the pre-edit figure until a full
+   * page reload. Same trap already documented in ProcesoEditorPage.
+   */
+  function invalidateVacancyCaches(id: string | undefined) {
+    queryClient.invalidateQueries({ queryKey: vacancyKeys.all });
+    if (!id) return;
+    queryClient.invalidateQueries({ queryKey: vacancyKeys.detail(id) });
+    queryClient.invalidateQueries({ queryKey: pipelineKeys.pipeline(id) });
+  }
+
   async function onPublish(values: VacancyFormValues) {
     // Defense in depth: the Publicar button is hidden without vacanciesPublish,
     // but the form's Enter-key submit still routes here — fall back to the
@@ -91,10 +107,7 @@ export function VacancyForm({
     setPending("publish");
     try {
       await persist(values, "active");
-      queryClient.invalidateQueries({ queryKey: vacancyKeys.all });
-      if (vacancyId) {
-        queryClient.invalidateQueries({ queryKey: vacancyKeys.detail(vacancyId) });
-      }
+      invalidateVacancyCaches(vacancyId);
       router.push(ROUTES.vacantes);
       router.refresh();
     } catch (error) {
@@ -123,10 +136,7 @@ export function VacancyForm({
     setPending("solicitud");
     try {
       await persist(values, "solicitud");
-      queryClient.invalidateQueries({ queryKey: vacancyKeys.all });
-      if (vacancyId) {
-        queryClient.invalidateQueries({ queryKey: vacancyKeys.detail(vacancyId) });
-      }
+      invalidateVacancyCaches(vacancyId);
       router.push(ROUTES.vacantes);
       router.refresh();
     } catch (error) {
