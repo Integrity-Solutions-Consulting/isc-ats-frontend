@@ -14,7 +14,7 @@ import type { Vacancy, VacancyFormValues } from '@/features/vacancies/types';
 import { deleteVacancy, reactivateVacancy, updateVacancy } from '@/features/vacancies/api/vacanciesApi';
 import { vacancyKeys } from '@/features/vacancies/hooks/useVacancies';
 import type { VacancyPipelineStats } from '@/features/pipeline/types';
-import { usePipeline } from '@/features/pipeline/hooks/usePipeline';
+import { pipelineKeys, usePipeline } from '@/features/pipeline/hooks/usePipeline';
 import { ROUTES } from '@/shared/constants/routes';
 
 interface VacancyStripProps {
@@ -70,6 +70,10 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
       setActionError(null);
       queryClient.invalidateQueries({ queryKey: vacancyKeys.detail(vacancy.id) });
       queryClient.invalidateQueries({ queryKey: vacancyKeys.all });
+      // Closing a vacancy auto-rejects its remaining applications on the
+      // backend, and this strip's own counters come from the pipeline query —
+      // without this it keeps showing the pre-close figures for a full minute.
+      queryClient.invalidateQueries({ queryKey: pipelineKeys.pipeline(vacancy.id) });
       router.refresh();
     },
     onError: (error) => {
@@ -102,6 +106,7 @@ export function VacancyStrip({ vacancy, stats }: VacancyStripProps) {
       setActionError(null);
       queryClient.invalidateQueries({ queryKey: vacancyKeys.all });
       queryClient.invalidateQueries({ queryKey: vacancyKeys.detail(vacancy.id) });
+      queryClient.invalidateQueries({ queryKey: pipelineKeys.pipeline(vacancy.id) });
       router.refresh();
     },
     onError: (error) => {

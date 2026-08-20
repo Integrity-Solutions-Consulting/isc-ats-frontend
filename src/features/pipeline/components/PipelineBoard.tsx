@@ -1,20 +1,19 @@
 'use client';
 
 import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Button } from '@/design-system/ui/button';
-import { TogglePill } from '@/design-system/molecules/TogglePill';
 import { PERM } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/PermissionsProvider';
 import { resolveDropAction } from '../dropAction';
+import { EMPTY_FILTERS, cityOptionsFrom, filterCards, type PipelineFilters } from '../filters';
 import { useMovePipelineCard, usePipeline } from '../hooks/usePipeline';
 import type { PipelineCard } from '../types';
 import { CandidateCardOverlay } from './CandidateCard';
 import { PipelineColumn } from './PipelineColumn';
+import { PipelineFilterBar } from './PipelineFilterBar';
 import { RejectReasonDialog } from './RejectReasonDialog';
-
-type MatchFilter = 'all' | 'high' | 'medium';
 
 interface PipelineBoardProps {
   vacancyId: string;
@@ -54,9 +53,16 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
   const { has } = usePermissions();
   const canMove = has(PERM.applicationsUpdate);
   const [activeCard, setActiveCard] = useState<PipelineCard | null>(null);
-  const [matchFilter, setMatchFilter] = useState<MatchFilter>('all');
+  const [filters, setFilters] = useState<PipelineFilters>(EMPTY_FILTERS);
   const [pendingReject, setPendingReject] = useState<PendingReject | null>(null);
   const [rejectError, setRejectError] = useState<string | null>(null);
+
+  // Filtering happens once for the whole board — the columns render whatever
+  // they are handed. Keeping it here means a card and its stage count can never
+  // disagree about which filters were applied.
+  const allCards = useMemo(() => pipeline?.cards ?? [], [pipeline]);
+  const visibleCards = useMemo(() => filterCards(allCards, filters), [allCards, filters]);
+  const cityOptions = useMemo(() => cityOptionsFrom(allCards), [allCards]);
 
   if (isLoading) return <BoardSkeleton />;
 
@@ -142,35 +148,24 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Filter pills */}
-      <div className="flex items-center justify-end gap-2">
-        <span className="text-xs text-ink-muted">Filtrar por match:</span>
-        <TogglePill
-          label="Filtrar por match"
-          value={matchFilter}
-          onValueChange={(v) => setMatchFilter(v as MatchFilter)}
-          items={[
-            { value: 'all', label: 'Sin filtro' },
-            { value: 'high', label: 'Match > 75%' },
-            { value: 'medium', label: 'Match > 50%' },
-          ]}
-        />
-      </div>
+      <PipelineFilterBar
+        filters={filters}
+        onChange={setFilters}
+        cityOptions={cityOptions}
+        shownCount={visibleCards.length}
+        totalCount={allCards.length}
+      />
 
       {/* Board */}
       <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="flex gap-4 overflow-x-auto pb-4">
           {sortedStages.map((stage) => {
-            const stageCards = pipeline.cards.filter((c) => c.stageId === stage.id);
+            const stageCards = visibleCards.filter((c) => c.stageId === stage.id);
             return (
               <PipelineColumn
                 key={stage.id}
                 stage={stage}
                 cards={stageCards}
-                rejectionSummary={
-                  stage.type === 'rejected' ? pipeline.rejectionSummary : undefined
-                }
-                matchFilter={matchFilter}
                 canDrag={canMove}
               />
             );

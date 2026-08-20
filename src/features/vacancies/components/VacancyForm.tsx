@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Loader2, Send } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Send } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { vacancyKeys } from "../hooks/useVacancies";
 
@@ -13,9 +13,10 @@ import { Button } from "@/design-system/ui/button";
 import { ROUTES } from "@/shared/constants/routes";
 import { PERM } from "@/features/auth/permissions";
 import { usePermissions } from "@/features/auth/PermissionsProvider";
+import { pipelineKeys } from "@/features/pipeline/hooks/usePipeline";
 import { createVacancy, updateVacancy } from "../api/vacanciesApi";
 import { EMPTY_VACANCY_FORM, makeVacancySchema } from "../formSchema";
-import type { VacancyFormValues } from "../types";
+import type { VacancyFormValues, VacancyStatus } from "../types";
 import { BasicInfoSection } from "./vacancy-form/BasicInfoSection";
 import { LocationSection } from "./vacancy-form/LocationSection";
 import { SelectionSection } from "./vacancy-form/SelectionSection";
@@ -27,6 +28,8 @@ interface VacancyFormProps {
   title: string;
   vacancyId?: string;
   initialValues?: VacancyFormValues;
+  /** The vacancy's status as it was BEFORE this edit — decides the submit button's label. */
+  currentStatus?: VacancyStatus;
 }
 
 export function VacancyForm({
@@ -34,6 +37,7 @@ export function VacancyForm({
   title,
   vacancyId,
   initialValues,
+  currentStatus,
 }: VacancyFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -50,6 +54,13 @@ export function VacancyForm({
   // derived combination of create/publish. Create mode is unaffected (the
   // create route already requires vacanciesCreate to be reached at all).
   const readOnly = mode === "edit" && !canUpdate;
+  // Editing a vacancy that is already live is a save, not a publish action —
+  // "Publicar vacante" read as if it were about to go live for the first time,
+  // when persist() below just PATCHes it. Only the 'active' case is relabeled:
+  // 'solicitud' really is being published for the first time, and 'closed'/
+  // 'cancelled' vacancies never reach this form (VacancyStrip only offers
+  // "Editar" while a vacancy is active).
+  const isEditingLiveVacancy = mode === "edit" && currentStatus === "active";
   const [pending, setPending] = useState<null | "solicitud" | "publish">(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -78,6 +89,21 @@ export function VacancyForm({
     return createVacancy(values, status);
   }
 
+  /**
+   * Queries holding a copy of this vacancy, invalidated together after a save.
+   *
+   * The pipeline query is not optional: the vacancy header strip reads
+   * `openings` from it rather than from the server-rendered stats, and with the
+   * global 60s staleTime it would keep serving the pre-edit figure until a full
+   * page reload. Same trap already documented in ProcesoEditorPage.
+   */
+  function invalidateVacancyCaches(id: string | undefined) {
+    queryClient.invalidateQueries({ queryKey: vacancyKeys.all });
+    if (!id) return;
+    queryClient.invalidateQueries({ queryKey: vacancyKeys.detail(id) });
+    queryClient.invalidateQueries({ queryKey: pipelineKeys.pipeline(id) });
+  }
+
   async function onPublish(values: VacancyFormValues) {
     // Defense in depth: the Publicar button is hidden without vacanciesPublish,
     // but the form's Enter-key submit still routes here — fall back to the
@@ -91,10 +117,7 @@ export function VacancyForm({
     setPending("publish");
     try {
       await persist(values, "active");
-      queryClient.invalidateQueries({ queryKey: vacancyKeys.all });
-      if (vacancyId) {
-        queryClient.invalidateQueries({ queryKey: vacancyKeys.detail(vacancyId) });
-      }
+      invalidateVacancyCaches(vacancyId);
       router.push(ROUTES.vacantes);
       router.refresh();
     } catch (error) {
@@ -123,10 +146,7 @@ export function VacancyForm({
     setPending("solicitud");
     try {
       await persist(values, "solicitud");
-      queryClient.invalidateQueries({ queryKey: vacancyKeys.all });
-      if (vacancyId) {
-        queryClient.invalidateQueries({ queryKey: vacancyKeys.detail(vacancyId) });
-      }
+      invalidateVacancyCaches(vacancyId);
       router.push(ROUTES.vacantes);
       router.refresh();
     } catch (error) {
@@ -180,10 +200,12 @@ export function VacancyForm({
             <Button type="submit" disabled={pending !== null}>
               {pending === "publish" ? (
                 <Loader2 className="size-4 animate-spin" />
+              ) : isEditingLiveVacancy ? (
+                <Save />
               ) : (
                 <Send />
               )}
-              Publicar vacante
+              {isEditingLiveVacancy ? "Guardar cambios" : "Publicar vacante"}
             </Button>
           )}
         </div>

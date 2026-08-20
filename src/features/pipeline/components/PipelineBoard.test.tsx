@@ -21,6 +21,8 @@ const samplePipeline: VacancyPipeline = {
       matchPercent: 80,
       matchStatus: "done",
       stageStatus: "pending_review",
+      city: "Guayaquil",
+      isStudying: false,
       salaryExpectation: 1200,
       updatedAt: new Date().toISOString(),
     },

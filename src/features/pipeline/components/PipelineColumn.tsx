@@ -6,14 +6,13 @@ import { useRouter } from 'next/navigation';
 
 import { cn } from '@/shared/utils';
 import { sortCardsByMatch } from '../navigation';
-import type { PipelineCard, PipelineStage, RejectionSummary } from '../types';
+import type { PipelineCard, PipelineStage } from '../types';
 import { CandidateCard } from './CandidateCard';
 
 interface PipelineColumnProps {
   stage: PipelineStage;
+  /** Already filtered by the board — the column only sorts and renders. */
   cards: PipelineCard[];
-  rejectionSummary?: RejectionSummary;
-  matchFilter: 'all' | 'high' | 'medium';
   /** Gated by `has(PERM.applicationsUpdate)` at the board level. */
   canDrag?: boolean;
 }
@@ -21,25 +20,14 @@ interface PipelineColumnProps {
 export function PipelineColumn({
   stage,
   cards,
-  rejectionSummary,
-  matchFilter,
   canDrag = true,
 }: PipelineColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   const router = useRouter();
 
-  // Filter cards based on match percentage
-  const filteredCards = cards.filter((card) => {
-    if (matchFilter === 'all') return true;
-    if (card.matchStatus === 'analyzing' || card.matchPercent === null) return false;
-    if (matchFilter === 'high') return card.matchPercent >= 75;
-    if (matchFilter === 'medium') return card.matchPercent >= 50;
-    return true;
-  });
-
   // Sort by match percentage, highest first (shared with the profile navigator
   // so a candidate's position is consistent between board and profile).
-  const sortedCards = sortCardsByMatch(filteredCards);
+  const sortedCards = sortCardsByMatch(cards);
 
   const isRejected = stage.type === 'rejected';
   const isFinal = stage.type === 'final';
@@ -75,24 +63,20 @@ export function PipelineColumn({
 
         {isFinal && <Star className="h-3.5 w-3.5 shrink-0 text-primary-500" />}
 
-        {/* Card count pill */}
-        {!isRejected && (
-          <span
-            className={cn(
-              'rounded-full px-1.5 py-0.5 text-xs font-medium',
-              isFinal
+        {/* Card count pill — always counts the cards actually rendered, so it
+            never contradicts the column while filters are active. */}
+        <span
+          className={cn(
+            'rounded-full px-1.5 py-0.5 text-xs font-medium',
+            isRejected
+              ? 'bg-danger/15 text-danger'
+              : isFinal
                 ? 'bg-primary-100 text-primary-700'
                 : 'bg-border text-ink-muted',
-            )}
-          >
-            {filteredCards.length}
-          </span>
-        )}
-        {isRejected && rejectionSummary && (
-          <span className="rounded-full bg-danger/15 px-1.5 py-0.5 text-xs font-medium text-danger">
-            {rejectionSummary.total}
-          </span>
-        )}
+          )}
+        >
+          {cards.length}
+        </span>
       </div>
 
       {/* Drop area */}

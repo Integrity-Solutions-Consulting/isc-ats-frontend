@@ -56,6 +56,7 @@ export function VacancyEditPage({ id }: { id: string }) {
       vacancyId={id}
       title="Editar vacante"
       initialValues={toFormValues(data)}
+      currentStatus={data.status}
     />
   );
 }
