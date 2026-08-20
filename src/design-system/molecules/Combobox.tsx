@@ -124,10 +124,9 @@ export function Combobox({
           if (!isIdMode) onChange(e.target.value);
           setOpen(true);
         }}
-        onFocus={(e) => {
+        onFocus={() => {
           setOpen(true);
           justFocusedRef.current = true;
-          e.target.select();
         }}
         onClick={() => {
           if (justFocusedRef.current) {
