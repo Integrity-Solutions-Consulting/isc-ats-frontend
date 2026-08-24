@@ -108,6 +108,11 @@ export interface CandidateProfile {
   cvFileName: string;
   cvSizeKb: number;
   cvUpdatedDaysAgo: number;
+  /** True once the candidate has ever decided (grant, refusal, or revoke) on
+   * marketing consent. Gates whether MarketingConsentModal shows on /mi-perfil. */
+  marketingConsentDecided: boolean;
+  /** True when a marketing consent grant is currently active (non-revoked). */
+  marketingConsentSubscribed: boolean;
   stats: {
     vacanciesViewed: number;
     applicationsCount: number;

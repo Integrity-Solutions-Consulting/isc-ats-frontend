@@ -28,6 +28,8 @@ const schema = z
     }),
     confirmPassword: z.string().min(1, 'Confirma tu contraseña'),
     terms: z.literal(true, { message: 'Debes aceptar los términos' }),
+    // Optional, opt-in — unchecked by default (no dark patterns).
+    marketing: z.boolean(),
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: 'Las contraseñas no coinciden',
@@ -58,7 +60,11 @@ export function RegistrationForm({ turnstileSiteKey = '' }: RegistrationFormProp
     handleSubmit,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema), mode: 'onTouched' });
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    mode: 'onTouched',
+    defaultValues: { marketing: false },
+  });
 
   const passwordValue = watch('password', '');
   const confirmValue = watch('confirmPassword', '');
@@ -74,6 +80,8 @@ export function RegistrationForm({ turnstileSiteKey = '' }: RegistrationFormProp
           email: data.email,
           password: data.password,
           turnstile_token: captchaToken,
+          accepts_terms: data.terms,
+          accepts_marketing: data.marketing,
         }),
       });
       const resData = await res.json();
@@ -244,6 +252,24 @@ export function RegistrationForm({ turnstileSiteKey = '' }: RegistrationFormProp
             </span>
           </label>
           {errors.terms && <p className="text-xs text-danger">{errors.terms.message}</p>}
+        </div>
+
+        {/* Marketing (optional, opt-in) */}
+        <div className="space-y-1">
+          <label className="flex cursor-pointer items-start gap-2.5 text-sm text-ink-muted">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 rounded border-border accent-primary-600"
+              {...register('marketing')}
+            />
+            <span>
+              Quiero recibir información sobre eventos, conferencias y novedades de
+              Integrity Solutions.
+            </span>
+          </label>
+          <p className="pl-[26px] text-xs text-ink-subtle">
+            Podrás darte de baja cuando quieras desde tu perfil.
+          </p>
         </div>
 
         {captchaEnabled && (

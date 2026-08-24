@@ -86,6 +86,7 @@ export const ROUTES = {
     catalogos: '/configuracion/catalogos',
     usuarios: '/configuracion/usuarios',
     roles: '/configuracion/roles',
+    suscriptores: '/configuracion/suscriptores',
   },
 
   // (candidate) — candidate-facing portal

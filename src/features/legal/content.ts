@@ -22,16 +22,24 @@ export interface LegalDocument {
   title: string;
   /** Human-readable last-revision date, e.g. "Junio 2026". */
   lastUpdated: string;
+  /**
+   * Policy version recorded in auth.consents.policy_version on acceptance.
+   * MUST match ConsentsService.CURRENT_POLICY_VERSION in the backend
+   * (app/modules/auth/application/consents_service.py) — bump both together.
+   */
+  version: string;
   intro: string[];
   sections: LegalSection[];
 }
 
 const COMPANY = 'Integrity Solutions';
 const LAST_UPDATED = 'Junio 2026';
+const POLICY_VERSION = '1.0';
 
 export const TERMS: LegalDocument = {
   title: 'Términos y Condiciones',
   lastUpdated: LAST_UPDATED,
+  version: POLICY_VERSION,
   intro: [
     `Estos Términos y Condiciones regulan el acceso y uso del portal de empleo de ${COMPANY} (en adelante, "el Portal") por parte de las personas que se registran como candidatos. Al crear una cuenta y utilizar el Portal, usted declara haber leído, entendido y aceptado estos términos.`,
   ],
@@ -105,6 +113,7 @@ export const TERMS: LegalDocument = {
 export const PRIVACY: LegalDocument = {
   title: 'Política de Privacidad',
   lastUpdated: LAST_UPDATED,
+  version: POLICY_VERSION,
   intro: [
     `En ${COMPANY} protegemos sus datos personales conforme a la Ley Orgánica de Protección de Datos Personales (LOPDP) del Ecuador. Esta Política explica qué datos recopilamos, con qué finalidad, con quién los compartimos y cómo puede ejercer sus derechos.`,
   ],
