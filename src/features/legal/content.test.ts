@@ -9,10 +9,10 @@ import { LEGAL_DOCS } from './content';
 // the tripwire.
 describe('LEGAL_DOCS version (backend policy version coupling — D4)', () => {
   it('terms.version matches the backend CURRENT_POLICY_VERSION', () => {
-    expect(LEGAL_DOCS.terms.version).toBe('1.0');
+    expect(LEGAL_DOCS.terms.version).toBe('2.0');
   });
 
   it('privacy.version matches the backend CURRENT_POLICY_VERSION', () => {
-    expect(LEGAL_DOCS.privacy.version).toBe('1.0');
+    expect(LEGAL_DOCS.privacy.version).toBe('2.0');
   });
 });
