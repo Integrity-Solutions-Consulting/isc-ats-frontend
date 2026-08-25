@@ -24,6 +24,7 @@ function makeCard(overrides: Partial<PipelineCard> = {}): PipelineCard {
     city: "Guayaquil",
     isStudying: false,
     salaryExpectation: 1200,
+    yearsOfExperience: 3,
     updatedAt: "2026-08-20T12:00:00.000Z",
     ...overrides,
   };
@@ -141,6 +142,41 @@ describe("filterCards — salary range", () => {
   });
 });
 
+describe("filterCards — minimum experience", () => {
+  it("keeps every card when the filter is inactive", () => {
+    const cards = [
+      makeCard({ id: "declared", yearsOfExperience: 1 }),
+      makeCard({ id: "undeclared", yearsOfExperience: null }),
+    ];
+    expect(filterCards(cards, EMPTY_FILTERS)).toEqual(cards);
+  });
+
+  it("keeps candidates whose experience is equal to or greater than the minimum", () => {
+    const cards = [
+      makeCard({ id: "below", yearsOfExperience: 1.5 }),
+      makeCard({ id: "equal", yearsOfExperience: 2 }),
+      makeCard({ id: "above", yearsOfExperience: 2.5 }),
+    ];
+    const result = filterCards(cards, withFilters({ minExperience: 2 }));
+    expect(result.map((c) => c.id)).toEqual(["equal", "above"]);
+  });
+
+  it("excludes candidates who never declared their experience", () => {
+    // Undeclared is unknown, not zero — it cannot be claimed to meet any
+    // minimum the recruiter asked for.
+    const cards = [makeCard({ id: "undeclared", yearsOfExperience: null })];
+    expect(filterCards(cards, withFilters({ minExperience: 0 }))).toEqual([]);
+  });
+
+  it("keeps a declared experience of 0 when the minimum is 0, but excludes it once the minimum is raised", () => {
+    const cards = [makeCard({ id: "declared-zero", yearsOfExperience: 0 })];
+    expect(filterCards(cards, withFilters({ minExperience: 0 })).map((c) => c.id)).toEqual([
+      "declared-zero",
+    ]);
+    expect(filterCards(cards, withFilters({ minExperience: 1 }))).toEqual([]);
+  });
+});
+
 describe("filterCards — combined", () => {
   it("applies every active filter together", () => {
     const cards = [
@@ -178,5 +214,6 @@ describe("hasActiveFilters", () => {
   it("is true when a zero-valued numeric filter is set", () => {
     expect(hasActiveFilters(withFilters({ minMatch: 0 }))).toBe(true);
     expect(hasActiveFilters(withFilters({ minSalary: 0 }))).toBe(true);
+    expect(hasActiveFilters(withFilters({ minExperience: 0 }))).toBe(true);
   });
 });

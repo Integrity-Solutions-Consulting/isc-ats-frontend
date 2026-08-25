@@ -32,6 +32,8 @@ export interface PipelineCard {
   isStudying: boolean;
   /** null = never declared an expectation (distinct from a declared 0). */
   salaryExpectation: number | null;
+  /** null = never declared their experience (distinct from a declared 0). */
+  yearsOfExperience: number | null;
   updatedAt: string;     // ISO date
 }
 

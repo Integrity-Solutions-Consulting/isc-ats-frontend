@@ -1,9 +1,62 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
-import { movePipelineCard } from "./pipelineApi";
+import { getVacancyPipeline, movePipelineCard } from "./pipelineApi";
+import type { VacancyPipeline } from "../types";
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+function makePipelineResponse(yearsOfExperience: number | null): VacancyPipeline {
+  return {
+    stages: [],
+    cards: [
+      {
+        id: "app-1",
+        candidateId: "cand-1",
+        vacancyId: "vac-1",
+        stageId: "stage-1",
+        candidateName: "Jane Doe",
+        initials: "JD",
+        avatarColor: "bg-primary-600",
+        matchPercent: 80,
+        matchStatus: "done",
+        stageStatus: "pending_review",
+        city: "Guayaquil",
+        isStudying: false,
+        salaryExpectation: 1200,
+        yearsOfExperience,
+        updatedAt: "2026-08-20T12:00:00.000Z",
+      },
+    ],
+    rejectionSummary: { total: 0, reasons: [] },
+  };
+}
+
+describe("getVacancyPipeline — yearsOfExperience mapping", () => {
+  it("passes a declared yearsOfExperience straight through", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => makePipelineResponse(2.5),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const pipeline = await getVacancyPipeline("vac-1");
+
+    expect(pipeline.cards[0].yearsOfExperience).toBe(2.5);
+  });
+
+  it("passes a null yearsOfExperience straight through — undeclared is never coerced to 0", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => makePipelineResponse(null),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const pipeline = await getVacancyPipeline("vac-1");
+
+    expect(pipeline.cards[0].yearsOfExperience).toBeNull();
+  });
 });
 
 describe("movePipelineCard", () => {

@@ -109,6 +109,28 @@ export function PipelineFilterBar({
         </Select>
       </div>
 
+      <div className={cn(FIELD_GROUP, 'w-[165px]')}>
+        <label htmlFor="filter-min-experience" className={FIELD_LABEL}>
+          Experiencia mínima
+        </label>
+        <div className="relative">
+          <Input
+            id="filter-min-experience"
+            type="number"
+            min={0}
+            step={0.5}
+            inputMode="numeric"
+            placeholder="Sin filtro"
+            value={filters.minExperience ?? ''}
+            onChange={(e) => set('minExperience', toNumberOrNull(e.target.value))}
+            className="pr-11"
+          />
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ink-subtle">
+            años
+          </span>
+        </div>
+      </div>
+
       <div className={cn(FIELD_GROUP, 'w-[250px]')}>
         <span className={FIELD_LABEL}>Aspiración salarial</span>
         <div className="flex items-center gap-1.5">

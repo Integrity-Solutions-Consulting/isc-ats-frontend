@@ -20,6 +20,7 @@ const card: PipelineCard = {
   city: "Guayaquil",
   isStudying: false,
   salaryExpectation: 1200,
+  yearsOfExperience: 3,
   updatedAt: new Date().toISOString(),
 };
 
