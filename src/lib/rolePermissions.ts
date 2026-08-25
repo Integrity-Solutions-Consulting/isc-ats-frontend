@@ -1,4 +1,4 @@
-import { backendGet } from "@/lib/backendFetch";
+import { backendGetAllPages } from "@/lib/backendPages";
 
 export interface PermissionSyncPlan {
   toGrant: number[];
@@ -44,17 +44,19 @@ export function computeRolePermissionSync(
   return { toGrant, toRevoke };
 }
 
-interface BackendUserPage {
-  items: { id: number; roles: string[] }[];
-  total: number;
+interface BackendUserRoles {
+  id: number;
+  roles: string[];
 }
 
 /** Count of users assigned to each role, keyed by role name. */
 export async function getRoleUserCounts(): Promise<Map<string, number>> {
   const counts = new Map<string, number>();
   try {
-    const usersData = await backendGet<BackendUserPage>("/auth/users?size=100");
-    for (const user of usersData.items) {
+    // Every page, not just the first: counting a single 100-row page reported a
+    // role as empty whenever its members happened to sit past that cut-off.
+    const users = await backendGetAllPages<BackendUserRoles>("/auth/users");
+    for (const user of users) {
       for (const roleName of user.roles) {
         counts.set(roleName, (counts.get(roleName) ?? 0) + 1);
       }
