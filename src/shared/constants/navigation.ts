@@ -10,6 +10,7 @@ import {
   ListChecks,
   Building,
   Contact,
+  Mail,
   type LucideIcon,
 } from "lucide-react";
 
@@ -52,6 +53,7 @@ export const PORTAL_NAV: NavGroup[] = [
       { label: "Catálogos", href: ROUTES.configuracion.catalogos, icon: ListChecks, permission: PERM.parameters },
       { label: "Usuarios", href: ROUTES.configuracion.usuarios, icon: UserCog, permission: PERM.users },
       { label: "Roles y permisos", href: ROUTES.configuracion.roles, icon: Shield, permission: PERM.roles },
+      { label: "Suscriptores", href: ROUTES.configuracion.suscriptores, icon: Mail, permission: PERM.subscribers },
     ],
   },
 ];

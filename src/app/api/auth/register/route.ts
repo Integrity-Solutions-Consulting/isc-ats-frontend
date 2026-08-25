@@ -6,10 +6,12 @@ const BACKEND = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000/api/v
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
-  const { email, password, turnstile_token } = body as {
+  const { email, password, turnstile_token, accepts_terms, accepts_marketing } = body as {
     email?: string;
     password?: string;
     turnstile_token?: string | null;
+    accepts_terms?: boolean;
+    accepts_marketing?: boolean;
   };
 
   if (!email || !password) {
@@ -21,7 +23,13 @@ export async function POST(request: NextRequest) {
     backendRes = await fetch(`${BACKEND}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...clientIpHeader(request) },
-      body: JSON.stringify({ email, password, turnstile_token }),
+      body: JSON.stringify({
+        email,
+        password,
+        turnstile_token,
+        accepts_terms,
+        accepts_marketing,
+      }),
     });
   } catch {
     return NextResponse.json(

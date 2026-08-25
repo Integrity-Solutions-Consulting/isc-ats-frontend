@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, ChevronDown, LogOut, Search, User } from "lucide-react";
+import { Bell, ChevronDown, LogOut, User } from "lucide-react";
 
 import { cn } from "@/shared/utils";
 
@@ -51,18 +51,6 @@ export function Header({
       )}
     >
       <div className="shrink-0">{breadcrumb}</div>
-
-      <div className="flex h-9 min-w-[120px] max-w-md flex-1 items-center gap-2 rounded-full border border-border bg-bg px-4 text-sm">
-        <Search className="size-4 text-ink-subtle" />
-        <input
-          type="search"
-          placeholder="Buscar vacantes, candidatos, contactos…"
-          className="flex-1 bg-transparent text-ink outline-none placeholder:text-ink-subtle"
-        />
-        <kbd className="hidden rounded border border-border px-1.5 text-xs text-ink-subtle sm:inline">
-          ⌘K
-        </kbd>
-      </div>
 
       <div className="ml-auto flex items-center gap-3">
         <button

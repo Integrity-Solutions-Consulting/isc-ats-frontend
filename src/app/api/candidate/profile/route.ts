@@ -16,6 +16,7 @@ interface BackendCandidateExpanded {
   cedula: string | null;
   birth_date: string | null;
   phone: string | null;
+  years_of_experience: number | null;
   city: string | null;
   education_level: string | null;
   career: string | null;
@@ -47,6 +48,22 @@ export async function GET() {
     const candidate = data.items[0];
     if (!candidate) return NextResponse.json(null, { status: 404 });
 
+    // Second backend call, kept here deliberately rather than folded into the
+    // recruitment DTO above (design D5) — marketing consent is an auth-module
+    // concern, not a recruitment one. Defaults to "not decided" if the call
+    // fails, so a transient error never blocks the rest of the profile.
+    let marketingConsentDecided = false;
+    let marketingConsentSubscribed = false;
+    try {
+      const consent = await backendGet<{ decided: boolean; subscribed: boolean }>(
+        "/auth/me/consents/marketing",
+      );
+      marketingConsentDecided = consent.decided;
+      marketingConsentSubscribed = consent.subscribed;
+    } catch {
+      // Leave the "not decided" defaults — the modal will simply show again.
+    }
+
     let cvFileName = "";
     let cvSizeKb = 0;
     let cvUpdatedDaysAgo = 0;
@@ -76,6 +93,7 @@ export async function GET() {
       lastName: candidate.last_name,
       email: candidate.email,
       phone: candidate.phone ?? "",
+      yearsOfExperience: candidate.years_of_experience,
       docType: candidate.doc_type === "passport" ? "passport" : "cedula",
       idNumber: candidate.cedula ?? "",
       birthDate: candidate.birth_date ?? "",
@@ -93,6 +111,8 @@ export async function GET() {
       cvFileName,
       cvSizeKb,
       cvUpdatedDaysAgo,
+      marketingConsentDecided,
+      marketingConsentSubscribed,
       stats: {
         vacanciesViewed: 0,
         applicationsCount: 0,
@@ -123,6 +143,7 @@ export async function PATCH(request: Request) {
       firstName?: string;
       lastName?: string;
       phone?: string;
+      yearsOfExperience?: number | null;
       homeAddress?: string | null;
       universityId?: number | null;
       cityId?: number | null;
@@ -143,6 +164,7 @@ export async function PATCH(request: Request) {
     if (body.firstName !== undefined) payload.first_name = body.firstName;
     if (body.lastName !== undefined) payload.last_name = body.lastName;
     if (body.phone !== undefined) payload.phone = body.phone;
+    if (body.yearsOfExperience !== undefined) payload.years_of_experience = body.yearsOfExperience;
     if (body.homeAddress !== undefined) payload.home_address = body.homeAddress;
     if (body.universityId !== undefined) payload.university_id = body.universityId;
     if (body.cityId !== undefined) payload.city_id = body.cityId;

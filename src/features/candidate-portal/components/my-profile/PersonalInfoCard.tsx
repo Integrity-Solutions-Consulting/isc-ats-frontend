@@ -8,7 +8,7 @@ import { Combobox } from '@/design-system/molecules/Combobox';
 import { cn } from '@/shared/utils';
 import type { CandidateProfile } from '../../types';
 import { myProfileKeys } from '../../hooks/useMyProfile';
-import { FieldLabel, FieldValue, FieldInput } from './fields';
+import { FieldLabel, FieldValue, FieldInput, FieldNumberInput, IncompleteNotice } from './fields';
 import { formatBirthDate } from './formatBirthDate';
 
 interface CatalogOption {
@@ -52,6 +52,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
     firstName: profile.firstName,
     lastName: profile.lastName,
     phone: profile.phone,
+    yearsOfExperience: profile.yearsOfExperience != null ? String(profile.yearsOfExperience) : '',
     homeAddress: profile.homeAddress,
     // ID fields start empty — user re-selects if they want to change; placeholder shows current value
     cityId: '',
@@ -121,6 +122,7 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
       firstName: profile.firstName,
       lastName: profile.lastName,
       phone: profile.phone,
+      yearsOfExperience: profile.yearsOfExperience != null ? String(profile.yearsOfExperience) : '',
       homeAddress: profile.homeAddress,
       cityId: '',
       educationLevelId: '',
@@ -139,11 +141,15 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
     setSaveError(null);
     try {
       const toId = (v: string) => { const n = Number(v); return (!v || v === 'other' || isNaN(n)) ? null : n; };
+      const yearsOfExperienceTrimmed = form.yearsOfExperience.trim();
+      const yearsOfExperienceNum = Number(yearsOfExperienceTrimmed);
       const patchBody: Record<string, unknown> = {
         candidateId: profile.id,
         firstName: form.firstName,
         lastName: form.lastName,
         phone: form.phone,
+        yearsOfExperience:
+          yearsOfExperienceTrimmed === '' || isNaN(yearsOfExperienceNum) ? null : yearsOfExperienceNum,
         homeAddress: form.homeAddress || null,
         isStudying: form.isStudying,
         isWorking: form.isWorking,
@@ -306,6 +312,24 @@ export function PersonalInfoCard({ profile }: { profile: CandidateProfile }) {
             <FieldLabel>Correo</FieldLabel>
             <FieldValue>{profile.email}</FieldValue>
           </div>
+        </div>
+
+        {/* Row 3b: Años de experiencia */}
+        <div className="pb-2.5 border-b border-surface-2">
+          <FieldLabel htmlFor={editing ? 'edit-yearsOfExperience' : undefined}>Años de experiencia</FieldLabel>
+          {editing
+            ? <FieldNumberInput
+                id="edit-yearsOfExperience"
+                value={form.yearsOfExperience}
+                onChange={(v) => setForm((f) => ({ ...f, yearsOfExperience: v }))}
+              />
+            : <FieldValue>{profile.yearsOfExperience ?? '—'}</FieldValue>
+          }
+          {(editing ? form.yearsOfExperience.trim() === '' : profile.yearsOfExperience == null) && (
+            <IncompleteNotice>
+              Aún no registraste tus años de experiencia. Complétalos para poder postularte a las vacantes.
+            </IncompleteNotice>
+          )}
         </div>
 
         {/* Row 4: Ciudad */}

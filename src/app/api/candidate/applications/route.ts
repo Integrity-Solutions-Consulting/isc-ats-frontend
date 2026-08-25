@@ -93,6 +93,7 @@ interface BackendApplication {
 interface BackendCandidateExpanded {
   id: number;
   user_id: number;
+  years_of_experience: number | null;
 }
 
 export async function GET() {
@@ -239,6 +240,17 @@ export async function POST(request: NextRequest) {
     );
     const candidate = candidates.items[0];
     if (!candidate) return NextResponse.json({ error: "Candidato no encontrado" }, { status: 404 });
+
+    // UX nicety, not the security boundary: the backend also rejects this at
+    // POST /recruitment/applications when the candidate came through the
+    // portal. Checking here just saves a round-trip and gives a friendly
+    // Spanish message instead of a raw backend 422.
+    if (candidate.years_of_experience === null || candidate.years_of_experience === undefined) {
+      return NextResponse.json(
+        { error: "Debes completar tus años de experiencia en tu perfil antes de postular." },
+        { status: 422 },
+      );
+    }
 
     // Get active application status id
     interface BackendParamPage { items: { id: number; code: string }[]; }

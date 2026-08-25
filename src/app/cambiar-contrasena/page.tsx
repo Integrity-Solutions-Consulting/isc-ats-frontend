@@ -4,7 +4,7 @@ import { AuthLayout } from '@/design-system/templates/AuthLayout';
 import { MandatoryPasswordChangeForm } from '@/features/auth/components/MandatoryPasswordChangeForm';
 
 export const metadata: Metadata = {
-  title: 'Cambiar contraseña · Mi Chamba',
+  title: 'Cambiar contraseña · Bolsa de Empleo',
 };
 
 // Mandatory-password-change gate. The proxy funnels accounts with a temporary

@@ -36,10 +36,6 @@ export function LegalModal({ doc, onClose }: LegalModalProps) {
               ))}
             </section>
           ))}
-
-          <p className="pt-2 text-xs text-ink-subtle">
-            Última actualización: {shown.lastUpdated}
-          </p>
         </div>
       )}
     </Modal>

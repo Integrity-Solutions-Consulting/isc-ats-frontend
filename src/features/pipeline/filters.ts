@@ -19,6 +19,8 @@ export interface PipelineFilters {
   /** Salary expectation bounds, both inclusive. */
   minSalary: number | null;
   maxSalary: number | null;
+  /** Minimum years of experience, inclusive. */
+  minExperience: number | null;
 }
 
 export const EMPTY_FILTERS: PipelineFilters = {
@@ -27,6 +29,7 @@ export const EMPTY_FILTERS: PipelineFilters = {
   studying: 'all',
   minSalary: null,
   maxSalary: null,
+  minExperience: null,
 };
 
 function passesMatch(card: PipelineCard, minMatch: number | null): boolean {
@@ -51,6 +54,14 @@ function passesSalary(
   return true;
 }
 
+function passesExperience(card: PipelineCard, minExperience: number | null): boolean {
+  if (minExperience === null) return true;
+  // An undeclared experience is unknown, not zero — it cannot be claimed to
+  // meet any minimum the recruiter asked for.
+  if (card.yearsOfExperience === null) return false;
+  return card.yearsOfExperience >= minExperience;
+}
+
 export function filterCards(
   cards: PipelineCard[],
   filters: PipelineFilters,
@@ -61,6 +72,7 @@ export function filterCards(
     if (filters.studying === 'yes' && !card.isStudying) return false;
     if (filters.studying === 'no' && card.isStudying) return false;
     if (!passesSalary(card, filters.minSalary, filters.maxSalary)) return false;
+    if (!passesExperience(card, filters.minExperience)) return false;
     return true;
   });
 }
@@ -83,6 +95,7 @@ export function hasActiveFilters(filters: PipelineFilters): boolean {
     filters.city !== '' ||
     filters.studying !== 'all' ||
     filters.minSalary !== null ||
-    filters.maxSalary !== null
+    filters.maxSalary !== null ||
+    filters.minExperience !== null
   );
 }

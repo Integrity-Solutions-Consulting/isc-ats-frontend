@@ -5,7 +5,7 @@ import { AuthLayout } from '@/design-system/templates/AuthLayout';
 import { ResetPasswordForm } from '@/features/auth/components/ResetPasswordForm';
 
 export const metadata: Metadata = {
-  title: 'Restablecer contraseña · Mi Chamba',
+  title: 'Restablecer contraseña · Bolsa de Empleo',
 };
 
 // ResetPasswordForm reads useSearchParams (the token), which requires a Suspense

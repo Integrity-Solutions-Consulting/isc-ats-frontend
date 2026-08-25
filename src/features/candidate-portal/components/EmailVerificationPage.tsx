@@ -51,7 +51,7 @@ export function EmailVerificationPage({ email = 'tu@correo.com' }: { email?: str
     <div className="integrity-public-theme flex min-h-dvh items-center justify-center bg-bg px-4">
       <div className="w-full max-w-[520px] rounded-2xl border border-border bg-card p-10 shadow-sm text-center">
         <div className="mb-6 flex justify-center">
-          <Brand tone="header" subtitle="Mi Chamba" />
+          <Brand tone="header" />
         </div>
 
         {/* Icon */}

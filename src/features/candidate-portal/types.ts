@@ -90,6 +90,8 @@ export interface CandidateProfile {
   lastName: string;
   email: string;
   phone: string;
+  /** Whole or half years (e.g. 0.5, 1.5) of professional experience. Null until the candidate fills it in on their profile — required to apply to a vacancy. */
+  yearsOfExperience: number | null;
   docType: 'cedula' | 'passport';
   idNumber: string;
   birthDate: string;
@@ -108,6 +110,11 @@ export interface CandidateProfile {
   cvFileName: string;
   cvSizeKb: number;
   cvUpdatedDaysAgo: number;
+  /** True once the candidate has ever decided (grant, refusal, or revoke) on
+   * marketing consent. Gates whether MarketingConsentModal shows on /mi-perfil. */
+  marketingConsentDecided: boolean;
+  /** True when a marketing consent grant is currently active (non-revoked). */
+  marketingConsentSubscribed: boolean;
   stats: {
     vacanciesViewed: number;
     applicationsCount: number;
