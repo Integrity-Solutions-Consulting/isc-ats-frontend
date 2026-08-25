@@ -1,13 +1,17 @@
 /**
  * Legal documents shown to candidates (Terms of Service & Privacy Policy).
  *
- * Drafted as a BASE TEMPLATE aligned with Ecuadorian law — notably the Ley
- * Orgánica de Protección de Datos Personales (LOPDP, R.O. Suplemento 459 of
- * 2021-05-26) and the ARCO+ data-subject rights. THIS IS NOT LEGAL ADVICE and
- * must be reviewed by the company's legal counsel before production use.
+ * Aligned with Ecuadorian law — notably the Ley Orgánica de Protección de Datos
+ * Personales (LOPDP, R.O. Suplemento 459 of 2021-05-26) and the ARCO+ rights.
+ * Reviewed by the company's external counsel in August 2026; those changes and
+ * the company's registration data are already applied here, so no placeholders
+ * remain. Any further edit to this text is a legal decision, not an editorial
+ * one — route it through counsel.
  *
- * Placeholders wrapped in brackets — e.g. [RUC], [dirección] — MUST be completed
- * with the company's real registration data and contact channels.
+ * Two points counsel raised are still open and deliberately NOT reflected here:
+ * whether a Data Protection Delegate has been formally designated, and whether
+ * candidates who accepted version 1.0 must re-consent (1.0 disclosed neither the
+ * automated CV scoring nor the international transfers).
  */
 
 export type LegalDocId = 'terms' | 'privacy';
@@ -137,7 +141,7 @@ export const PRIVACY: LegalDocument = {
     {
       heading: '1. Responsable del tratamiento',
       body: [
-        `Responsable: ${COMPANY}, con RUC [RUC: completar] y domicilio en [dirección: completar], Ecuador.`,
+        `Responsable: ${COMPANY}, con RUC 0992718498001 y domicilio en Pedro Carbo 613 entre Luque y Aguirre, Guayaquil, Ecuador.`,
         `Canal de contacto en materia de protección de datos: ${DATA_CONTACT}.`,
       ],
     },
