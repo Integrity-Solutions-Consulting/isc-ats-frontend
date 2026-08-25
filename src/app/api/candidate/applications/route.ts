@@ -247,7 +247,7 @@ export async function POST(request: NextRequest) {
     // Spanish message instead of a raw backend 422.
     if (candidate.years_of_experience === null || candidate.years_of_experience === undefined) {
       return NextResponse.json(
-        { error: "Completa tus años de experiencia en tu perfil antes de postular." },
+        { error: "Debes completar tus años de experiencia en tu perfil antes de postular." },
         { status: 422 },
       );
     }

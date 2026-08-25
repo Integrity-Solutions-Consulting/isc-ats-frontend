@@ -49,7 +49,7 @@ describe('POST /api/candidate/applications — years_of_experience gate', () => 
     const data = await res.json();
 
     expect(res.status).toBe(422);
-    expect(data.error).toBe('Completa tus años de experiencia en tu perfil antes de postular.');
+    expect(data.error).toBe('Debes completar tus años de experiencia en tu perfil antes de postular.');
     expect(backendPost).not.toHaveBeenCalled();
   });
 

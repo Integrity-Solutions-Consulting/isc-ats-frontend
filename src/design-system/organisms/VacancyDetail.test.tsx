@@ -48,14 +48,14 @@ async function applyWithSalary(onApply: (salary: number) => Promise<void>) {
 describe('VacancyDetail — apply error surfacing', () => {
   it('shows the backend/proxy error message when onApply rejects with an Error', async () => {
     const onApply = vi.fn().mockRejectedValue(
-      new Error('Completa tus años de experiencia en tu perfil antes de postular.'),
+      new Error('Debes completar tus años de experiencia en tu perfil antes de postular.'),
     );
 
     await applyWithSalary(onApply);
 
     await waitFor(() =>
       expect(
-        screen.getByText('Completa tus años de experiencia en tu perfil antes de postular.'),
+        screen.getByText('Debes completar tus años de experiencia en tu perfil antes de postular.'),
       ).toBeInTheDocument(),
     );
   });
