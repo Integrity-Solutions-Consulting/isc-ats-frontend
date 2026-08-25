@@ -263,8 +263,8 @@ export function RegistrationForm({ turnstileSiteKey = '' }: RegistrationFormProp
               {...register('marketing')}
             />
             <span>
-              Quiero recibir información sobre eventos, conferencias y novedades de
-              Integrity Solutions.
+              Quiero recibir información sobre eventos y novedades de Integrity
+              Solutions.
             </span>
           </label>
           <p className="pl-[26px] text-xs text-ink-subtle">
