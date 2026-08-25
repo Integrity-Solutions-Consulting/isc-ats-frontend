@@ -15,7 +15,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const vacancy = await getPublicVacancy(id);
   return {
-    title: vacancy ? `${vacancy.title} · Mi Chamba` : 'Vacante · Mi Chamba',
+    title: vacancy
+      ? `${vacancy.title} · Bolsa de Empleo`
+      : 'Vacante · Bolsa de Empleo',
   };
 }
 

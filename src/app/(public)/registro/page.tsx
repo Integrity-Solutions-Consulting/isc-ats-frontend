@@ -3,7 +3,7 @@ import { AuthLayout } from '@/design-system/templates/AuthLayout';
 import { RegistrationForm } from '@/features/candidate-portal/components/RegistrationForm';
 
 export const metadata: Metadata = {
-  title: 'Crear cuenta · Mi Chamba',
+  title: 'Crear cuenta · Bolsa de Empleo',
 };
 
 // Read the Turnstile site key at request time (server-side) so it comes from the

@@ -39,12 +39,12 @@ export function PublicHeader({ portalHref }: PublicHeaderProps) {
       {/* Mobile: logo floats free at the left edge, no shared pill background —
           avoids the empty-looking gap a full-width bar left in the middle. */}
       <div className="sm:hidden">
-        <Brand tone="header" subtitle="Mi Chamba" />
+        <Brand tone="header" />
       </div>
 
       {/* Desktop: original centered floating pill, unchanged */}
       <div className="hidden items-center gap-4 rounded-[100px] border border-border/80 bg-card/90 px-4 py-[5px] shadow-brand-md backdrop-blur-md sm:flex">
-        <Brand tone="header" subtitle="Mi Chamba" />
+        <Brand tone="header" />
 
         {portalHref ? (
           <>

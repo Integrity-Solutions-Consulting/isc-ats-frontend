@@ -13,9 +13,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   // Root fallback, inherited by the internal staff portal — its pages define no
-  // metadata of their own. Candidate routes override it with "· Mi Chamba".
-  // "Bolsa de Empleo" is the internal portal's name on purpose, not a leftover
-  // from the Mi Chamba rebrand.
+  // metadata of their own. Public and candidate routes suffix their own title
+  // with "· Bolsa de Empleo", the single product name across every portal.
   title: "Bolsa de Empleo · Integrity Solutions",
   description: "Portal interno de Bolsa de Empleo de Integrity Solutions",
 };
