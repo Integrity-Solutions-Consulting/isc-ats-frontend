@@ -164,19 +164,14 @@ export function UsersPage() {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 10;
 
-  // Derive unique role options from loaded users instead of a hardcoded array
-  const roleOptions = useMemo(() => {
-    const seen = new Set<string>();
-    for (const u of users) {
-      if (u.role && u.role !== 'Sin rol') {
-        for (const r of u.role.split(',')) {
-          const trimmed = r.trim();
-          if (trimmed) seen.add(trimmed);
-        }
-      }
-    }
-    return Array.from(seen).sort();
-  }, [users]);
+  // Options come from the role catalog, not from the roles the loaded users
+  // happen to hold: a freshly created role has no members yet, so deriving the
+  // list from `users` made it impossible to filter by — the exact reason the new
+  // Marketing role never appeared here.
+  const roleOptions = useMemo(
+    () => roles.map((r) => r.name).sort((a, b) => a.localeCompare(b, 'es')),
+    [roles],
+  );
 
   const filtered = [...users].sort((a, b) => Number(b.id) - Number(a.id)).filter((u) => {
     const q = search.toLowerCase();

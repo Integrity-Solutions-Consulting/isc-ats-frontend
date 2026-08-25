@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { backendGet, backendPost } from "@/lib/backendFetch";
+import { backendPost } from "@/lib/backendFetch";
+import { backendGetAllPages } from "@/lib/backendPages";
 
-interface BackendPage<T> { items: T[]; total: number; }
 interface BackendUser {
   id: number;
   email: string;
@@ -30,8 +30,8 @@ function mapUser(u: BackendUser) {
 
 export async function GET() {
   try {
-    const data = await backendGet<BackendPage<BackendUser>>("/auth/users?size=100");
-    return NextResponse.json(data.items.map(mapUser));
+    const users = await backendGetAllPages<BackendUser>("/auth/users");
+    return NextResponse.json(users.map(mapUser));
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
