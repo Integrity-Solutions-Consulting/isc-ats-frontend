@@ -90,6 +90,8 @@ export interface CandidateProfile {
   lastName: string;
   email: string;
   phone: string;
+  /** Whole or half years (e.g. 0.5, 1.5) of professional experience. Null until the candidate fills it in on their profile — required to apply to a vacancy. */
+  yearsOfExperience: number | null;
   docType: 'cedula' | 'passport';
   idNumber: string;
   birthDate: string;

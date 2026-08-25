@@ -1,3 +1,4 @@
+import { AlertTriangle } from 'lucide-react';
 import { Input } from '@/design-system/ui/input';
 import { cn } from '@/shared/utils';
 
@@ -31,6 +32,40 @@ export function FieldInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
     />
+  );
+}
+
+export function FieldNumberInput({
+  id,
+  value,
+  onChange,
+}: {
+  id?: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <Input
+      id={id}
+      type="number"
+      step="0.5"
+      min={0}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  );
+}
+
+// ─── Incomplete-field notice ────────────────────────────────────────────────
+// Same amber "parciales" visual language as PermissionModuleCard's partial-
+// coverage badge (Roles y permisos), reused here to flag an unfilled field.
+
+export function IncompleteNotice({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-warning/10 px-2.5 py-1 text-[12px] font-medium text-warning">
+      <AlertTriangle className="size-3.5 shrink-0" />
+      {children}
+    </p>
   );
 }
 

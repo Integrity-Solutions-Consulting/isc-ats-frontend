@@ -16,6 +16,7 @@ interface BackendCandidateExpanded {
   cedula: string | null;
   birth_date: string | null;
   phone: string | null;
+  years_of_experience: number | null;
   city: string | null;
   education_level: string | null;
   career: string | null;
@@ -92,6 +93,7 @@ export async function GET() {
       lastName: candidate.last_name,
       email: candidate.email,
       phone: candidate.phone ?? "",
+      yearsOfExperience: candidate.years_of_experience,
       docType: candidate.doc_type === "passport" ? "passport" : "cedula",
       idNumber: candidate.cedula ?? "",
       birthDate: candidate.birth_date ?? "",
@@ -141,6 +143,7 @@ export async function PATCH(request: Request) {
       firstName?: string;
       lastName?: string;
       phone?: string;
+      yearsOfExperience?: number | null;
       homeAddress?: string | null;
       universityId?: number | null;
       cityId?: number | null;
@@ -161,6 +164,7 @@ export async function PATCH(request: Request) {
     if (body.firstName !== undefined) payload.first_name = body.firstName;
     if (body.lastName !== undefined) payload.last_name = body.lastName;
     if (body.phone !== undefined) payload.phone = body.phone;
+    if (body.yearsOfExperience !== undefined) payload.years_of_experience = body.yearsOfExperience;
     if (body.homeAddress !== undefined) payload.home_address = body.homeAddress;
     if (body.universityId !== undefined) payload.university_id = body.universityId;
     if (body.cityId !== undefined) payload.city_id = body.cityId;

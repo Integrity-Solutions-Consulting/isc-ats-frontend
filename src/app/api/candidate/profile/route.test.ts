@@ -12,10 +12,11 @@ vi.mock('@/lib/decodeUserId', () => ({
 }));
 
 const backendGet = vi.fn();
+const backendPatch = vi.fn();
 
 vi.mock('@/lib/backendFetch', () => ({
   backendGet: (...args: unknown[]) => backendGet(...args),
-  backendPatch: vi.fn(),
+  backendPatch: (...args: unknown[]) => backendPatch(...args),
   backendPost: vi.fn(),
   BackendError: class BackendError extends Error {},
 }));
@@ -24,7 +25,7 @@ vi.mock('@/lib/sessionCookie', () => ({
   setSessionUserCookie: vi.fn(),
 }));
 
-import { GET } from './route';
+import { GET, PATCH } from './route';
 
 const BASE_CANDIDATE = {
   id: 1,
@@ -36,6 +37,7 @@ const BASE_CANDIDATE = {
   cedula: '0102030405',
   birth_date: null,
   phone: null,
+  years_of_experience: null,
   city: null,
   education_level: null,
   career: null,
@@ -92,5 +94,85 @@ describe('GET /api/candidate/profile — marketing consent merge (D5)', () => {
     expect(body.marketingConsentDecided).toBe(false);
     expect(body.marketingConsentSubscribed).toBe(false);
     expect(body.firstName).toBe('Ana');
+  });
+});
+
+describe('GET /api/candidate/profile — yearsOfExperience mapping', () => {
+  beforeEach(() => {
+    backendGet.mockReset();
+  });
+
+  it('maps years_of_experience straight through, null included', async () => {
+    backendGet.mockImplementation(async (path: string) => {
+      if (path.startsWith('/recruitment/candidates/expanded')) {
+        return { items: [BASE_CANDIDATE] };
+      }
+      if (path === '/auth/me/consents/marketing') {
+        return { decided: true, subscribed: false };
+      }
+      throw new Error(`Unexpected path: ${path}`);
+    });
+
+    const res = await GET();
+    const body = await res.json();
+
+    expect(body.yearsOfExperience).toBeNull();
+  });
+
+  it('maps a set years_of_experience value, decimals included', async () => {
+    backendGet.mockImplementation(async (path: string) => {
+      if (path.startsWith('/recruitment/candidates/expanded')) {
+        return { items: [{ ...BASE_CANDIDATE, years_of_experience: 2.5 }] };
+      }
+      if (path === '/auth/me/consents/marketing') {
+        return { decided: true, subscribed: false };
+      }
+      throw new Error(`Unexpected path: ${path}`);
+    });
+
+    const res = await GET();
+    const body = await res.json();
+
+    expect(body.yearsOfExperience).toBe(2.5);
+  });
+});
+
+describe('PATCH /api/candidate/profile — yearsOfExperience forwarding', () => {
+  beforeEach(() => {
+    backendPatch.mockReset();
+    backendPatch.mockResolvedValue({});
+  });
+
+  function makeRequest(body: unknown) {
+    return new Request('http://localhost/api/candidate/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it('forwards yearsOfExperience as years_of_experience when present', async () => {
+    await PATCH(makeRequest({ candidateId: 1, yearsOfExperience: 3.5 }));
+
+    expect(backendPatch).toHaveBeenCalledWith(
+      '/recruitment/candidates/1',
+      expect.objectContaining({ years_of_experience: 3.5 }),
+    );
+  });
+
+  it('forwards null to clear the value when explicitly sent', async () => {
+    await PATCH(makeRequest({ candidateId: 1, yearsOfExperience: null }));
+
+    expect(backendPatch).toHaveBeenCalledWith(
+      '/recruitment/candidates/1',
+      expect.objectContaining({ years_of_experience: null }),
+    );
+  });
+
+  it('omits years_of_experience entirely when not sent', async () => {
+    await PATCH(makeRequest({ candidateId: 1, phone: '0999999999' }));
+
+    const [, payload] = backendPatch.mock.calls[0];
+    expect(payload).not.toHaveProperty('years_of_experience');
   });
 });
