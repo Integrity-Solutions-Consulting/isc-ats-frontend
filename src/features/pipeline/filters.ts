@@ -99,3 +99,59 @@ export function hasActiveFilters(filters: PipelineFilters): boolean {
     filters.minExperience !== null
   );
 }
+
+// ─── URL round-trip ──────────────────────────────────────────────────────────
+
+/**
+ * Query-param names the filters travel under.
+ *
+ * The filters live in the URL rather than in component state alone because the
+ * recruiter leaves the board constantly — opening a candidate unmounts it, and
+ * a filter set that dies on every visit means retyping it dozens of times a day.
+ * The URL also survives a reload and can be shared as-is.
+ */
+export const FILTER_PARAM_KEYS = [
+  'minMatch',
+  'city',
+  'studying',
+  'minSalary',
+  'maxSalary',
+  'minExperience',
+] as const;
+
+/** A plain query bag — what a server page's `searchParams` already looks like. */
+export type FilterQuery = Record<string, string | undefined>;
+
+function paramToNumberOrNull(raw: string | undefined): number | null {
+  if (raw === undefined || raw.trim() === '') return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+/** Reads the filters back out of a URL, ignoring anything unparseable. */
+export function parseFilters(query: FilterQuery): PipelineFilters {
+  const studying = query.studying;
+  return {
+    minMatch: paramToNumberOrNull(query.minMatch),
+    city: query.city ?? '',
+    studying: studying === 'yes' || studying === 'no' ? studying : 'all',
+    minSalary: paramToNumberOrNull(query.minSalary),
+    maxSalary: paramToNumberOrNull(query.maxSalary),
+    minExperience: paramToNumberOrNull(query.minExperience),
+  };
+}
+
+/**
+ * Serializes only the active filters, so an untouched board keeps a clean URL
+ * and `parseFilters(filtersToParams(f))` round-trips back to `f`.
+ */
+export function filtersToParams(filters: PipelineFilters): Record<string, string> {
+  const params: Record<string, string> = {};
+  if (filters.minMatch !== null) params.minMatch = String(filters.minMatch);
+  if (filters.city !== '') params.city = filters.city;
+  if (filters.studying !== 'all') params.studying = filters.studying;
+  if (filters.minSalary !== null) params.minSalary = String(filters.minSalary);
+  if (filters.maxSalary !== null) params.maxSalary = String(filters.maxSalary);
+  if (filters.minExperience !== null) params.minExperience = String(filters.minExperience);
+  return params;
+}

@@ -1,13 +1,21 @@
 'use client';
 
 import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
-import { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useCallback, useMemo, useState } from 'react';
 
 import { Button } from '@/design-system/ui/button';
 import { PERM } from '@/features/auth/permissions';
 import { usePermissions } from '@/features/auth/PermissionsProvider';
 import { resolveDropAction } from '../dropAction';
-import { EMPTY_FILTERS, cityOptionsFrom, filterCards, type PipelineFilters } from '../filters';
+import {
+  FILTER_PARAM_KEYS,
+  cityOptionsFrom,
+  filterCards,
+  filtersToParams,
+  parseFilters,
+  type PipelineFilters,
+} from '../filters';
 import { useMovePipelineCard, usePipeline } from '../hooks/usePipeline';
 import type { PipelineCard } from '../types';
 import { CandidateCardOverlay } from './CandidateCard';
@@ -51,9 +59,14 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
   const { data: pipeline, isLoading, isError, refetch } = usePipeline(vacancyId);
   const { mutate: moveCard, isPending: isMoving } = useMovePipelineCard();
   const { has } = usePermissions();
+  const searchParams = useSearchParams();
   const canMove = has(PERM.applicationsUpdate);
   const [activeCard, setActiveCard] = useState<PipelineCard | null>(null);
-  const [filters, setFilters] = useState<PipelineFilters>(EMPTY_FILTERS);
+  // Seeded from the URL so returning from a candidate's profile — or reloading,
+  // or opening a shared link — lands on the same filtered board.
+  const [filters, setFilters] = useState<PipelineFilters>(() =>
+    parseFilters(Object.fromEntries(searchParams.entries())),
+  );
   const [pendingReject, setPendingReject] = useState<PendingReject | null>(null);
   const [rejectError, setRejectError] = useState<string | null>(null);
 
@@ -63,6 +76,23 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
   const allCards = useMemo(() => pipeline?.cards ?? [], [pipeline]);
   const visibleCards = useMemo(() => filterCards(allCards, filters), [allCards, filters]);
   const cityOptions = useMemo(() => cityOptionsFrom(allCards), [allCards]);
+  const filterParams = useMemo(() => filtersToParams(filters), [filters]);
+
+  const handleFiltersChange = useCallback((next: PipelineFilters) => {
+    setFilters(next);
+    // Mirrored into the URL with the native history API rather than
+    // `router.replace`: every keystroke in a numeric field would otherwise
+    // re-run the vacancy server page for data the board already holds.
+    const params = new URLSearchParams(window.location.search);
+    for (const key of FILTER_PARAM_KEYS) params.delete(key);
+    for (const [key, value] of Object.entries(filtersToParams(next))) params.set(key, value);
+    const qs = params.toString();
+    window.history.replaceState(
+      null,
+      '',
+      qs ? `${window.location.pathname}?${qs}` : window.location.pathname,
+    );
+  }, []);
 
   if (isLoading) return <BoardSkeleton />;
 
@@ -150,7 +180,7 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
     <div className="flex flex-col gap-4">
       <PipelineFilterBar
         filters={filters}
-        onChange={setFilters}
+        onChange={handleFiltersChange}
         cityOptions={cityOptions}
         shownCount={visibleCards.length}
         totalCount={allCards.length}
@@ -167,6 +197,7 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
                 stage={stage}
                 cards={stageCards}
                 canDrag={canMove}
+                filterParams={filterParams}
               />
             );
           })}

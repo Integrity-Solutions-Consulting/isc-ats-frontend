@@ -20,6 +20,22 @@ interface CandidateInVacancyQuery {
   total?: number;
   /** Talent-pool entry id, preserved for back navigation. */
   tpId?: string;
+  /**
+   * Pipeline stage the profile was opened from. It pins the prev/next queue to
+   * that stage, so moving a candidate forward does not empty the navigator.
+   */
+  stageId?: string;
+  /**
+   * Board filters, carried verbatim so the profile's queue matches the board
+   * the recruiter came from and the back link restores it untouched.
+   */
+  filters?: Record<string, string>;
+}
+
+/** Extra params are set last so a caller can never drop a required one. */
+function appendExtra(params: URLSearchParams, extra?: Record<string, string>): void {
+  if (!extra) return;
+  for (const [key, value] of Object.entries(extra)) params.set(key, value);
 }
 
 function candidateInVacancy(
@@ -36,6 +52,26 @@ function candidateInVacancy(
   if (query.pos != null) params.set('pos', String(query.pos));
   if (query.total != null) params.set('total', String(query.total));
   if (query.tpId) params.set('tpId', query.tpId);
+  if (query.stageId) params.set('stageId', query.stageId);
+  appendExtra(params, query.filters);
+
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
+}
+
+interface VacancyQuery {
+  tab?: string;
+  /** Pipeline filters to restore when returning to the board. */
+  filters?: Record<string, string>;
+}
+
+function vacancy(id: string, query?: VacancyQuery): string {
+  const base = `/vacantes/${id}`;
+  if (!query) return base;
+
+  const params = new URLSearchParams();
+  if (query.tab) params.set('tab', query.tab);
+  appendExtra(params, query.filters);
 
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;
@@ -57,7 +93,7 @@ export const ROUTES = {
   dashboard: '/',
   vacantes: '/vacantes',
   vacanteNueva: '/vacantes/nueva',
-  vacante: (id: string) => `/vacantes/${id}`,
+  vacante: vacancy,
   vacanteEditar: (id: string) => `/vacantes/${id}/editar`,
   candidatoEnVacante: candidateInVacancy,
   entrevistas: '/entrevistas',

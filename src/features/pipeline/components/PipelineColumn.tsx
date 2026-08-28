@@ -4,6 +4,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+import { ROUTES } from '@/shared/constants/routes';
 import { cn } from '@/shared/utils';
 import { sortCardsByMatch } from '../navigation';
 import type { PipelineCard, PipelineStage } from '../types';
@@ -15,12 +16,15 @@ interface PipelineColumnProps {
   cards: PipelineCard[];
   /** Gated by `has(PERM.applicationsUpdate)` at the board level. */
   canDrag?: boolean;
+  /** Active board filters, serialized — carried into the profile and back. */
+  filterParams?: Record<string, string>;
 }
 
 export function PipelineColumn({
   stage,
   cards,
   canDrag = true,
+  filterParams,
 }: PipelineColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   const router = useRouter();
@@ -101,10 +105,15 @@ export function PipelineColumn({
             card={card}
             canDrag={canDrag}
             onView={() => {
-              // The profile derives "X de N" and prev/next from the candidate's
-              // current stage, so only the appId needs to travel in the URL.
+              // The stage and the filters travel with the click so the profile
+              // can rebuild the exact queue the recruiter is working through —
+              // and hand it back untouched when they return to the board.
               router.push(
-                `/vacantes/${card.vacancyId}/candidato/${card.candidateId}?appId=${card.id}`,
+                ROUTES.candidatoEnVacante(card.vacancyId, card.candidateId, {
+                  appId: card.id,
+                  stageId: stage.id,
+                  filters: filterParams,
+                }),
               );
             }}
           />

@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 
 import { Input } from "@/design-system/ui/input";
 import { Combobox } from "@/design-system/molecules/Combobox";
-import { LEVEL_LABEL, STATUS_LABEL } from "../labels";
+import { STATUS_LABEL } from "../labels";
 import type {
   CatalogOption,
   SeniorityLevel,
@@ -27,11 +27,28 @@ const STATUS_COMBO_OPTIONS = [
   ...STATUS_OPTIONS.map(([value, label]) => ({ id: value, label })),
 ];
 
+type AuditStatus = Filters["isActiveFilter"];
+
+/**
+ * `satisfies` keeps this list and the `isActiveFilter` union tied together: add
+ * an option the union does not know about and this line stops compiling, rather
+ * than the list silently falling through every branch of the audit filter.
+ */
 const AUDIT_STATUS_OPTIONS = [
   { id: "active", label: "Estado: Activo" },
   { id: "inactive", label: "Estado: Inactivo" },
   { id: "all", label: "Estado: Todos" },
-];
+] satisfies { id: AuditStatus; label: string }[];
+
+/**
+ * `Combobox` is typed to emit a plain string, so the value is narrowed against
+ * the options themselves before it reaches the filter state. In `id` mode it
+ * only ever emits an option id, making this a boundary check — one that keeps
+ * the current selection instead of widening the list on an unknown value.
+ */
+function isAuditStatus(id: string): id is AuditStatus {
+  return AUDIT_STATUS_OPTIONS.some((option) => option.id === id);
+}
 
 export function VacancyFilters({
   filters,
@@ -93,7 +110,9 @@ export function VacancyFilters({
         aria-label="Filtrar por estado de auditoría"
         className="w-auto min-w-[150px]"
         value={filters.isActiveFilter}
-        onChange={(id) => onChange({ isActiveFilter: id as any })}
+        onChange={(id) => {
+          if (isAuditStatus(id)) onChange({ isActiveFilter: id });
+        }}
         options={AUDIT_STATUS_OPTIONS}
       />
     </div>

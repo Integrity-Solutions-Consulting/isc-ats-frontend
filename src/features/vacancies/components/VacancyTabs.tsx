@@ -35,7 +35,13 @@ export function VacancyTabs({ vacancy, initialTab }: VacancyTabsProps) {
     : 'pipeline';
 
   function handleTabChange(value: string) {
-    router.replace(`${pathname}?tab=${value}`);
+    // Every other param is preserved — leaving the pipeline tab for a moment
+    // must not throw away the filters the recruiter has set up. Read from the
+    // live URL rather than the hook: the board writes its filters with the
+    // native history API, which the hook is not guaranteed to have picked up.
+    const params = new URLSearchParams(window.location.search);
+    params.set('tab', value);
+    router.replace(`${pathname}?${params.toString()}`);
   }
 
   return (

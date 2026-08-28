@@ -21,9 +21,13 @@ interface CandidateHeaderProps {
   vacancyName: string;
   pos: number;
   total: number;
-  // Pipeline-only: candidates of the current stage, derived server-side so
-  // prev/next follow the candidate's current stage (undefined for talent pool).
+  // Pipeline-only: the queue of the stage under review, derived server-side
+  // (undefined for talent pool).
   navEntries?: PipelineNavEntry[];
+  /** Stage under review — kept in the URL so the queue survives a stage move. */
+  reviewStageId?: string;
+  /** Active board filters, carried so back and prev/next stay in that view. */
+  filterParams?: Record<string, string>;
   talentPoolId?: string;
 }
 
@@ -34,6 +38,8 @@ export function CandidateHeader({
   pos,
   total,
   navEntries,
+  reviewStageId,
+  filterParams,
   talentPoolId,
 }: CandidateHeaderProps) {
   const searchParams = useSearchParams();
@@ -57,12 +63,16 @@ export function CandidateHeader({
     }
     const entry = navEntries?.[targetPos - 1];
     if (!entry) return null;
+    // No pos/total here: the profile derives them from the reviewed stage, so
+    // sending a frozen position would only give it a chance to disagree.
     return ROUTES.candidatoEnVacante(entry.vacancyId, entry.candidateId, {
       appId: entry.appId,
-      pos: targetPos,
-      total,
+      stageId: reviewStageId,
+      filters: filterParams,
     });
   }
+
+  const boardUrl = ROUTES.vacante(vacancyId, { tab: 'pipeline', filters: filterParams });
 
   const prevUrl = pos > 1 ? buildNavUrl(pos - 1) : null;
   const nextUrl = pos < total ? buildNavUrl(pos + 1) : null;
@@ -72,7 +82,7 @@ return (
     <div className="flex items-center gap-3">
       {/* Back arrow */}
       <Button variant="ghost" size="icon" asChild aria-label="Volver">
-        <Link href={isTalentPool ? ROUTES.bancoTalento : ROUTES.vacante(vacancyId)}>
+        <Link href={isTalentPool ? ROUTES.bancoTalento : boardUrl}>
           <ArrowLeft className="h-4 w-4" />
         </Link>
       </Button>

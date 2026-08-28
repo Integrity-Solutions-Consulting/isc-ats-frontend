@@ -19,6 +19,7 @@ import {
 } from '@/features/candidates/hooks/useCandidates';
 import type { CandidateApplication, OtherApplication } from '@/features/candidates/types';
 import { getTalentPoolMembership } from '@/features/talent-pool/api/talentPoolApi';
+import { ROUTES } from '@/shared/constants/routes';
 import { AgendarEntrevistaModal } from '@/features/interviews/components/AgendarEntrevistaModal';
 
 interface StatusSidebarProps {
@@ -30,6 +31,10 @@ interface StatusSidebarProps {
   candidateInitials: string;
   candidateAvatarColor: string;
   position: string;
+  /** Next candidate waiting in the stage under review; null when it is done. */
+  nextInQueueUrl?: string | null;
+  /** The board the recruiter came from, filters included. */
+  boardUrl?: string;
 }
 
 export function StatusSidebar({
@@ -39,6 +44,8 @@ export function StatusSidebar({
   vacancyId,
   candidateName,
   position,
+  nextInQueueUrl,
+  boardUrl,
 }: StatusSidebarProps) {
   const router = useRouter();
   const { has } = usePermissions();
@@ -115,11 +122,26 @@ export function StatusSidebar({
     );
   };
 
+  /**
+   * The candidate has just left the stage under review, so staying here would
+   * strand the recruiter on a navigator of one. Jump straight to whoever is
+   * next in that stage — the whole point is to work the queue down without
+   * bouncing back to the board between candidates — and only return to the
+   * board once nobody is left.
+   */
+  const advanceQueue = () => {
+    // Refresh first: it clears the client router cache, so the destination is
+    // rendered against a pipeline that already knows this candidate moved.
+    // After the push it would target the route we are leaving instead.
+    router.refresh();
+    router.push(nextInQueueUrl ?? boardUrl ?? ROUTES.vacante(vacancyId));
+  };
+
   const handleMoveNext = () => {
     if (!nextStage) return;
     moveToNextMutation.mutate(
       { applicationId: application.id, toStageId: nextStage.id, vacancyId },
-      { onSuccess: () => router.refresh() },
+      { onSuccess: advanceQueue },
     );
   };
 
@@ -140,7 +162,8 @@ export function StatusSidebar({
       {
         onSuccess: () => {
           setConfirmRejectOpen(false);
-          router.refresh();
+          // A rejection empties the queue slot exactly like a move forward does.
+          advanceQueue();
         },
         onError: (err) =>
           setRejectError(err instanceof Error ? err.message : 'No se pudo rechazar al candidato.'),
