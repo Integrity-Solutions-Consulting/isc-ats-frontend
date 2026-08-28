@@ -4,7 +4,9 @@ import {
   EMPTY_FILTERS,
   cityOptionsFrom,
   filterCards,
+  filtersToParams,
   hasActiveFilters,
+  parseFilters,
   type PipelineFilters,
 } from "./filters";
 import type { PipelineCard } from "./types";
@@ -215,5 +217,40 @@ describe("hasActiveFilters", () => {
     expect(hasActiveFilters(withFilters({ minMatch: 0 }))).toBe(true);
     expect(hasActiveFilters(withFilters({ minSalary: 0 }))).toBe(true);
     expect(hasActiveFilters(withFilters({ minExperience: 0 }))).toBe(true);
+  });
+});
+
+describe("filters URL round-trip", () => {
+  it("writes nothing for an untouched board", () => {
+    expect(filtersToParams(EMPTY_FILTERS)).toEqual({});
+  });
+
+  it("restores every filter it wrote", () => {
+    const filters = withFilters({
+      minMatch: 75,
+      city: "Quito",
+      studying: "yes",
+      minSalary: 800,
+      maxSalary: 1200,
+      minExperience: 2.5,
+    });
+    expect(parseFilters(filtersToParams(filters))).toEqual(filters);
+  });
+
+  it("round-trips zero-valued filters instead of dropping them as falsy", () => {
+    // 0 is a threshold the recruiter deliberately typed. Serializing it away
+    // would silently widen the board after leaving and coming back.
+    const filters = withFilters({ minMatch: 0, minSalary: 0, minExperience: 0 });
+    expect(parseFilters(filtersToParams(filters))).toEqual(filters);
+  });
+
+  it("falls back to the empty set for a URL with no filter params", () => {
+    expect(parseFilters({})).toEqual(EMPTY_FILTERS);
+  });
+
+  it("ignores unparseable or unknown values rather than filtering by garbage", () => {
+    expect(parseFilters({ minMatch: "abc", studying: "maybe", minSalary: "" })).toEqual(
+      EMPTY_FILTERS,
+    );
   });
 });
