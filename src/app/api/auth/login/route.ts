@@ -70,13 +70,18 @@ export async function POST(request: NextRequest) {
     }
 
     let errorMsg = "Credenciales incorrectas";
+    // `code` is the machine-readable half of the answer: the UI branches on it
+    // instead of re-matching Spanish prose, so rewording the message can never
+    // silently disable the resend action attached to it.
+    let code: string | undefined;
     if (low.includes("not verified") || low.includes("verify") || low.includes("verificado")) {
       errorMsg = "Tu correo no está verificado. Revisa tu bandeja de entrada y haz clic en el enlace de confirmación.";
+      code = "email_not_verified";
     } else if (low.includes("inactive") || low.includes("not active") || low.includes("disabled")) {
       errorMsg = "Tu cuenta no está activa. Comunícate con soporte.";
     }
     return NextResponse.json(
-      { error: errorMsg },
+      { error: errorMsg, ...(code ? { code } : {}) },
       { status: backendRes.status === 401 ? 401 : 400 },
     );
   }
