@@ -27,6 +27,19 @@ function formatUploadDate(isoDatetime: string): string {
   return d.toLocaleDateString('es-EC', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+/**
+ * Undeclared experience reads as "No declarado", never as "0 años".
+ *
+ * The board lets recruiters filter by a minimum, so the two states must stay
+ * distinguishable here too: claiming zero for someone who simply never answered
+ * misreports them as having no experience at all.
+ */
+function formatExperience(years: number | null): string {
+  if (years === null) return 'No declarado';
+  const rounded = Number.isInteger(years) ? String(years) : years.toFixed(1);
+  return `${rounded} ${years === 1 ? 'año' : 'años'}`;
+}
+
 // ─── Row helper ──────────────────────────────────────────────────────────────
 
 interface RowProps {
@@ -34,11 +47,21 @@ interface RowProps {
   value: string;
 }
 
+/**
+ * An empty value reads as "No registrado" rather than as a blank line.
+ *
+ * Most of these fields are optional during onboarding, so blanks are common —
+ * and a label with nothing under it looks like the screen failed to load rather
+ * than like the candidate never answered.
+ */
 function Row({ label, value }: RowProps) {
+  const isBlank = value.trim() === '';
   return (
     <div>
       <p className="text-xs text-ink-subtle">{label}</p>
-      <p className="text-sm text-ink font-medium">{value}</p>
+      <p className={isBlank ? 'text-sm text-ink-subtle' : 'text-sm text-ink font-medium'}>
+        {isBlank ? 'No registrado' : value}
+      </p>
     </div>
   );
 }
@@ -58,7 +81,13 @@ export function PersonalDataCard({ candidate }: PersonalDataCardProps) {
       {/* Info grid */}
       <div className="grid grid-cols-2 gap-x-6 gap-y-4 mb-5">
         <Row label="Nombre completo" value={candidate.fullName} />
-        <Row label="Cédula" value={candidate.nationalId} />
+        {/* Foreign applicants register with a passport, and the number shown is
+            theirs — labelling it "Cédula" would contradict what the candidate
+            sees on their own profile for the same record. */}
+        <Row
+          label={candidate.docType === 'passport' ? 'Pasaporte' : 'Cédula'}
+          value={candidate.nationalId}
+        />
         {dobFormatted && (
           <Row
             label="Fecha de nacimiento"
@@ -68,8 +97,18 @@ export function PersonalDataCard({ candidate }: PersonalDataCardProps) {
         <Row label="Correo electrónico" value={candidate.email} />
         <Row label="Teléfono" value={candidate.phone} />
         <Row label="Ciudad" value={candidate.city} />
+        <Row label="Dirección domiciliaria" value={candidate.homeAddress} />
         <Row label="Nivel de instrucción" value={candidate.educationLevel} />
-        <Row label="Título" value={candidate.degree} />
+        {/* Carrera and Título are separate answers in the candidate's own form.
+            This card used to show the career under the "Título" label, so the
+            recruiter was reading one field believing it was the other. */}
+        <Row label="Carrera" value={candidate.career} />
+        <Row label="Título" value={candidate.title} />
+        <Row label="Universidad" value={candidate.university} />
+        <Row
+          label="Años de experiencia"
+          value={formatExperience(candidate.yearsOfExperience)}
+        />
         <Row label="Estudia actualmente" value={candidate.currentlyStudying ? 'Sí' : 'No'} />
         <Row
           label="Trabaja actualmente"

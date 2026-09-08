@@ -11,6 +11,7 @@ import { AIAnalysisSectionClient } from '@/features/candidates/components/AIAnal
 import { CandidateHeader } from '@/features/candidates/components/CandidateHeader';
 import { NotesCard } from '@/features/candidates/components/NotesCard';
 import { PersonalDataCard } from '@/features/candidates/components/PersonalDataCard';
+import { SalaryExpectationCard } from '@/features/candidates/components/SalaryExpectationCard';
 import { StatusSidebar } from '@/features/candidates/components/StatusSidebar';
 
 export default async function CandidateProfilePage({
@@ -88,10 +89,18 @@ export default async function CandidateProfilePage({
         {/* Left column */}
         <div className="flex flex-col gap-6 flex-1 min-w-0">
           {!isTalentPool && (
-            <AIAnalysisSectionClient
-              applicationId={application.id}
-              initialAnalysis={aiAnalysis}
-            />
+            <>
+              <AIAnalysisSectionClient
+                applicationId={application.id}
+                initialAnalysis={aiAnalysis}
+              />
+              {/* Application-scoped, so it is hidden in the talent pool, where
+                  the profile is not being read against one vacancy. */}
+              <SalaryExpectationCard
+                salaryExpectation={application.salaryExpectation}
+                appliedAt={application.createdAt}
+              />
+            </>
           )}
           <PersonalDataCard candidate={candidate} />
           <NotesCard applicationId={application.id} readOnly={isTalentPool} />

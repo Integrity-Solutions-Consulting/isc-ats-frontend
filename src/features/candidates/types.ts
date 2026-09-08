@@ -37,16 +37,25 @@ export interface Candidate {
   initials: string;
   avatarColor: string;
   avatarFileId?: number;
+  /** Drives the identity-document label: the number is a passport for foreign applicants. */
+  docType: 'cedula' | 'passport';
   nationalId: string;
   dateOfBirth: string; // ISO date
   email: string;
   phone: string;
   city: string;
+  homeAddress: string;
   educationLevel: string;
-  degree: string;
+  /** Field of study, e.g. "Ingeniería en Sistemas". */
+  career: string;
+  /** Awarded title, e.g. "Ingeniero" — a different field from the career. */
+  title: string;
+  university: string;
   currentlyStudying: boolean;
   currentlyEmployed: boolean;
   currentEmployer: string | null;
+  /** null = never declared their experience (distinct from a declared 0). */
+  yearsOfExperience: number | null;
   cv: CandidateCV;
   isActive?: boolean;
 }
@@ -60,7 +69,12 @@ export interface CandidateApplication {
   currentStatusId: number | null;
   matchPercent: number | null;
   matchStatus: MatchStatus;
-  salaryExpectation: number;
+  /**
+   * What the candidate asked for on THIS application — the same person can ask
+   * for a different amount on another vacancy. null = never declared, which is
+   * distinct from a declared 0.
+   */
+  salaryExpectation: number | null;
   createdAt: string;
   updatedAt: string;
 }
