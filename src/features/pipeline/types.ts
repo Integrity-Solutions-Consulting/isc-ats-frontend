@@ -29,6 +29,8 @@ export interface PipelineCard {
   stageStatus: CandidateStageStatus;
   /** Candidate's city of residence; null when not on record. */
   city: string | null;
+  /** Candidate's university; null when not on record. */
+  university: string | null;
   isStudying: boolean;
   /** null = never declared an expectation (distinct from a declared 0). */
   salaryExpectation: number | null;

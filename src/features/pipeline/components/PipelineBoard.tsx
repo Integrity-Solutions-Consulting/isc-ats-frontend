@@ -14,6 +14,7 @@ import {
   filterCards,
   filtersToParams,
   parseFilters,
+  universityOptionsFrom,
   type PipelineFilters,
 } from '../filters';
 import { useMovePipelineCard, usePipeline } from '../hooks/usePipeline';
@@ -76,6 +77,7 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
   const allCards = useMemo(() => pipeline?.cards ?? [], [pipeline]);
   const visibleCards = useMemo(() => filterCards(allCards, filters), [allCards, filters]);
   const cityOptions = useMemo(() => cityOptionsFrom(allCards), [allCards]);
+  const universityOptions = useMemo(() => universityOptionsFrom(allCards), [allCards]);
   const filterParams = useMemo(() => filtersToParams(filters), [filters]);
 
   const handleFiltersChange = useCallback((next: PipelineFilters) => {
@@ -182,6 +184,7 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
         filters={filters}
         onChange={handleFiltersChange}
         cityOptions={cityOptions}
+        universityOptions={universityOptions}
         shownCount={visibleCards.length}
         totalCount={allCards.length}
       />

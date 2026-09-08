@@ -8,7 +8,22 @@ interface BackendApplication {
   id: number; vacancy_id: number; candidate_id: number;
   current_stage_id: number | null; current_status_id: number | null;
   match_score: string | null;
+  // Decimal on the backend, which Pydantic serializes as a JSON string.
+  salary_expectation: string | null;
   applied_at: string; updated_at: string | null; is_active: boolean;
+}
+
+/**
+ * `null` stays `null` — an undeclared expectation is unknown, not zero.
+ *
+ * The check is explicitly against null rather than a truthiness test: the string
+ * "0.00" is truthy so it would survive either way, but a declared 0 is a real
+ * answer and the intent must not depend on that accident.
+ */
+function toNumberOrNull(raw: string | null | undefined): number | null {
+  if (raw === null || raw === undefined) return null;
+  const parsed = parseFloat(raw);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 export async function GET(
@@ -27,7 +42,7 @@ export async function GET(
       stageStatus: "pending_review",
       matchPercent: data.match_score ? parseFloat(data.match_score) : null,
       matchStatus: data.match_score ? "done" : "analyzing",
-      salaryExpectation: 0,
+      salaryExpectation: toNumberOrNull(data.salary_expectation),
       createdAt: data.applied_at,
       updatedAt: data.updated_at ?? data.applied_at,
     };

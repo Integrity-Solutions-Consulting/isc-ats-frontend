@@ -22,6 +22,7 @@ const samplePipeline: VacancyPipeline = {
       matchStatus: "done",
       stageStatus: "pending_review",
       city: "Guayaquil",
+      university: "ESPOL",
       isStudying: false,
       salaryExpectation: 1200,
       yearsOfExperience: 3,
