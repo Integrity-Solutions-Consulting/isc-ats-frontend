@@ -7,6 +7,7 @@ import {
   Shield,
   Workflow,
   FileText,
+  FileOutput,
   ListChecks,
   Building,
   Contact,
@@ -54,6 +55,7 @@ export const PORTAL_NAV: NavGroup[] = [
       { label: "Usuarios", href: ROUTES.configuracion.usuarios, icon: UserCog, permission: PERM.users },
       { label: "Roles y permisos", href: ROUTES.configuracion.roles, icon: Shield, permission: PERM.roles },
       { label: "Suscriptores", href: ROUTES.configuracion.suscriptores, icon: Mail, permission: PERM.subscribers },
+      { label: "Convertir CV", href: ROUTES.convertirCv, icon: FileOutput },
     ],
   },
 ];

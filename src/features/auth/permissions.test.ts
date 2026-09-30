@@ -31,3 +31,5 @@ describe("PERM", () => {
     expect(PERM.vacancies).toBe("recruitment.vacancies.read");
   });
 });
+
+//comentario de pruebaS

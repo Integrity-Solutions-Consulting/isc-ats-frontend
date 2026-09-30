@@ -110,6 +110,7 @@ export const ROUTES = {
   },
   miPerfil: '/mi-perfil',
   reportes: '/reportes',
+  convertirCv: '/convertir-cv',
   configuracion: {
     plantillas: '/configuracion/plantillas',
     plantillaNueva: '/configuracion/plantillas/nueva',
