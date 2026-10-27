@@ -16,21 +16,15 @@ interface ComboboxProps {
   placeholder?: string;
   id?: string;
   className?: string;
-  /** Override classes on the input itself (className targets the outer wrapper). */
   inputClassName?: string;
   "aria-invalid"?: boolean;
   "aria-label"?: string;
   disabled?: boolean;
-  /**
-   * What `value`/`onChange` carry:
-   * - "label" (default): free-text combobox. `value` is the typed text and
-   *   `onChange` emits whatever the user types or selects (the option label).
-   *   Use for open fields like a job title.
-   * - "id": strict searchable select. `value` is the selected option id and
-   *   `onChange` emits the option id. The input shows the matching label and
-   *   typing only filters — it never becomes the value. Use for FK fields.
-   */
   valueKey?: "label" | "id";
+  /** En modo id, muestra el placeholder cuando el valor es vacío. */
+  emptyValueShowsPlaceholder?: boolean;
+  /** En modo id, limpia la búsqueda al abrir sin cambiar la selección. */
+  clearSearchOnOpen?: boolean;
 }
 
 export function Combobox({
@@ -45,22 +39,22 @@ export function Combobox({
   "aria-label": ariaLabel,
   disabled,
   valueKey = "label",
+  emptyValueShowsPlaceholder = false,
+  clearSearchOnOpen = false,
 }: ComboboxProps) {
   const isIdMode = valueKey === "id";
-
-  // The text shown in the input for the current value. In id mode it is the
-  // label of the selected option; in label mode the value is itself the text.
+  const labelForOption = (option: ComboboxOption) =>
+    isIdMode && emptyValueShowsPlaceholder && option.id === ""
+      ? ""
+      : option.label;
   const selectedLabel = isIdMode
-    ? options.find((o) => o.id === value)?.label ?? ""
+    ? emptyValueShowsPlaceholder && value === ""
+      ? ""
+      : (options.find((option) => option.id === value)?.label ?? "")
     : value;
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(selectedLabel);
-  // getDerivedState pattern: setState during render → React re-renders synchronously.
-  // Sync the visible text when the selected label changes. Keying on the label
-  // (not the raw value) also handles id mode where options load asynchronously
-  // after the value is set (e.g. the edit form resolves the label once catalogs
-  // arrive). While typing in id mode the label is unchanged, so it never clobbers.
   const [prevSelectedLabel, setPrevSelectedLabel] = useState(selectedLabel);
   if (selectedLabel !== prevSelectedLabel) {
     setPrevSelectedLabel(selectedLabel);
@@ -69,8 +63,6 @@ export function Combobox({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const justFocusedRef = useRef(false);
-  // Latest selected label, read inside the outside-click handler to restore the
-  // input when the user clicks away after typing a non-matching query (id mode).
   const selectedLabelRef = useRef(selectedLabel);
   useEffect(() => {
     selectedLabelRef.current = selectedLabel;
@@ -80,8 +72,11 @@ export function Combobox({
   const listboxId = id ? `${id}-listbox` : `${generatedId}-listbox`;
 
   useEffect(() => {
-    function onMouseDown(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+    function onMouseDown(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setOpen(false);
         justFocusedRef.current = false;
         if (isIdMode) setQuery(selectedLabelRef.current);
@@ -91,26 +86,40 @@ export function Combobox({
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, [isIdMode]);
 
-  // Until the user actually edits the text, the input still shows the current
-  // selection's label — filtering against it would hide every other option.
-  // Treat "untouched" query (still equal to the selected label) as no filter.
   const filtered =
     query.length === 0 || query === selectedLabel
       ? options
-      : options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()));
+      : options.filter((option) =>
+          option.label.toLowerCase().includes(query.toLowerCase()),
+        );
+
+  const openList = () => {
+    if (isIdMode && clearSearchOnOpen) setQuery("");
+    setOpen(true);
+  };
+
+  const closeList = () => {
+    setOpen(false);
+    justFocusedRef.current = false;
+    if (isIdMode) setQuery(selectedLabel);
+  };
+
+  const selectOption = (option: ComboboxOption) => {
+    onChange(isIdMode ? option.id : option.label);
+    setQuery(labelForOption(option));
+    setOpen(false);
+    justFocusedRef.current = false;
+  };
 
   return (
-    <div
-      ref={containerRef}
-      className={cn("relative", className)}
-    >
+    <div ref={containerRef} className={cn("relative", className)}>
       <input
         id={id}
         type="text"
         autoComplete="off"
         disabled={disabled}
         value={query}
-        placeholder={placeholder}
+        placeholder={open && isIdMode && clearSearchOnOpen ? "" : placeholder}
         role="combobox"
         aria-expanded={open}
         aria-haspopup="listbox"
@@ -118,40 +127,40 @@ export function Combobox({
         aria-invalid={ariaInvalid}
         aria-label={ariaLabel}
         aria-autocomplete="list"
-        onChange={(e) => {
-          setQuery(e.target.value);
-          // In id mode, typing only filters — free text is never a valid value.
-          if (!isIdMode) onChange(e.target.value);
+        onChange={(event) => {
+          setQuery(event.target.value);
+          if (!isIdMode) onChange(event.target.value);
           setOpen(true);
         }}
         onFocus={() => {
-          setOpen(true);
+          openList();
           justFocusedRef.current = true;
         }}
         onClick={() => {
           if (justFocusedRef.current) {
             justFocusedRef.current = false;
+          } else if (open) {
+            closeList();
           } else {
-            setOpen((prev) => !prev);
+            openList();
           }
         }}
         onBlur={() => {
+          // Una selección con el ratón evita el blur mediante preventDefault.
+          setOpen(false);
+          justFocusedRef.current = false;
           if (isIdMode) setQuery(selectedLabelRef.current);
         }}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") {
-            setOpen(false);
-            justFocusedRef.current = false;
-            if (isIdMode) setQuery(selectedLabel);
-          } else if (e.key === "Enter") {
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            closeList();
+          } else if (event.key === "Enter") {
             if (open && filtered.length > 0) {
-              e.preventDefault();
-              const top = filtered[0];
-              onChange(isIdMode ? top.id : top.label);
-              setQuery(top.label);
+              event.preventDefault();
+              selectOption(filtered[0]);
+            } else {
+              closeList();
             }
-            setOpen(false);
-            justFocusedRef.current = false;
           }
         }}
         className={cn(
@@ -163,9 +172,7 @@ export function Combobox({
           inputClassName,
         )}
       />
-      <ChevronDown
-        className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-ink-subtle"
-      />
+      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-ink-subtle" />
       {open && (
         <ul
           id={listboxId}
@@ -174,17 +181,17 @@ export function Combobox({
         >
           {filtered.length > 0 ? (
             filtered.map((option) => {
-              const selected = isIdMode ? value === option.id : value === option.label;
+              const selected = isIdMode
+                ? value === option.id
+                : value === option.label;
               return (
                 <li
                   key={option.id}
                   role="option"
                   aria-selected={selected}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    onChange(isIdMode ? option.id : option.label);
-                    setQuery(option.label);
-                    setOpen(false);
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    selectOption(option);
                   }}
                   className={cn(
                     "cursor-pointer px-3 py-2 text-sm text-ink hover:bg-surface-2",

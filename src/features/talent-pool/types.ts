@@ -13,6 +13,8 @@ export interface TalentPoolEntry {
   matchPercent: number;
   savedAt: string;
   isActive: boolean;
+  skills: string[];
+  tools: string[];
 }
 
 export interface TalentPoolFilters {
@@ -20,4 +22,6 @@ export interface TalentPoolFilters {
   career: string | null;
   vacancyId: string | null;
   status: string;
+  skill: string | null;
+  tool: string | null;
 }
