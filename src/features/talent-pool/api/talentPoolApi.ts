@@ -1,7 +1,18 @@
-import type { TalentPoolEntry } from '../types';
+import type { TalentPoolEntry, TalentPoolFilters } from "../types";
 
-export async function listTalentPool(): Promise<TalentPoolEntry[]> {
-  const res = await fetch('/api/talent-pool', { cache: 'no-store' });
+export async function listTalentPool(
+  filters?: Partial<TalentPoolFilters>,
+): Promise<TalentPoolEntry[]> {
+  const qs = new URLSearchParams();
+  if (filters?.search) qs.set("search", filters.search);
+  if (filters?.skill) qs.set("skill", filters.skill);
+  if (filters?.tool) qs.set("tool", filters.tool);
+  if (filters?.vacancyId) qs.set("source_vacancy_id", filters.vacancyId);
+
+  const queryStr = qs.toString();
+  const url = queryStr ? `/api/talent-pool?${queryStr}` : "/api/talent-pool";
+
+  const res = await fetch(url, { cache: "no-store" });
   if (res.ok) return res.json() as Promise<TalentPoolEntry[]>;
   return [];
 }
@@ -21,7 +32,7 @@ export async function getTalentPoolMembership(
     source_vacancy_id: sourceVacancyId,
   });
   const res = await fetch(`/api/talent-pool/membership?${qs.toString()}`, {
-    cache: 'no-store',
+    cache: "no-store",
   });
   if (res.ok) return res.json() as Promise<TalentPoolMembership>;
   return { inPool: false, entryId: null };
@@ -29,7 +40,8 @@ export async function getTalentPoolMembership(
 
 export async function removeFromTalentPool(id: string): Promise<void> {
   const res = await fetch(`/api/talent-pool/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
-  if (!res.ok) throw new Error('Error al remover el candidato del banco de talento');
+  if (!res.ok)
+    throw new Error("Error al remover el candidato del banco de talento");
 }
