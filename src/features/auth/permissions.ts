@@ -10,46 +10,47 @@
  * The "view" (read) code of a section is what gates entering it.
  */
 export const PERM = {
-  vacancies: 'recruitment.vacancies.read',
-  interviewsAgenda: 'recruitment.interviews.read_agenda',
-  talentPool: 'talent.talent_pool.read',
-  profileTemplates: 'org.profile_templates.read',
-  processes: 'org.processes.read',
-  clients: 'org.client_companies.read',
-  contacts: 'org.contacts.read',
-  parameters: 'org.parameters.read',
-  departments: 'org.departments.read',
-  users: 'auth.users.read',
-  roles: 'auth.roles.read',
-  subscribers: 'auth.subscribers.read',
+  vacancies: "recruitment.vacancies.read",
+  interviewsAgenda: "recruitment.interviews.read_agenda",
+  talentPool: "talent.talent_pool.read",
+  candidates: "recruitment.candidates.read",
+  profileTemplates: "org.profile_templates.read",
+  processes: "org.processes.read",
+  clients: "org.client_companies.read",
+  contacts: "org.contacts.read",
+  parameters: "org.parameters.read",
+  departments: "org.departments.read",
+  users: "auth.users.read",
+  roles: "auth.roles.read",
+  subscribers: "auth.subscribers.read",
   // Action-level codes — gate specific write actions rather than whole routes.
-  vacanciesCreate: 'recruitment.vacancies.create',
-  processStagesCreate: 'org.process_stages.create',
-  vacanciesPublish: 'recruitment.vacancies.publish',
-  vacanciesUpdate: 'recruitment.vacancies.update',
-  vacanciesDelete: 'recruitment.vacancies.delete',
-  applicationsCreate: 'recruitment.applications.create',
-  applicationsUpdate: 'recruitment.applications.update',
-  applicationsDelete: 'recruitment.applications.delete',
-  applicationNotesCreate: 'recruitment.application_notes.create',
-  interviewsCreate: 'recruitment.interviews.create',
-  filesRead: 'storage.files.read',
-  contactsCreate: 'org.contacts.create',
-  contactsUpdate: 'org.contacts.update',
-  contactsDelete: 'org.contacts.delete',
+  vacanciesCreate: "recruitment.vacancies.create",
+  processStagesCreate: "org.process_stages.create",
+  vacanciesPublish: "recruitment.vacancies.publish",
+  vacanciesUpdate: "recruitment.vacancies.update",
+  vacanciesDelete: "recruitment.vacancies.delete",
+  applicationsCreate: "recruitment.applications.create",
+  applicationsUpdate: "recruitment.applications.update",
+  applicationsDelete: "recruitment.applications.delete",
+  applicationNotesCreate: "recruitment.application_notes.create",
+  interviewsCreate: "recruitment.interviews.create",
+  filesRead: "storage.files.read",
+  contactsCreate: "org.contacts.create",
+  contactsUpdate: "org.contacts.update",
+  contactsDelete: "org.contacts.delete",
   // Admin-only gate for the (now read-only) Clientes page. Clients are a live
   // mirror of the external TMR system, so no BDE role manages them — every
   // internal role keeps `clients` (org.client_companies.read) for the vacancy
   // form's client dropdown, but only Admin holds this write code (granted to no
   // other role), so gating the page by it makes it Admin-only without touching
   // the dropdown's read access.
-  clientsManage: 'org.client_companies.create',
-  departmentsCreate: 'org.departments.create',
-  departmentsUpdate: 'org.departments.update',
-  departmentsDelete: 'org.departments.delete',
-  interviewerAvailability: 'recruitment.interviewer_availability.read',
-  vacancyPromoImagesCreate: 'ai.vacancy_promo_images.create',
-  vacancyPromoImagesDelete: 'ai.vacancy_promo_images.delete',
+  clientsManage: "org.client_companies.create",
+  departmentsCreate: "org.departments.create",
+  departmentsUpdate: "org.departments.update",
+  departmentsDelete: "org.departments.delete",
+  interviewerAvailability: "recruitment.interviewer_availability.read",
+  vacancyPromoImagesCreate: "ai.vacancy_promo_images.create",
+  vacancyPromoImagesDelete: "ai.vacancy_promo_images.delete",
 } as const;
 
 export type PermissionCode = (typeof PERM)[keyof typeof PERM];
@@ -62,18 +63,19 @@ export type PermissionCode = (typeof PERM)[keyof typeof PERM];
  * permission and stay reachable by any authenticated staff user.
  */
 const ROUTE_PERMISSIONS: { prefix: string; permission: PermissionCode }[] = [
-  { prefix: '/configuracion/plantillas', permission: PERM.profileTemplates },
-  { prefix: '/configuracion/procesos', permission: PERM.processes },
-  { prefix: '/configuracion/clientes', permission: PERM.clientsManage },
-  { prefix: '/configuracion/contactos', permission: PERM.contacts },
-  { prefix: '/configuracion/catalogos', permission: PERM.parameters },
-  { prefix: '/configuracion/usuarios', permission: PERM.users },
-  { prefix: '/configuracion/roles', permission: PERM.roles },
-  { prefix: '/configuracion/suscriptores', permission: PERM.subscribers },
-  { prefix: '/vacantes', permission: PERM.vacancies },
-  { prefix: '/entrevistas', permission: PERM.interviewsAgenda },
-  { prefix: '/banco-talento', permission: PERM.talentPool },
-  { prefix: '/reportes', permission: PERM.vacancies },
+  { prefix: "/configuracion/plantillas", permission: PERM.profileTemplates },
+  { prefix: "/configuracion/procesos", permission: PERM.processes },
+  { prefix: "/configuracion/clientes", permission: PERM.clientsManage },
+  { prefix: "/configuracion/contactos", permission: PERM.contacts },
+  { prefix: "/configuracion/catalogos", permission: PERM.parameters },
+  { prefix: "/configuracion/usuarios", permission: PERM.users },
+  { prefix: "/configuracion/roles", permission: PERM.roles },
+  { prefix: "/configuracion/suscriptores", permission: PERM.subscribers },
+  { prefix: "/vacantes", permission: PERM.vacancies },
+  { prefix: "/entrevistas", permission: PERM.interviewsAgenda },
+  { prefix: "/banco-talento", permission: PERM.talentPool },
+  { prefix: "/candidatos", permission: PERM.candidates },
+  { prefix: "/reportes", permission: PERM.vacancies },
 ];
 
 function matchesPrefix(path: string, prefix: string): boolean {
@@ -86,7 +88,7 @@ function matchesPrefix(path: string, prefix: string): boolean {
  * prefix so nested config routes are not shadowed by a shorter sibling.
  */
 export function permissionForPath(path: string): PermissionCode | null {
-  const clean = path.split('?')[0];
+  const clean = path.split("?")[0];
   let best: { prefix: string; permission: PermissionCode } | null = null;
   for (const entry of ROUTE_PERMISSIONS) {
     if (matchesPrefix(clean, entry.prefix)) {

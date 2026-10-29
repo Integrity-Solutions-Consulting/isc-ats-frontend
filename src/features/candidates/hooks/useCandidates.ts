@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   useMutation,
@@ -6,9 +6,9 @@ import {
   useQueryClient,
   type UseMutationResult,
   type UseQueryResult,
-} from '@tanstack/react-query';
+} from "@tanstack/react-query";
 
-import { pipelineKeys } from '@/features/pipeline/hooks/usePipeline';
+import { pipelineKeys } from "@/features/pipeline/hooks/usePipeline";
 // pipelineKeys is intentionally imported from features/pipeline: invalidating the
 // pipeline query cache after a stage move is a coordinated cross-domain side-effect,
 // not a type dependency. This is documented here so the coupling stays explicit.
@@ -19,30 +19,35 @@ import {
   getCandidateApplication,
   getCandidateNotes,
   getOtherApplications,
+  listCandidateDirectory,
   moveToNextStage,
   rejectCandidate,
   updateStageStatus,
-} from '../api/candidatesApi';
+} from "../api/candidatesApi";
 import type {
   AIAnalysis,
   CandidateApplication,
+  CandidateDirectoryEntry,
+  CandidateDirectoryFilters,
   CandidateNote,
   OtherApplication,
-} from '../types';
-import type { CandidateStageStatus } from '@/shared/types/pipeline';
+} from "../types";
+import type { CandidateStageStatus } from "@/shared/types/pipeline";
 
 // ─── Query keys ──────────────────────────────────────────────────────────────
 
 export const candidateKeys = {
-  all: ['candidates'] as const,
+  all: ["candidates"] as const,
+  directory: (filters?: Partial<CandidateDirectoryFilters>) =>
+    ["candidates", "directory", filters] as const,
   application: (applicationId: string) =>
-    ['candidates', 'application', applicationId] as const,
+    ["candidates", "application", applicationId] as const,
   aiAnalysis: (applicationId: string) =>
-    ['candidates', 'ai-analysis', applicationId] as const,
+    ["candidates", "ai-analysis", applicationId] as const,
   notes: (applicationId: string) =>
-    ['candidates', 'notes', applicationId] as const,
+    ["candidates", "notes", applicationId] as const,
   otherApplications: (candidateId: string) =>
-    ['candidates', 'other-applications', candidateId] as const,
+    ["candidates", "other-applications", candidateId] as const,
 };
 
 // ─── Queries ─────────────────────────────────────────────────────────────────
@@ -87,9 +92,20 @@ export function useOtherApplications(
   });
 }
 
+export function useCandidateDirectory(
+  filters?: Partial<CandidateDirectoryFilters>,
+): UseQueryResult<CandidateDirectoryEntry[]> {
+  return useQuery({
+    queryKey: candidateKeys.directory(filters),
+    queryFn: () => listCandidateDirectory(filters),
+  });
+}
+
 // ─── Mutations ───────────────────────────────────────────────────────────────
 
-export function useAddNote(applicationId: string): UseMutationResult<
+export function useAddNote(
+  applicationId: string,
+): UseMutationResult<
   CandidateNote,
   Error,
   { body: string; author: { name: string; initials: string } }
@@ -99,10 +115,12 @@ export function useAddNote(applicationId: string): UseMutationResult<
   return useMutation({
     mutationFn: ({ body, author }) => addNote(applicationId, body, author),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: candidateKeys.notes(applicationId) });
+      queryClient.invalidateQueries({
+        queryKey: candidateKeys.notes(applicationId),
+      });
     },
     onError: (error: Error) => {
-      console.error('[useAddNote]', error);
+      console.error("[useAddNote]", error);
     },
   });
 }
@@ -154,7 +172,8 @@ export function useRejectCandidate(): UseMutationResult<
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ applicationId, rejectionReason }) => rejectCandidate(applicationId, rejectionReason),
+    mutationFn: ({ applicationId, rejectionReason }) =>
+      rejectCandidate(applicationId, rejectionReason),
     onSuccess: (_data, { applicationId, vacancyId }) => {
       queryClient.invalidateQueries({
         queryKey: pipelineKeys.pipeline(vacancyId),
@@ -169,9 +188,16 @@ export function useRejectCandidate(): UseMutationResult<
 export function useAddToTalentPool(): UseMutationResult<
   void,
   Error,
-  { candidateId: string; vacancyId: string }
+  { candidateId: string; vacancyId?: string | null }
 > {
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: ({ candidateId, vacancyId }) => addToTalentPool(candidateId, vacancyId),
+    mutationFn: ({ candidateId, vacancyId }) =>
+      addToTalentPool(candidateId, vacancyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: candidateKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["talent-pool"] });
+    },
   });
 }
