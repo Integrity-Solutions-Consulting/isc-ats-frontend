@@ -20,8 +20,13 @@ export function PortalSidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { loaded, has } = usePermissions();
+  const from = searchParams.get("from");
   const currentPath =
-    searchParams.get("from") === "banco-talento" ? ROUTES.bancoTalento : pathname;
+    from === "banco-talento"
+      ? ROUTES.bancoTalento
+      : from === "candidatos" || pathname.startsWith("/candidatos")
+        ? ROUTES.candidatos
+        : pathname;
 
   // Until permissions resolve, show the full menu (fail-open); once known, hide
   // entries the user cannot access and drop any group left empty.
@@ -29,7 +34,9 @@ export function PortalSidebar() {
     if (!loaded) return PORTAL_NAV;
     return PORTAL_NAV.map((group) => ({
       ...group,
-      items: group.items.filter((item) => !item.permission || has(item.permission)),
+      items: group.items.filter(
+        (item) => !item.permission || has(item.permission),
+      ),
     })).filter((group) => group.items.length > 0);
   }, [loaded, has]);
 

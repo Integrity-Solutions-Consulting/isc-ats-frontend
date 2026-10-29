@@ -1,6 +1,9 @@
-import type { CandidateStageStatus, MatchStatus } from '@/shared/types/pipeline';
+import type {
+  CandidateStageStatus,
+  MatchStatus,
+} from "@/shared/types/pipeline";
 
-export type AITagMatch = 'match' | 'miss' | 'neutral';
+export type AITagMatch = "match" | "miss" | "neutral";
 
 export interface AIExtractedTag {
   label: string;
@@ -9,8 +12,8 @@ export interface AIExtractedTag {
 
 export interface AIAnalysis {
   applicationId?: string;
-  isAnalyzing?: boolean;       // true = still pending
-  noTextLayer?: boolean;       // true = CV has no extractable text
+  isAnalyzing?: boolean; // true = still pending
+  noTextLayer?: boolean; // true = CV has no extractable text
   matchPercent: number | null;
   summary: string;
   strengths: string[];
@@ -38,7 +41,7 @@ export interface Candidate {
   avatarColor: string;
   avatarFileId?: number;
   /** Drives the identity-document label: the number is a passport for foreign applicants. */
-  docType: 'cedula' | 'passport';
+  docType: "cedula" | "passport";
   nationalId: string;
   dateOfBirth: string; // ISO date
   email: string;
@@ -94,4 +97,36 @@ export interface OtherApplication {
   vacancyTitle: string;
   companyName: string;
   statusLabel: string; // display string, e.g. "Llamada de validación"
+}
+
+export interface CandidateAppliedVacancy {
+  vacancyId: string;
+  vacancyTitle: string;
+  matchPercent: number | null;
+}
+
+export interface CandidateDirectoryEntry {
+  id: string;
+  candidateName: string;
+  candidateInitials: string;
+  avatarColor: string;
+  candidateAvatarFileId?: number;
+  career: string;
+  phone: string;
+  email: string;
+  isActive: boolean;
+  vacancies: CandidateAppliedVacancy[];
+  inTalentPool: boolean;
+  talentPoolEntryId?: string | null;
+  skills: string[];
+  tools: string[];
+  createdAt: string;
+}
+
+export interface CandidateDirectoryFilters {
+  search: string;
+  career: string | null;
+  vacancyId: string | null;
+  status: string;
+  technology: string | null;
 }
