@@ -1,10 +1,10 @@
 'use client';
 
 import { differenceInYears, parseISO } from 'date-fns';
-import { Download, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 
-import { Button } from '@/design-system/ui/button';
 import type { Candidate } from '@/features/candidates/types';
+import { CandidateCvActions } from './CandidateCvActions';
 
 interface PersonalDataCardProps {
   candidate: Candidate;
@@ -136,21 +136,7 @@ export function PersonalDataCard({ candidate }: PersonalDataCardProps) {
           )}
         </div>
         {candidate.cv.fileId && (
-          <div className="flex gap-2 shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => window.open(`${candidate.cv.url}?view=1`, '_blank')}
-            >
-              Ver
-            </Button>
-            <Button variant="ghost" size="sm" asChild>
-              <a href={candidate.cv.url} download>
-                <Download className="h-4 w-4" />
-                Descargar
-              </a>
-            </Button>
-          </div>
+          <CandidateCvActions fileId={candidate.cv.fileId} />
         )}
       </div>
     </div>

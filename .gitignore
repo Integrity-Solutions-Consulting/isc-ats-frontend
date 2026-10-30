@@ -69,3 +69,4 @@ tmp/
 # Agent guide and internal docs — not published to the company repository
 CLAUDE.md
 /docs/
+docker-compose.yml

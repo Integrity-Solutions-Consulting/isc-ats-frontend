@@ -17,6 +17,7 @@ import {
   useAddToTalentPool,
 } from "../hooks/useCandidates";
 import { useCandidateDirectoryNavStore } from "@/shared/stores/candidateDirectoryNavStore";
+import { CandidateCvActions } from "./CandidateCvActions";
 import type { CandidateDirectoryEntry } from "../types";
 
 const normalizeTechnology = (value: string) =>
@@ -421,6 +422,27 @@ export function CandidatesPage() {
           {e.isActive ? "Activo" : "Inactivo"}
         </Badge>
       ),
+    },
+    {
+      key: "cv",
+      header: "CV",
+      align: "center",
+      width: "w-[96px]",
+      render: (e) =>
+        e.cvFileId ? (
+          <CandidateCvActions
+            fileId={e.cvFileId}
+            compact
+            subject={e.candidateName}
+          />
+        ) : (
+          <span
+            className="text-xs text-ink-subtle"
+            title="El candidato no ha subido su hoja de vida."
+          >
+            Sin CV
+          </span>
+        ),
     },
   ];
 
