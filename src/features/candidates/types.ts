@@ -111,6 +111,8 @@ export interface CandidateDirectoryEntry {
   candidateInitials: string;
   avatarColor: string;
   candidateAvatarFileId?: number;
+  /** Storage file id of the CV; null when the candidate has not uploaded one. */
+  cvFileId?: number | null;
   career: string;
   phone: string;
   email: string;
