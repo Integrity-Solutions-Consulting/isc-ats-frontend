@@ -150,6 +150,7 @@ export async function GET(request: NextRequest) {
               ).toUpperCase() || "C",
             avatarColor: AVATAR_COLORS[c.candidate_id % AVATAR_COLORS.length],
             candidateAvatarFileId: c.avatar_file_id ?? undefined,
+            cvFileId: c.cv_file_id ?? null,
             career: c.career ?? "Sin carrera especificada",
             phone: c.phone ?? "Sin teléfono",
             email: c.email ?? "",
