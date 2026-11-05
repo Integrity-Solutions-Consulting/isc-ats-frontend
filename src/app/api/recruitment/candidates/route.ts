@@ -53,7 +53,7 @@ interface BackendDirectoryPage {
   total: number;
 }
 
-/** `null` stays `null` — undeclared experience is unknown, not zero. */
+/** `null` stays `null` â€” undeclared experience is unknown, not zero. */
 function toNumberOrNull(raw: string | null | undefined): number | null {
   if (raw === null || raw === undefined) return null;
   const parsed = parseFloat(raw);
@@ -123,21 +123,37 @@ export async function GET(request: NextRequest) {
         if (candidates.length >= data.total) break;
         if (data.items.length === 0) {
           throw new Error(
-            "La API devolvió una página vacía antes de completar el directorio.",
+            "La API devolviÃ³ una pÃ¡gina vacÃ­a antes de completar el directorio.",
           );
         }
       }
 
+      // Application ids keep each row and its analysis tied to the same submission.
+      const applications: { id: number; candidate_id: number; vacancy_id: number; vacancy_name?: string | null; match_score: string | number | null; is_active: boolean }[] = [];
+      for (let page = 1; ; page++) {
+        const result = await backendGet<{ items: typeof applications; total: number }>(
+          `/recruitment/applications?page=${page}&size=100`,
+        );
+        applications.push(...result.items);
+        if (applications.length >= result.total) break;
+        if (!result.items.length) throw new Error("No se pudieron cargar todas las postulaciones.");
+      }
+      const byCandidate = new Map<number, typeof applications>();
+      for (const application of applications) {
+        if (!application.is_active) continue;
+        const group = byCandidate.get(application.candidate_id) ?? [];
+        group.push(application);
+        byCandidate.set(application.candidate_id, group);
+      }
+
       const directoryEntries: CandidateDirectoryEntry[] = candidates.map(
         (c) => {
-          const vacancies: CandidateAppliedVacancy[] = c.applied_vacancies.map(
-            (v) => ({
-              vacancyId: String(v.id),
-              vacancyTitle: v.title,
-              matchPercent:
-                v.match_score != null
-                  ? Math.round(Number(v.match_score))
-                  : null,
+          const vacancies: CandidateAppliedVacancy[] = (byCandidate.get(c.candidate_id) ?? []).map(
+            (app) => ({
+              applicationId: String(app.id),
+              vacancyId: String(app.vacancy_id),
+              vacancyTitle: app.vacancy_name ?? c.applied_vacancies.find((v) => v.id === app.vacancy_id)?.title ?? "Vacante",
+              matchPercent: app.match_score != null && Number.isFinite(Number(app.match_score)) ? Math.round(Number(app.match_score)) : null,
             }),
           );
 
@@ -152,7 +168,7 @@ export async function GET(request: NextRequest) {
             candidateAvatarFileId: c.avatar_file_id ?? undefined,
             cvFileId: c.cv_file_id ?? null,
             career: c.career ?? "Sin carrera especificada",
-            phone: c.phone ?? "Sin teléfono",
+            phone: c.phone ?? "Sin telÃ©fono",
             email: c.email ?? "",
             isActive: c.is_active,
             vacancies,

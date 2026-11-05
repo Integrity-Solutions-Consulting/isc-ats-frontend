@@ -10,7 +10,7 @@ export interface TalentPoolEntry {
   email: string;
   vacancyId: string;
   vacancyTitle: string;
-  matchPercent: number;
+  matchPercent: number | null;
   savedAt: string;
   isActive: boolean;
   skills: string[];

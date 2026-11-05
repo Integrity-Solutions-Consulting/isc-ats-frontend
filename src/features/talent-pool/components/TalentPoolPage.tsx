@@ -7,6 +7,8 @@ import { X } from "lucide-react";
 import { Badge } from "@/design-system/ui/badge";
 import { Button } from "@/design-system/ui/button";
 import { DataTable, type ColumnDef } from "@/design-system/organisms/DataTable";
+import { Pagination } from "@/design-system/molecules/Pagination";
+import { usePagedData } from "@/shared/hooks/usePagedData";
 import { FilterBar } from "@/design-system/molecules/FilterBar";
 import { Combobox } from "@/design-system/molecules/Combobox";
 import { Avatar } from "@/design-system/atoms/Avatar";
@@ -36,6 +38,8 @@ type UnifiedTalentPoolFilters = Omit<TalentPoolFilters, "skill" | "tool"> & {
   technology: string | null;
 };
 
+const PAGE_SIZE = 10;
+
 const MATCH_COLORS = (pct: number) => {
   if (pct >= 75) return "text-success bg-success/10";
   if (pct >= 50) return "text-warning bg-warning/10";
@@ -44,16 +48,17 @@ const MATCH_COLORS = (pct: number) => {
 
 export function TalentPoolPage() {
   const router = useRouter();
-  const { data: entries = [], isLoading } = useTalentPool();
   const setNavEntries = useTalentPoolNavStore((s) => s.setEntries);
 
   const [filters, setFilters] = useState<UnifiedTalentPoolFilters>({
     search: "",
     career: null,
     vacancyId: null,
-    status: "",
+    status: "active",
     technology: null,
   });
+
+  const { data: entries = [], isLoading } = useTalentPool({ status: filters.status });
 
   const careers = useMemo(() => {
     return Array.from(
@@ -88,7 +93,7 @@ export function TalentPoolPage() {
     filters.search ||
     filters.career ||
     filters.vacancyId ||
-    filters.status ||
+    filters.status !== "active" ||
     filters.technology,
   );
 
@@ -97,7 +102,7 @@ export function TalentPoolPage() {
       search: "",
       career: null,
       vacancyId: null,
-      status: "",
+      status: "active",
       technology: null,
     });
   };
@@ -146,6 +151,8 @@ export function TalentPoolPage() {
         return true;
       });
   }, [entries, filters]);
+
+  const { pageRows, page, pageCount, goPrev, goNext } = usePagedData(filtered, PAGE_SIZE);
 
   const columns: ColumnDef<TalentPoolEntry>[] = [
     {
@@ -252,8 +259,10 @@ export function TalentPoolPage() {
     {
       key: "match",
       header: "Match",
-      align: "right",
-      render: (e) => (
+      align: "center",
+      render: (e) => e.matchPercent == null ? (
+        <span className="text-ink-muted">-</span>
+      ) : (
         <span
           className={cn(
             "rounded-full px-2 py-0.5 text-xs font-medium",
@@ -366,7 +375,7 @@ export function TalentPoolPage() {
 
       <DataTable
         columns={columns}
-        data={filtered}
+        data={pageRows}
         rowKey={(e) => e.id}
         isLoading={isLoading}
         onRowClick={(entry) => {
@@ -385,12 +394,16 @@ export function TalentPoolPage() {
         emptyState={{ title: "Sin resultados para los filtros seleccionados." }}
       />
 
-      <div className="text-sm text-ink-muted">
-        Mostrando {filtered.length} de{" "}
-        <span className="font-medium text-ink">{entries.length}</span> candidato
-        {entries.length !== 1 ? "s" : ""} guardado
-        {entries.length !== 1 ? "s" : ""}
-      </div>
+      {!isLoading && (
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-ink-muted">
+          <span role="status">
+            Mostrando {filtered.length === 0 ? 0 : page * PAGE_SIZE + 1}
+            {filtered.length > 0 ? `-${page * PAGE_SIZE + pageRows.length}` : ""} de{" "}
+            <span className="font-medium text-ink">{filtered.length}</span> candidatos
+          </span>
+          <Pagination page={page} pageCount={pageCount} onPrev={goPrev} onNext={goNext} />
+        </div>
+      )}
     </div>
   );
 }
