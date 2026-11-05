@@ -20,6 +20,16 @@ interface BackendVacancyItem {
 interface BackendParam { id: number; name: string; }
 interface BackendPage<T> { items: T[]; total: number; }
 
+async function getAllPages<T>(path: string): Promise<BackendPage<T>> {
+  const items: T[] = [];
+  for (let page = 1; ; page++) {
+    const result = await backendGet<BackendPage<T>>(`${path}&page=${page}`);
+    items.push(...result.items);
+    if (items.length >= result.total) return { items, total: result.total };
+    if (!result.items.length) throw new Error("No se pudieron cargar todas las postulaciones.");
+  }
+}
+
 // GET /api/recruitment/applications?candidate_id=123
 // Lists every application a candidate has, resolved with vacancy + status labels.
 // Used by the "Otras postulaciones" card on the candidate profile.
@@ -30,10 +40,10 @@ export async function GET(request: NextRequest) {
 
   try {
     const [appsPage, vacanciesPage, statusesPage] = await Promise.all([
-      backendGet<BackendPage<BackendApplication>>(
+      getAllPages<BackendApplication>(
         `/recruitment/applications?candidate_id=${candidateId}&size=100`,
       ),
-      backendGet<BackendPage<BackendVacancyItem>>(
+      getAllPages<BackendVacancyItem>(
         "/recruitment/vacancies/expanded?size=100&include_inactive=true",
       ),
       backendGet<BackendPage<BackendParam>>("/org/parameters?type=application_status&size=50"),
