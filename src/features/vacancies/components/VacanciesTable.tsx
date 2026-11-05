@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/design-system/ui/badge";
 import { Pagination } from "@/design-system/molecules/Pagination";
 import { DataTable, type ColumnDef } from "@/design-system/organisms/DataTable";
-import { usePagedData } from "@/shared/hooks/usePagedData";
 import {
   LEVEL_LABEL,
   STATUS_BADGE_VARIANT,
@@ -66,10 +65,19 @@ const COLUMNS: ColumnDef<Vacancy>[] = [
   },
 ];
 
-export function VacanciesTable({ data }: { data: Vacancy[] }) {
+interface VacanciesTableProps {
+  data: Vacancy[];
+  pageIndex: number;
+  onPageChange: (pageIndex: number) => void;
+}
+
+export function VacanciesTable({ data, pageIndex, onPageChange }: VacanciesTableProps) {
   const router = useRouter();
   const sorted = useMemo(() => [...data].sort((a, b) => Number(b.id) - Number(a.id)), [data]);
-  const { pageRows, page, pageCount, goPrev, goNext } = usePagedData(sorted, PAGE_SIZE);
+  const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  // A vacancy may have been removed while the detail was open.
+  const page = Math.max(0, Math.min(pageIndex, pageCount - 1));
+  const pageRows = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
     <div className="flex flex-col gap-3">
@@ -86,7 +94,12 @@ export function VacanciesTable({ data }: { data: Vacancy[] }) {
           Mostrando {pageRows.length} de{" "}
           <span className="font-medium text-ink">{data.length}</span> vacantes
         </span>
-        <Pagination page={page} pageCount={pageCount} onPrev={goPrev} onNext={goNext} />
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          onPrev={() => onPageChange(Math.max(0, page - 1))}
+          onNext={() => onPageChange(Math.min(pageCount - 1, page + 1))}
+        />
       </div>
     </div>
   );

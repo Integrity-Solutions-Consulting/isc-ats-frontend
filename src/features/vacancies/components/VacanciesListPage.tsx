@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { Briefcase, Download, Loader2, Plus } from "lucide-react";
 
@@ -9,29 +9,20 @@ import { EmptyState } from "@/design-system/molecules/EmptyState";
 import { VacancyFilters } from "./VacancyFilters";
 import { VacanciesTable } from "./VacanciesTable";
 import { useVacancies, useVacancyCatalogs } from "../hooks/useVacancies";
-import type { VacancyFilters as Filters } from "../types";
+import { useVacanciesListStore } from "@/shared/stores/vacanciesListStore";
 import { ROUTES } from "@/shared/constants/routes";
 import { PERM } from "@/features/auth/permissions";
 import { usePermissions } from "@/features/auth/PermissionsProvider";
-
-const INITIAL_FILTERS: Filters = {
-  search: "",
-  clientCompany: null,
-  department: null,
-  status: null,
-  level: null,
-  isActiveFilter: "active",
-};
 
 export function VacanciesListPage() {
   const { data: vacancies, isLoading, isError } = useVacancies();
   const { data: catalogs } = useVacancyCatalogs();
   const { has } = usePermissions();
   const canCreate = has(PERM.vacanciesCreate);
-  const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
-
-  const onChange = (patch: Partial<Filters>) =>
-    setFilters((prev) => ({ ...prev, ...patch }));
+  const filters = useVacanciesListStore((state) => state.filters);
+  const changeFilters = useVacanciesListStore((state) => state.setFilters);
+  const pageIndex = useVacanciesListStore((state) => state.page);
+  const changePage = useVacanciesListStore((state) => state.setPage);
 
   const filtered = useMemo(() => {
     if (!vacancies) return [];
@@ -74,7 +65,7 @@ export function VacanciesListPage() {
 
       <VacancyFilters
         filters={filters}
-        onChange={onChange}
+        onChange={changeFilters}
         clients={catalogs?.clients ?? []}
         departments={catalogs?.departments ?? []}
         levels={catalogs?.resourceLevels ?? []}
@@ -97,7 +88,7 @@ export function VacanciesListPage() {
           description="No hay vacantes que coincidan con los filtros aplicados."
         />
       ) : (
-        <VacanciesTable data={filtered} />
+        <VacanciesTable data={filtered} pageIndex={pageIndex} onPageChange={changePage} />
       )}
     </div>
   );
