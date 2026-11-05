@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { backendGet, backendPost } from "@/lib/backendFetch";
-
-interface BackendPage<T> {
-  items: T[];
-  total: number;
-}
+import { backendPost } from "@/lib/backendFetch";
+import { backendGetAllPages } from "@/lib/backendPages";
 
 interface BackendTalentPoolRead {
   id: number;
@@ -69,8 +65,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     const backendParams = new URLSearchParams({
-      size: "100",
-      include_inactive: "true",
+      include_inactive: String(searchParams.get("include_inactive") === "true"),
     });
 
     const skill = searchParams.get("skill");
@@ -86,28 +81,28 @@ export async function GET(request: NextRequest) {
     if (vacancyId) backendParams.set("source_vacancy_id", vacancyId);
     if (candidateId) backendParams.set("candidate_id", candidateId);
 
-    const [entriesPage, candidatesPage, vacanciesPage, applicationsPage] =
+    const [entries, candidates, vacancies, applications] =
       await Promise.all([
-        backendGet<BackendPage<BackendTalentPoolRead>>(
+        backendGetAllPages<BackendTalentPoolRead>(
           `/talent/talent-pool?${backendParams.toString()}`,
         ),
-        backendGet<BackendPage<BackendCandidateExpanded>>(
-          "/recruitment/candidates/expanded?size=100",
+        backendGetAllPages<BackendCandidateExpanded>(
+          "/recruitment/candidates/expanded",
         ),
-        backendGet<BackendPage<BackendVacancyListItem>>(
-          "/recruitment/vacancies/expanded?size=100",
+        backendGetAllPages<BackendVacancyListItem>(
+          "/recruitment/vacancies/expanded",
         ),
-        backendGet<BackendPage<BackendApplication>>(
-          "/recruitment/applications?size=100",
+        backendGetAllPages<BackendApplication>(
+          "/recruitment/applications",
         ),
       ]);
 
-    const candidateMap = new Map(candidatesPage.items.map((c) => [c.id, c]));
-    const vacancyMap = new Map(vacanciesPage.items.map((v) => [v.id, v]));
+    const candidateMap = new Map(candidates.map((c) => [c.id, c]));
+    const vacancyMap = new Map(vacancies.map((v) => [v.id, v]));
 
     // Map candidateId + vacancyId to match_score
     const appMatchMap = new Map<string, number>();
-    for (const app of applicationsPage.items) {
+    for (const app of applications) {
       if (app.match_score != null) {
         appMatchMap.set(
           `${app.candidate_id}:${app.vacancy_id}`,
@@ -116,7 +111,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const resolvedEntries = entriesPage.items
+    const resolvedEntries = entries
       .map((entry) => {
         const candidate = candidateMap.get(entry.candidate_id);
 
@@ -138,8 +133,8 @@ export async function GET(request: NextRequest) {
         const matchPercent = entry.source_vacancy_id
           ? (appMatchMap.get(
               `${entry.candidate_id}:${entry.source_vacancy_id}`,
-            ) ?? 80)
-          : 80;
+            ) ?? null)
+          : null;
 
         const avatarFileId =
           entry.avatar_file_id ?? candidate?.avatar_file_id ?? undefined;

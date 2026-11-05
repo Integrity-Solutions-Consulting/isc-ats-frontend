@@ -4,6 +4,9 @@ export async function listTalentPool(
   filters?: Partial<TalentPoolFilters>,
 ): Promise<TalentPoolEntry[]> {
   const qs = new URLSearchParams();
+  if (filters?.status === "inactive" || filters?.status === "") {
+    qs.set("include_inactive", "true");
+  }
   if (filters?.search) qs.set("search", filters.search);
   if (filters?.skill) qs.set("skill", filters.skill);
   if (filters?.tool) qs.set("tool", filters.tool);
