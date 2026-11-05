@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#050a22" />
+  <meta name="description" content="Bolsa de empleo de Integrity Solutions: sitio en mantenimiento. Envía tu CV a Talento Humano." />
+  <title>Mantenimiento | Integrity Solutions</title>
+  <style>
+    :root { color-scheme: dark; --navy:#050a22; --blue:#079fdb; --muted:#a9bad5; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--navy); color:#fff; }
+    main { min-height:100vh; display:grid; grid-template-columns:minmax(360px, 1fr) minmax(0, 1.12fr); }
+    .message { min-width:0; padding:clamp(32px,6vw,82px); display:flex; flex-direction:column; justify-content:center; }
+    .brand { display:flex; align-items:center; margin-bottom:clamp(42px,8vh,82px); }
+    .brand-logo { width:min(270px,100%); height:auto; display:block; padding:12px 18px; border-radius:10px; }
+    .eyebrow { color:#34b9f0;text-transform:uppercase;letter-spacing:.16em;font-size:12px;font-weight:700;margin:0 0 16px; }
+    h1 { font-size:clamp(36px,5vw,58px);line-height:1.04;letter-spacing:-1.8px;margin:0 0 20px;max-width:560px; }
+    .intro { color:var(--muted);font-size:17px;line-height:1.7;max-width:520px;margin:0 0 30px; }
+    .card { max-width:520px;padding:22px;border:1px solid #243251;background:#0c1533;border-radius:14px;overflow-wrap:anywhere; }
+    .card p { margin:0;color:#dce7f8;line-height:1.65; }
+    .card strong { color:#fff; }
+    .button { display:inline-flex;justify-content:center;align-items:center;gap:10px;margin-top:20px;min-height:52px;padding:12px 22px;background:var(--blue);color:var(--navy);text-decoration:none;font-weight:700;border-radius:9px;transition:background .2s,transform .2s; }
+    .button:hover { background:#34b9f0;transform:translateY(-1px); }
+    .button:focus-visible { outline:3px solid #fff;outline-offset:4px; }
+    .note { color:#8495b4!important;font-size:13px;margin-top:13px!important; }
+    footer { color:#8294b5;font-size:14px;margin-top:clamp(44px,9vh,90px); }
+    .visual { position:relative;min-height:100vh;overflow:hidden;background:radial-gradient(ellipse at 72% 25%,#164580 0%,transparent 40%),linear-gradient(145deg,#112f61,#07112d 66%);display:flex;align-items:flex-end;padding:clamp(32px,5vw,68px); }
+    .visual:before,.visual:after { content:"";position:absolute;border:1px solid #4b8bcc33;border-radius:50%;width:min(65vw,760px);aspect-ratio:1;top:8%;left:10%; }
+    .visual:after { width:min(48vw,550px);top:20%;left:22%;border-color:#65b9ef30; }
+    .orb { position:absolute;width:240px;height:240px;border-radius:50%;top:26%;left:43%;background:linear-gradient(135deg,#26b6e5,#1250a2 65%,#07112d);box-shadow:0 0 100px #149dde55;opacity:.72; }
+    .visual-copy { position:relative;z-index:1;max-width:500px; }
+    .visual-copy .line { width:56px;height:4px;background:var(--blue);margin-bottom:20px; }
+    .visual-copy h2 { font-size:clamp(27px,3.4vw,42px);line-height:1.17;letter-spacing:-1px;margin:0; }
+    .visual-copy p {color:#b8c8e1;line-height:1.6;margin:14px 0 0;}
+    @media(max-width:760px) { main {grid-template-columns:1fr;} .message {padding:34px 26px;} .brand {margin-bottom:48px;} .visual {min-height:300px;padding:34px 26px;} footer {margin-top:48px;} }
+    @media(prefers-reduced-motion:reduce) { .button {transition:none;} .button:hover {transform:none;} }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="message" aria-labelledby="title">
+      <div class="brand"><img class="brand-logo" src="/brand/logo_integrity_full.svg" width="130" height="50" alt="Integrity Solutions" /></div>
+      <p class="eyebrow">Bolsa de empleo</p>
+      <h1 id="title">Estamos en mantenimiento</h1>
+      <p class="intro">Estamos realizando mejoras para ofrecerte una mejor experiencia. Muy pronto podrás volver a explorar nuestras oportunidades laborales.</p>
+      <div class="card">
+        <p>Mientras tanto, envía tu CV a <strong>talentohumano@integritysolutions.com.ec</strong> e incluye en el asunto el <strong>nombre de la vacante</strong> a la que deseas postular.</p>
+        <a class="button" href="mailto:talentohumano@integritysolutions.com.ec?subject=Postulaci%C3%B3n%20-%20Nombre%20de%20la%20vacante&amp;body=Hola%2C%20adjunto%20mi%20CV%20para%20la%20vacante%3A%20%5Bescribe%20el%20nombre%5D.">Enviar mi CV por correo <span aria-hidden="true">→</span></a>
+        <p class="note">Recuerda adjuntar tu hoja de vida antes de enviar el mensaje.</p>
+      </div>
+      <footer>© 2026 Integrity Solutions</footer>
+    </section>
+    <aside class="visual" aria-label="Mensaje de Integrity Solutions">
+      <div class="orb" aria-hidden="true"></div>
+      <div class="visual-copy"><div class="line" aria-hidden="true"></div><h2>Conectando el mejor talento con las mejores oportunidades</h2><p>Gracias por tu interés en formar parte de nuestro equipo.</p></div>
+    </aside>
+  </main>
+</body>
+</html>
