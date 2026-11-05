@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Plus, X } from "lucide-react";
 
+import { Pagination } from "@/design-system/molecules/Pagination";
 import { Badge } from "@/design-system/ui/badge";
 import { Button } from "@/design-system/ui/button";
 import { DataTable, type ColumnDef } from "@/design-system/organisms/DataTable";
@@ -18,6 +19,7 @@ import {
 } from "../hooks/useCandidates";
 import { useCandidateDirectoryNavStore } from "@/shared/stores/candidateDirectoryNavStore";
 import { CandidateCvActions } from "./CandidateCvActions";
+import { getCandidateDirectoryRows, type CandidateDirectoryRow } from "../directoryRows";
 import type { CandidateDirectoryEntry } from "../types";
 
 const normalizeTechnology = (value: string) =>
@@ -66,13 +68,12 @@ export function CandidatesPage() {
     null,
   );
 
-  const [filters, setFilters] = useState<UnifiedCandidateFilters>({
-    search: "",
-    career: null,
-    vacancyId: null,
-    status: "",
-    technology: null,
-  });
+  const filters = useCandidateDirectoryNavStore((s) => s.filters);
+  const updateFilters = useCandidateDirectoryNavStore((s) => s.setFilters);
+  const page = useCandidateDirectoryNavStore((s) => s.page);
+  const setPage = useCandidateDirectoryNavStore((s) => s.setPage);
+  const setFilters = (value: UnifiedCandidateFilters | ((previous: UnifiedCandidateFilters) => UnifiedCandidateFilters)) =>
+    updateFilters(typeof value === "function" ? value(filters) : value);
 
   const careers = useMemo(() => {
     return Array.from(
@@ -128,7 +129,7 @@ export function CandidatesPage() {
     setAddingCandidateId(candidate.id);
     try {
       const sourceVacancyId =
-        filters.vacancyId || candidate.vacancies[0]?.vacancyId || null;
+        filters.vacancyId || (candidate.vacancies.length === 1 ? candidate.vacancies[0].vacancyId : null);
       await addToTalentPoolMutation.mutateAsync({
         candidateId: candidate.id,
         vacancyId: sourceVacancyId,
@@ -141,7 +142,7 @@ export function CandidatesPage() {
   };
 
   const filtered = useMemo(() => {
-    return [...entries]
+    return getCandidateDirectoryRows(entries)
       .sort((a, b) => Number(b.id) - Number(a.id))
       .filter((e) => {
         const q = filters.search.trim().toLowerCase();
@@ -193,7 +194,11 @@ export function CandidatesPage() {
       });
   }, [entries, filters]);
 
-  const columns: ColumnDef<CandidateDirectoryEntry>[] = [
+  const pageCount = Math.max(1, Math.ceil(filtered.length / 10));
+  const currentPage = Math.min(page, pageCount - 1);
+  const paginated = filtered.slice(currentPage * 10, (currentPage + 1) * 10);
+
+  const columns: ColumnDef<CandidateDirectoryRow>[] = [
     {
       key: "candidate",
       header: "Candidato",
@@ -216,55 +221,7 @@ export function CandidatesPage() {
     {
       key: "vacancies",
       header: "Vacantes postuladas",
-      render: (e) => {
-        if (!e.vacancies || e.vacancies.length === 0) {
-          return (
-            <span className="text-xs text-ink-subtle">Sin postulaciones</span>
-          );
-        }
-
-        const targetVacancy = filters.vacancyId;
-        const ordered = targetVacancy
-          ? [
-              ...e.vacancies.filter((v) => v.vacancyId === targetVacancy),
-              ...e.vacancies.filter((v) => v.vacancyId !== targetVacancy),
-            ]
-          : e.vacancies;
-
-        const visible = ordered.slice(0, 2);
-        const hidden = ordered.slice(visible.length);
-
-        return (
-          <div className="flex max-w-[280px] flex-col gap-1">
-            {visible.map((v) => {
-              const isSelected =
-                targetVacancy !== null && v.vacancyId === targetVacancy;
-              return (
-                <span
-                  key={v.vacancyId}
-                  className={cn(
-                    "text-sm",
-                    isSelected
-                      ? "font-medium text-primary-800"
-                      : "text-ink-muted",
-                  )}
-                  title={v.vacancyTitle}
-                >
-                  {v.vacancyTitle}
-                </span>
-              );
-            })}
-            {hidden.length > 0 && (
-              <span
-                className="text-[11px] font-medium text-ink-subtle"
-                title={hidden.map((h) => h.vacancyTitle).join(", ")}
-              >
-                +{hidden.length}
-              </span>
-            )}
-          </div>
-        );
-      },
+      render: (e) => <span className="text-ink-muted">{e.vacancies[0]?.vacancyTitle ?? "Sin postulaciones"}</span>,
     },
     {
       key: "career",
@@ -340,44 +297,11 @@ export function CandidatesPage() {
     {
       key: "match",
       header: "Match",
-      align: "right",
+      align: "center",
       render: (e) => {
-        const applications = filters.vacancyId
-          ? e.vacancies.filter((v) => v.vacancyId === filters.vacancyId)
-          : e.vacancies;
-
-        if (applications.length === 0) {
-          return (
-            <span className="text-xs text-ink-subtle">Sin evaluación</span>
-          );
-        }
-
-        return (
-          <div className="flex flex-col items-end gap-1.5">
-            {applications.map((app) => (
-              <div
-                key={app.vacancyId}
-                className="flex items-center justify-end gap-2"
-                title={app.vacancyTitle}
-              >
-                {app.matchPercent === null ? (
-                  <span className="text-xs text-ink-subtle">
-                    Sin evaluación
-                  </span>
-                ) : (
-                  <span
-                    className={cn(
-                      "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
-                      MATCH_COLORS(app.matchPercent),
-                    )}
-                  >
-                    {app.matchPercent}%
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        );
+        const application = e.vacancies[0];
+        if (application?.matchPercent == null) return <span className="text-ink-subtle">-</span>;
+        return <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", MATCH_COLORS(application.matchPercent))}>{application.matchPercent}%</span>;
       },
     },
     {
@@ -549,14 +473,16 @@ export function CandidatesPage() {
 
       <DataTable
         columns={columns}
-        data={filtered}
-        rowKey={(e) => e.id}
+        data={paginated}
+        rowKey={(e) => e.rowId}
         isLoading={isLoading}
         onRowClick={(entry) => {
           const idx = filtered.indexOf(entry);
           setNavEntries(
             filtered.map((e) => ({
               candidateId: e.id,
+              applicationId: e.applicationId,
+              vacancyId: e.vacancies[0]?.vacancyId,
               tpId: e.talentPoolEntryId,
             })),
           );
@@ -564,7 +490,8 @@ export function CandidatesPage() {
             ROUTES.candidatoDetalle(entry.id, {
               pos: idx + 1,
               total: filtered.length,
-              vacancyId: filters.vacancyId ?? undefined,
+              vacancyId: entry.vacancies[0]?.vacancyId,
+              appId: entry.applicationId,
               tpId: entry.talentPoolEntryId ?? undefined,
             }),
           );
@@ -576,11 +503,12 @@ export function CandidatesPage() {
         }}
       />
 
-      <div className="text-sm text-ink-muted">
-        Mostrando {filtered.length} de{" "}
-        <span className="font-medium text-ink">{entries.length}</span> candidato
-        {entries.length !== 1 ? "s" : ""} registrado
-        {entries.length !== 1 ? "s" : ""}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-sm text-ink-muted">
+          Mostrando {filtered.length ? currentPage * 10 + 1 : 0} a {Math.min((currentPage + 1) * 10, filtered.length)} de {filtered.length} registros
+        </div>
+        <Pagination className="ml-auto" page={currentPage} pageCount={pageCount}
+          onPrev={() => setPage(currentPage - 1)} onNext={() => setPage(currentPage + 1)} />
       </div>
     </div>
   );

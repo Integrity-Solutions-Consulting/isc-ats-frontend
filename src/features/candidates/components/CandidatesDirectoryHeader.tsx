@@ -47,7 +47,8 @@ export function CandidateDirectoryHeader({
     return ROUTES.candidatoDetalle(entry.candidateId, {
       pos: targetPos,
       total,
-      vacancyId: vacancyId ?? undefined,
+      vacancyId: entry.vacancyId,
+      appId: entry.applicationId,
       tpId: entry.tpId ?? undefined,
     });
   }
@@ -120,7 +121,7 @@ export function CandidateDirectoryHeader({
           >
             <Plus className="h-3.5 w-3.5" />
             {addMutation.isPending
-              ? "Agregando…"
+              ? "Agregandoâ€¦"
               : "Agregar al banco de talento"}
           </Button>
         )}
@@ -152,7 +153,7 @@ export function CandidateDirectoryHeader({
               </Button>
             )}
             <span>
-              candidato {pos} de {total}
+              registro {pos} de {total}
             </span>
             {nextUrl ? (
               <Button
@@ -185,8 +186,8 @@ export function CandidateDirectoryHeader({
         <ConfirmDialog
           open={confirmRemoveOpen}
           onOpenChange={setConfirmRemoveOpen}
-          title="¿Quitar del banco de talento?"
-          description="Este candidato será removido del banco de talento. Podrás volver a agregarlo en cualquier momento."
+          title="Â¿Quitar del banco de talento?"
+          description="Este candidato serÃ¡ removido del banco de talento. PodrÃ¡s volver a agregarlo en cualquier momento."
           confirmLabel="Quitar"
           variant="danger"
           onConfirm={() => {

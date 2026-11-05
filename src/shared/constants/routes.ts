@@ -2,7 +2,7 @@
  * Single source of truth for application URLs.
  *
  * Static routes are string constants; dynamic routes are builder functions
- * that take their path params. Route groups — (public), (staff), (candidate) —
+ * that take their path params. Route groups â€” (public), (staff), (candidate) â€”
  * are invisible in the URL, so they do not appear here.
  *
  * Always reference ROUTES instead of hardcoding path strings, so a route
@@ -81,7 +81,7 @@ function vacancy(id: string, query?: VacancyQuery): string {
 }
 
 export const ROUTES = {
-  // (public) — no session required
+  // (public) â€” no session required
   login: "/login",
   registro: "/registro",
   registroVerificacion: "/registro/verificacion",
@@ -92,7 +92,7 @@ export const ROUTES = {
   publicVacantes: "/empleos",
   publicVacante: (id: string) => `/empleos/${id}`,
 
-  // (staff) — internal Integrity portal
+  // (staff) â€” internal Integrity portal
   dashboard: "/",
   vacantes: "/vacantes",
   vacanteNueva: "/vacantes/nueva",
@@ -117,7 +117,7 @@ export const ROUTES = {
   candidatos: "/candidatos",
   candidatoDetalle: (
     candidateId: string,
-    opts?: { pos?: number; total?: number; vacancyId?: string; tpId?: string },
+    opts?: { pos?: number; total?: number; vacancyId?: string; tpId?: string; appId?: string },
   ) => {
     const base = `/candidatos/${candidateId}`;
     if (!opts) return base;
@@ -125,6 +125,7 @@ export const ROUTES = {
     if (opts.pos != null) params.set("pos", String(opts.pos));
     if (opts.total != null) params.set("total", String(opts.total));
     if (opts.vacancyId) params.set("vacancyId", opts.vacancyId);
+    if (opts.appId) params.set("appId", opts.appId);
     if (opts.tpId) params.set("tpId", opts.tpId);
     const qs = params.toString();
     return qs ? `${base}?${qs}` : base;
@@ -147,7 +148,7 @@ export const ROUTES = {
     suscriptores: "/configuracion/suscriptores",
   },
 
-  // (candidate) — candidate-facing portal
+  // (candidate) â€” candidate-facing portal
   candidato: {
     vacantes: "/candidato/vacantes",
     vacante: (id: string) => `/candidato/vacantes/${id}`,

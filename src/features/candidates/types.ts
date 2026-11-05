@@ -49,9 +49,9 @@ export interface Candidate {
   city: string;
   homeAddress: string;
   educationLevel: string;
-  /** Field of study, e.g. "Ingeniería en Sistemas". */
+  /** Field of study, e.g. "IngenierÃ­a en Sistemas". */
   career: string;
-  /** Awarded title, e.g. "Ingeniero" — a different field from the career. */
+  /** Awarded title, e.g. "Ingeniero" â€” a different field from the career. */
   title: string;
   university: string;
   currentlyStudying: boolean;
@@ -73,7 +73,7 @@ export interface CandidateApplication {
   matchPercent: number | null;
   matchStatus: MatchStatus;
   /**
-   * What the candidate asked for on THIS application — the same person can ask
+   * What the candidate asked for on THIS application â€” the same person can ask
    * for a different amount on another vacancy. null = never declared, which is
    * distinct from a declared 0.
    */
@@ -96,10 +96,11 @@ export interface OtherApplication {
   vacancyId: string;
   vacancyTitle: string;
   companyName: string;
-  statusLabel: string; // display string, e.g. "Llamada de validación"
+  statusLabel: string; // display string, e.g. "Llamada de validaciÃ³n"
 }
 
 export interface CandidateAppliedVacancy {
+  applicationId?: string;
   vacancyId: string;
   vacancyTitle: string;
   matchPercent: number | null;
