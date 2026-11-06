@@ -2,8 +2,9 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, Download, Eye, FileText, Loader2, Upload } from 'lucide-react';
+import { Download, Eye, FileText, Loader2, Upload } from 'lucide-react';
 import { toUserMessage } from '@/lib/userMessage';
+import { CvAnalysisStatus } from './CvAnalysisStatus';
 import type { CandidateProfile } from '../../types';
 
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;
@@ -118,10 +119,7 @@ export function ResumeCard({ profile }: { profile: CandidateProfile }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 mb-3">
-            <Check className="w-4 h-4 text-success" />
-            <p className="text-[12px] text-success font-medium">CV verificado y procesado</p>
-          </div>
+          <CvAnalysisStatus key={profile.cvFileId} candidateId={profile.id} fileId={profile.cvFileId} />
         </>
       ) : (
         <p className="text-[13px] text-ink-subtle mb-3">No has subido tu CV aún.</p>

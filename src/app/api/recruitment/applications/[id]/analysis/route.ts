@@ -19,9 +19,13 @@ export async function GET(
   try {
     const app = await backendGet<BackendApplication>(`/recruitment/applications/${id}`);
 
-    if (app.match_score === null || app.match_summary === null) {
+    const state = await backendGet<{ status: NonNullable<AIAnalysis['analysisStatus']> }>(
+      `/recruitment/applications/${id}/analysis-status`,
+    );
+    if (state.status !== 'completed' || app.match_score === null || app.match_summary === null) {
       return NextResponse.json({
-        isAnalyzing: true,
+        analysisStatus: state.status === 'completed' ? 'processing' : state.status,
+        isAnalyzing: ['pending', 'queued', 'processing', 'completed'].includes(state.status),
         matchPercent: null,
         summary: "",
         strengths: [],
@@ -63,7 +67,7 @@ export async function GET(
 
     return NextResponse.json(analysis);
   } catch {
-    return NextResponse.json(null);
+    return NextResponse.json({ error: "No se pudo consultar el análisis" }, { status: 502 });
   }
 }
 
