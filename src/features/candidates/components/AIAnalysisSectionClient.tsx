@@ -11,6 +11,8 @@ type Status = 'idle' | 'analyzing' | 'done' | 'error';
 
 function deriveStatus(analysis: AIAnalysis | null): Status {
   if (!analysis) return 'idle';
+  if (analysis.analysisStatus === 'failed') return 'error';
+  if (analysis.analysisStatus === 'unavailable' || analysis.analysisStatus === 'superseded') return 'idle';
   if (analysis.isAnalyzing) return 'analyzing';
   return 'done';
 }
@@ -34,11 +36,9 @@ interface Props {
 
 export function AIAnalysisSectionClient({ applicationId, initialAnalysis }: Props) {
   const [status, setStatus] = useState<Status>(() => deriveStatus(initialAnalysis));
+  const [starting, setStarting] = useState(false);
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(initialAnalysis);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const userTriggeredRef = useRef(false);
-  // Whether we already sent the auto-trigger POST for a stuck analysis
-  const autoTriggeredRef = useRef(false);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -52,53 +52,41 @@ export function AIAnalysisSectionClient({ applicationId, initialAnalysis }: Prop
       const res = await fetch(`/api/recruitment/applications/${applicationId}/analysis`);
       if (!res.ok) return;
       const data: AIAnalysis | null = await res.json();
-      if (data && !data.isAnalyzing) {
+      if (data) {
         setAnalysis(data);
-        setStatus('done');
-        stopPolling();
+        const nextStatus = deriveStatus(data);
+        setStatus(nextStatus);
+        if (nextStatus !== 'analyzing') stopPolling();
       }
+
     } catch {
       // keep polling on transient errors
     }
   }, [applicationId, stopPolling]);
 
   useEffect(() => {
-    if (status !== 'analyzing') return;
+    if (status !== 'analyzing' && status !== 'idle') return;
+    const initialPoll = setTimeout(poll, 0);
     pollRef.current = setInterval(poll, 3000);
-    return stopPolling;
+    return () => { clearTimeout(initialPoll); stopPolling(); };
   }, [status, poll, stopPolling]);
 
-  // Auto-trigger when the page loads with a stuck analysis (isAnalyzing from server,
-  // not triggered by the user in this session). Covers the case where the backend
-  // BackgroundTask was dropped (e.g. uvicorn --reload worker restart in dev).
-  useEffect(() => {
-    if (
-      status === 'analyzing' &&
-      !userTriggeredRef.current &&
-      !autoTriggeredRef.current &&
-      initialAnalysis?.isAnalyzing === true
-    ) {
-      autoTriggeredRef.current = true;
-      fetch(`/api/recruitment/applications/${applicationId}/analysis`, { method: 'POST' }).catch(() => null);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   async function handleAnalyze() {
-    userTriggeredRef.current = true;
-    setStatus('analyzing');
-    setAnalysis(STUCK_ANALYSIS);
+    setStarting(true);
     try {
       const res = await fetch(`/api/recruitment/applications/${applicationId}/analysis`, { method: 'POST' });
       if (!res.ok) {
-        userTriggeredRef.current = false;
         setStatus('error');
         setAnalysis(null);
+      } else {
+        setAnalysis(STUCK_ANALYSIS);
+        setStatus('analyzing');
       }
     } catch {
-      userTriggeredRef.current = false;
       setStatus('error');
       setAnalysis(null);
+    } finally {
+      setStarting(false);
     }
   }
 
@@ -109,10 +97,10 @@ export function AIAnalysisSectionClient({ applicationId, initialAnalysis }: Prop
         <div className="flex flex-col items-start gap-3">
           <p className="text-sm text-ink-muted">
             {status === 'error'
-              ? 'No se pudo iniciar el análisis. Intenta de nuevo.'
+              ? 'El CV sigue guardado. No se pudo completar el análisis; puedes reintentarlo.'
               : 'No hay análisis disponible para esta postulación.'}
           </p>
-          <Button size="sm" variant="outline" onClick={handleAnalyze}>
+          <Button size="sm" variant="outline" onClick={handleAnalyze} disabled={starting}>
             <Sparkles className="h-4 w-4 mr-2" />
             Analizar CV
           </Button>
@@ -122,7 +110,13 @@ export function AIAnalysisSectionClient({ applicationId, initialAnalysis }: Prop
   }
 
   if (status === 'analyzing') {
-    return <AIAnalysisCard analysis={analysis ?? STUCK_ANALYSIS} />;
+    return <div>
+      <p className="mb-2 text-sm text-ink-muted" role="status">
+        {analysis?.analysisStatus === 'pending' ? 'Análisis pendiente. Se reintentará automáticamente.'
+          : analysis?.analysisStatus === 'queued' ? 'En espera de análisis.' : 'Procesando análisis de IA…'}
+      </p>
+      <AIAnalysisCard analysis={analysis ?? STUCK_ANALYSIS} />
+    </div>;
   }
 
   if (!analysis) return null;

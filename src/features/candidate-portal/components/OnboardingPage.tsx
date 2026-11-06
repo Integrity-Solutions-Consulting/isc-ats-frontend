@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ROUTES } from '@/shared/constants/routes';
 import { ProgressIndicator } from './onboarding/ProgressIndicator';
 import { Step0CvUpload, type CvPrefillData } from './onboarding/Step0CvUpload';
@@ -17,6 +17,7 @@ export function OnboardingPage() {
   // CV pre-fill state set in Step 0. The PDF is held in memory and only
   // uploaded once the candidate finishes registration (data minimisation).
   const [cvFile, setCvFile] = useState<File | null>(null);
+  const uploadedCv = useRef<{ file: File; id: number } | null>(null);
   const [prefillData, setPrefillData] = useState<CvPrefillData>({});
 
   // Persist values across steps so back/forward navigation preserves data
@@ -82,29 +83,31 @@ export function OnboardingPage() {
         throw new Error((errData as { error?: string }).error ?? 'Error al guardar el perfil');
       }
 
-      // Now that the candidate exists (and has consented), persist the CV and
-      // link it. If this fails the candidate is already registered — they can
-      // add the CV later from "Mi perfil", so we don't block the redirect.
+      // Confirm both storage and linking before leaving the registration form.
       if (cvFile) {
-        try {
-          const created = (await res.json()) as { id?: number };
-          const candidateId = created.id;
-          if (candidateId) {
-            const fd = new FormData();
-            fd.append('file', cvFile);
-            fd.append('entity_type', 'cv');
-            const uploadRes = await fetch('/api/candidate/upload', { method: 'POST', body: fd });
-            if (uploadRes.ok) {
-              const uploaded = (await uploadRes.json()) as { id: number };
-              await fetch('/api/candidate/profile', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ candidateId, cvFileId: uploaded.id }),
-              });
-            }
+        const created = (await res.json()) as { id?: number };
+        if (!created.id) throw new Error('No se pudo identificar el perfil para guardar el CV.');
+        let fileId = uploadedCv.current?.file === cvFile ? uploadedCv.current.id : undefined;
+        if (!fileId) {
+          const fd = new FormData();
+          fd.append('file', cvFile);
+          fd.append('entity_type', 'cv');
+          const uploadRes = await fetch('/api/candidate/upload', { method: 'POST', body: fd });
+          if (!uploadRes.ok) {
+            const detail = await uploadRes.json().catch(() => ({})) as { error?: string };
+            throw new Error(detail.error ?? 'Tu perfil se guardó, pero el CV no se pudo cargar. Intenta de nuevo.');
           }
-        } catch {
-          // Non-blocking: registration succeeded; the CV can be uploaded later.
+          const uploaded = await uploadRes.json() as { id: number };
+          fileId = uploaded.id;
+          uploadedCv.current = { file: cvFile, id: fileId };
+        }
+        const linked = await fetch('/api/candidate/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ candidateId: created.id, cvFileId: fileId }),
+        });
+        if (!linked.ok) {
+          throw new Error('El archivo se cargó, pero no pudo vincularse a tu perfil. Intenta de nuevo.');
         }
       }
 
