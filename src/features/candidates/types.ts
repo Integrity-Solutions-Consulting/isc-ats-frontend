@@ -101,6 +101,7 @@ export interface OtherApplication {
 }
 
 export interface CandidateAppliedVacancy {
+  salaryExpectation?: number | null;
   applicationId?: string;
   vacancyId: string;
   vacancyTitle: string;
@@ -108,6 +109,7 @@ export interface CandidateAppliedVacancy {
 }
 
 export interface CandidateDirectoryEntry {
+  city?: string;
   id: string;
   candidateName: string;
   candidateInitials: string;
@@ -128,6 +130,9 @@ export interface CandidateDirectoryEntry {
 }
 
 export interface CandidateDirectoryFilters {
+  city?: string;
+  salaryFrom?: string;
+  salaryTo?: string;
   search: string;
   career: string | null;
   vacancyId: string | null;
