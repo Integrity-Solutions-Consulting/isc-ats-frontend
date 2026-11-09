@@ -7,6 +7,7 @@ import { Check, Plus, X } from "lucide-react";
 import { Pagination } from "@/design-system/molecules/Pagination";
 import { Badge } from "@/design-system/ui/badge";
 import { Button } from "@/design-system/ui/button";
+import { Input } from "@/design-system/ui/input";
 import { DataTable, type ColumnDef } from "@/design-system/organisms/DataTable";
 import { FilterBar } from "@/design-system/molecules/FilterBar";
 import { Combobox } from "@/design-system/molecules/Combobox";
@@ -47,6 +48,7 @@ const MATCH_COLORS = (pct: number) => {
 };
 
 interface UnifiedCandidateFilters {
+  matchMin?: string;
   city?: string;
   salaryFrom?: string;
   salaryTo?: string;
@@ -121,6 +123,7 @@ export function CandidatesPage() {
   }, [entries]);
 
   const hasActiveFilters = Boolean(
+    filters.matchMin ||
     filters.city || filters.salaryFrom || filters.salaryTo ||
     filters.search ||
     filters.career ||
@@ -131,6 +134,7 @@ export function CandidatesPage() {
 
   const resetFilters = () => {
     setFilters({
+      matchMin: "",
       city: "",
       salaryFrom: "",
       salaryTo: "",
@@ -163,6 +167,10 @@ export function CandidatesPage() {
     return getCandidateDirectoryRows(entries)
       .sort((a, b) => Number(b.id) - Number(a.id))
       .filter((e) => {
+        if (filters.matchMin !== undefined && filters.matchMin !== "") {
+          const match = e.vacancies[0]?.matchPercent;
+          if (match == null || match < Number(filters.matchMin)) return false;
+        }
         if (filters.city && !normalizeTechnology(e.city ?? "").includes(normalizeTechnology(filters.city))) return false;
         const from = salaryValue(filters.salaryFrom);
         const to = salaryValue(filters.salaryTo);
@@ -498,6 +506,24 @@ export function CandidatesPage() {
           to={filters.salaryTo}
           onChange={(range) => setFilters((f) => ({ ...f, ...range }))}
         />
+
+        <div className="relative w-[120px]">
+          <Input
+            type="text"
+            inputMode="numeric"
+            aria-label="Filtrar por match mínimo"
+            placeholder="Match"
+            value={filters.matchMin ?? ""}
+            className="pr-8"
+            onChange={(event) => {
+              const value = event.target.value;
+              if (value === "" || (/^\d+$/.test(value) && Number(value) <= 100)) {
+                setFilters((f) => ({ ...f, matchMin: value === "" ? "" : String(Number(value)) }));
+              }
+            }}
+          />
+          <span aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ink-muted">%</span>
+        </div>
 
         {hasActiveFilters && (
           <Button
