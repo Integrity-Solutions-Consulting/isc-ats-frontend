@@ -7,6 +7,8 @@ import { X } from "lucide-react";
 import { CandidatesTable } from "./CandidatesTable";
 import { Pagination } from "@/design-system/molecules/Pagination";
 import { Button } from "@/design-system/ui/button";
+import { Input } from "@/design-system/ui/input";
+import { DataTable, type ColumnDef } from "@/design-system/organisms/DataTable";
 import { FilterBar } from "@/design-system/molecules/FilterBar";
 import { Combobox } from "@/design-system/molecules/Combobox";
 import { ROUTES } from "@/shared/constants/routes";
@@ -15,7 +17,9 @@ import {
   useAddToTalentPool,
 } from "../hooks/useCandidates";
 import { useCandidateDirectoryNavStore } from "@/shared/stores/candidateDirectoryNavStore";
-import { getCandidateDirectoryRows } from "../directoryRows";
+import { CandidateCvActions } from "./CandidateCvActions";
+import { SalaryRangeFilter, salaryValue } from "./SalaryRangeFilter";
+import { getCandidateDirectoryRows, type CandidateDirectoryRow } from "../directoryRows";
 import type { CandidateDirectoryEntry } from "../types";
 
 const normalizeTechnology = (value: string) =>
@@ -36,6 +40,10 @@ const getTechnologies = (entry: {
 };
 
 interface UnifiedCandidateFilters {
+  matchMin?: string;
+  city?: string;
+  salaryFrom?: string;
+  salaryTo?: string;
   search: string;
   career: string | null;
   vacancyId: string | null;
@@ -71,6 +79,16 @@ export function CandidatesPage() {
     ).sort((a, b) => a.localeCompare(b));
   }, [entries]);
 
+  const cities = useMemo(() => {
+    const unique = new Map<string, string>();
+    for (const entry of entries) {
+      const city = entry.city?.trim();
+      if (city) unique.set(normalizeTechnology(city), city);
+    }
+    return Array.from(unique, ([id, label]) => ({ id, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, "es"));
+  }, [entries]);
+
   const vacancies = useMemo(() => {
     const map = new Map<string, string>();
     for (const e of entries) {
@@ -97,6 +115,8 @@ export function CandidatesPage() {
   }, [entries]);
 
   const hasActiveFilters = Boolean(
+    filters.matchMin ||
+    filters.city || filters.salaryFrom || filters.salaryTo ||
     filters.search ||
     filters.career ||
     filters.vacancyId ||
@@ -106,6 +126,10 @@ export function CandidatesPage() {
 
   const resetFilters = () => {
     setFilters({
+      matchMin: "",
+      city: "",
+      salaryFrom: "",
+      salaryTo: "",
       search: "",
       career: null,
       vacancyId: null,
@@ -135,6 +159,18 @@ export function CandidatesPage() {
     return getCandidateDirectoryRows(entries)
       .sort((a, b) => Number(b.id) - Number(a.id))
       .filter((e) => {
+        if (filters.matchMin !== undefined && filters.matchMin !== "") {
+          const match = e.vacancies[0]?.matchPercent;
+          if (match == null || match < Number(filters.matchMin)) return false;
+        }
+        if (filters.city && !normalizeTechnology(e.city ?? "").includes(normalizeTechnology(filters.city))) return false;
+        const from = salaryValue(filters.salaryFrom);
+        const to = salaryValue(filters.salaryTo);
+        if (from !== null && to !== null && from > to) return false;
+        if (from !== null || to !== null) {
+          const salary = e.vacancies[0]?.salaryExpectation;
+          if (salary == null || (from !== null && salary < from) || (to !== null && salary > to)) return false;
+        }
         const q = filters.search.trim().toLowerCase();
         if (q) {
           const matchName = e.candidateName.toLowerCase().includes(q);
@@ -276,6 +312,39 @@ export function CandidatesPage() {
             { id: "inactive", label: "Inactivo" },
           ]}
         />
+
+        <Combobox
+          aria-label="Filtrar por ciudad"
+          placeholder="Ciudad"
+          className="w-auto min-w-[170px]"
+          value={filters.city ?? ""}
+          onChange={(city) => setFilters((f) => ({ ...f, city }))}
+          options={cities}
+        />
+
+        <SalaryRangeFilter
+          from={filters.salaryFrom}
+          to={filters.salaryTo}
+          onChange={(range) => setFilters((f) => ({ ...f, ...range }))}
+        />
+
+        <div className="relative w-[120px]">
+          <Input
+            type="text"
+            inputMode="numeric"
+            aria-label="Filtrar por match mínimo"
+            placeholder="Match"
+            value={filters.matchMin ?? ""}
+            className="pr-8"
+            onChange={(event) => {
+              const value = event.target.value;
+              if (value === "" || (/^\d+$/.test(value) && Number(value) <= 100)) {
+                setFilters((f) => ({ ...f, matchMin: value === "" ? "" : String(Number(value)) }));
+              }
+            }}
+          />
+          <span aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ink-muted">%</span>
+        </div>
 
         {hasActiveFilters && (
           <Button

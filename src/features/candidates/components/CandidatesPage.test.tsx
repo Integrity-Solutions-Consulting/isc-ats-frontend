@@ -49,6 +49,32 @@ describe("Candidates directory rows", () => {
     expect(candidateRows()).toHaveLength(1);
     expect(screen.getByText("Sin postulaciones")).toBeInTheDocument();
   });
+  it("filters minimum match inclusively from 0 to 100 and resets the filter", () => {
+    directory.entries = [{ ...candidate, vacancies: [0, 49, 50, 79, 80, 100, null].map((matchPercent, index) => ({
+      applicationId: String(index + 1), vacancyId: "4", vacancyTitle: "Developer", matchPercent,
+    })) }];
+    const view = render(<CandidatesPage />);
+    const input = screen.getByRole("textbox", { name: "Filtrar por match mínimo" });
+    expect(input).toHaveAttribute("placeholder", "Match");
+    expect(candidateRows()).toHaveLength(7);
+    for (const [value, count] of [["0", 6], ["50", 4], ["80", 2], ["100", 1]] as const) {
+      fireEvent.change(input, { target: { value } });
+      expect(candidateRows()).toHaveLength(count);
+    }
+    for (const value of ["101", "-1", "abc", "1e2", "50.5", "50,5"]) {
+      fireEvent.change(input, { target: { value } });
+      expect(input).toHaveValue("100");
+      expect(candidateRows()).toHaveLength(1);
+    }
+    fireEvent.change(input, { target: { value: "80" } });
+    view.unmount();
+    render(<CandidatesPage />);
+    expect(screen.getByRole("textbox", { name: "Filtrar por match mínimo" })).toHaveValue("80");
+    expect(candidateRows()).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+    expect(screen.getByRole("textbox", { name: "Filtrar por match mínimo" })).toHaveValue("");
+    expect(candidateRows()).toHaveLength(7);
+  });
   it("paginates submissions and restores the page after returning to the list", () => {
     directory.entries = [{ ...candidate, vacancies: Array.from({ length: 12 }, (_, index) => ({ applicationId: String(index + 1), vacancyId: String(index + 1), vacancyTitle: `Vacante ${index + 1}`, matchPercent: index })) }];
     const view = render(<CandidatesPage />);
@@ -61,5 +87,62 @@ describe("Candidates directory rows", () => {
     render(<CandidatesPage />);
     expect(screen.getByText("Página 2 de 2")).toBeInTheDocument();
     expect(candidateRows()).toHaveLength(2);
+  });
+});
+
+
+describe("Candidate city and salary filters", () => {
+  beforeEach(() => {
+    cleanup();
+    useCandidateDirectoryNavStore.setState({ page: 0, filters: { search: "", career: null, vacancyId: null, status: "", technology: null } });
+    directory.entries = [
+      { ...candidate, city: "Quito", vacancies: [
+        { applicationId: "11", vacancyId: "4", vacancyTitle: "Developer", matchPercent: null, salaryExpectation: 1200.5 },
+        { applicationId: "12", vacancyId: "5", vacancyTitle: "Designer", matchPercent: null, salaryExpectation: 1800 },
+      ] },
+      { ...candidate, id: "2", city: "Guayaquil", vacancies: [] },
+    ];
+  });
+  it("filters typed cities and allows selecting available cities", () => {
+    render(<CandidatesPage />);
+    const city = screen.getByRole("combobox", { name: "Filtrar por ciudad" });
+    fireEvent.change(city, { target: { value: "quito" } });
+    expect(candidateRows()).toHaveLength(2);
+    fireEvent.change(city, { target: { value: "" } });
+    fireEvent.focus(city);
+    fireEvent.mouseDown(screen.getByRole("option", { name: "Guayaquil" }));
+    expect(candidateRows()).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+    expect(candidateRows()).toHaveLength(3);
+    expect(city).toHaveValue("");
+  });
+  it("filters each application inclusively using comma or point decimals and clears both bounds", () => {
+    render(<CandidatesPage />);
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Aspiración salarial desde" }), { target: { value: "1200,50" } });
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Aspiración salarial hasta" }), { target: { value: "1200.50" } });
+    expect(candidateRows()).toHaveLength(1);
+    fireEvent.click(candidateRows()[0]);
+    expect(useCandidateDirectoryNavStore.getState().entries[0].applicationId).toBe("11");
+    fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+    expect(candidateRows()).toHaveLength(3);
+  });
+  it("rejects letters, negative amounts, malformed decimals and flags inverted ranges", () => {
+    render(<CandidatesPage />);
+    const from = screen.getByRole("spinbutton", { name: "Aspiración salarial desde" });
+    for (const value of ["abc", "1e3", "-1", "1,2.3", "12.345"]) {
+      fireEvent.change(from, { target: { value } });
+      expect(from).toHaveValue("");
+    }
+    fireEvent.change(from, { target: { value: "1800" } });
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Aspiración salarial hasta" }), { target: { value: "1200" } });
+    expect(screen.getByRole("alert")).toHaveTextContent("Desde no puede ser mayor que Hasta.");
+    expect(from).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText("Sin resultados para los filtros seleccionados.")).toBeInTheDocument();
+    fireEvent.change(from, { target: { value: "1199.50" } });
+    fireEvent.keyDown(from, { key: "ArrowUp" });
+    expect(from).toHaveValue("1200");
+    fireEvent.click(screen.getByRole("button", { name: "Disminuir aspiración salarial desde" }));
+    expect(from).toHaveValue("1199");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Application ids keep each row and its analysis tied to the same submission.
-      const applications: { id: number; candidate_id: number; vacancy_id: number; vacancy_name?: string | null; match_score: string | number | null; is_active: boolean }[] = [];
+      const applications: { id: number; candidate_id: number; vacancy_id: number; vacancy_name?: string | null; match_score: string | number | null; salary_expectation?: string | number | null; is_active: boolean }[] = [];
       for (let page = 1; ; page++) {
         const result = await backendGet<{ items: typeof applications; total: number }>(
           `/recruitment/applications?page=${page}&size=100`,
@@ -151,6 +151,7 @@ export async function GET(request: NextRequest) {
           const vacancies: CandidateAppliedVacancy[] = (byCandidate.get(c.candidate_id) ?? []).map(
             (app) => ({
               applicationId: String(app.id),
+              salaryExpectation: app.salary_expectation != null && Number.isFinite(Number(app.salary_expectation)) ? Number(app.salary_expectation) : null,
               vacancyId: String(app.vacancy_id),
               vacancyTitle: app.vacancy_name ?? c.applied_vacancies.find((v) => v.id === app.vacancy_id)?.title ?? "Vacante",
               matchPercent: app.match_score != null && Number.isFinite(Number(app.match_score)) ? Math.round(Number(app.match_score)) : null,
@@ -159,6 +160,7 @@ export async function GET(request: NextRequest) {
 
           return {
             id: String(c.candidate_id),
+            city: c.city ?? "",
             candidateName: `${c.first_name} ${c.last_name}`.trim(),
             candidateInitials:
               (
