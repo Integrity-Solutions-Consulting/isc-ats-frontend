@@ -49,6 +49,32 @@ describe("Candidates directory rows", () => {
     expect(candidateRows()).toHaveLength(1);
     expect(screen.getByText("Sin postulaciones")).toBeInTheDocument();
   });
+  it("filters minimum match inclusively from 0 to 100 and resets the filter", () => {
+    directory.entries = [{ ...candidate, vacancies: [0, 49, 50, 79, 80, 100, null].map((matchPercent, index) => ({
+      applicationId: String(index + 1), vacancyId: "4", vacancyTitle: "Developer", matchPercent,
+    })) }];
+    const view = render(<CandidatesPage />);
+    const input = screen.getByRole("textbox", { name: "Filtrar por match mínimo" });
+    expect(input).toHaveAttribute("placeholder", "Match");
+    expect(candidateRows()).toHaveLength(7);
+    for (const [value, count] of [["0", 6], ["50", 4], ["80", 2], ["100", 1]] as const) {
+      fireEvent.change(input, { target: { value } });
+      expect(candidateRows()).toHaveLength(count);
+    }
+    for (const value of ["101", "-1", "abc", "1e2", "50.5", "50,5"]) {
+      fireEvent.change(input, { target: { value } });
+      expect(input).toHaveValue("100");
+      expect(candidateRows()).toHaveLength(1);
+    }
+    fireEvent.change(input, { target: { value: "80" } });
+    view.unmount();
+    render(<CandidatesPage />);
+    expect(screen.getByRole("textbox", { name: "Filtrar por match mínimo" })).toHaveValue("80");
+    expect(candidateRows()).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+    expect(screen.getByRole("textbox", { name: "Filtrar por match mínimo" })).toHaveValue("");
+    expect(candidateRows()).toHaveLength(7);
+  });
   it("paginates submissions and restores the page after returning to the list", () => {
     directory.entries = [{ ...candidate, vacancies: Array.from({ length: 12 }, (_, index) => ({ applicationId: String(index + 1), vacancyId: String(index + 1), vacancyTitle: `Vacante ${index + 1}`, matchPercent: index })) }];
     const view = render(<CandidatesPage />);
