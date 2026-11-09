@@ -130,6 +130,7 @@ export interface CandidateDirectoryEntry {
 }
 
 export interface CandidateDirectoryFilters {
+  matchMin?: string;
   city?: string;
   salaryFrom?: string;
   salaryTo?: string;
