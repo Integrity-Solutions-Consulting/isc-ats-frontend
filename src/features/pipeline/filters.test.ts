@@ -378,6 +378,7 @@ describe("filters URL round-trip", () => {
 
   it("restores every filter it wrote", () => {
     const filters = withFilters({
+      processStageId: 'rejected',
       name: "pérez muñoz",
       minMatch: 75,
       city: "Quito",

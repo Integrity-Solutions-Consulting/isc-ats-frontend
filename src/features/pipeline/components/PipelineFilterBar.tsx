@@ -6,8 +6,10 @@ import { Select } from '@/design-system/atoms/Select';
 import { FilterBar } from '@/design-system/molecules/FilterBar';
 import { cn } from '@/shared/utils';
 import { EMPTY_FILTERS, hasActiveFilters, type PipelineFilters } from '../filters';
+import type { PipelineStage } from '../types';
 
 interface PipelineFilterBarProps {
+  stages: PipelineStage[];
   filters: PipelineFilters;
   onChange: (filters: PipelineFilters) => void;
   /** Cities present among this vacancy's candidates. */
@@ -39,6 +41,7 @@ const FIELD_LABEL = 'text-[11px] font-medium uppercase tracking-wide text-ink-mu
 const FIELD_GROUP = 'flex flex-col gap-1';
 
 export function PipelineFilterBar({
+  stages,
   filters,
   onChange,
   cityOptions,
@@ -221,6 +224,22 @@ export function PipelineFilterBar({
             className="min-w-0 flex-1"
           />
         </div>
+      </div>
+
+      <div className={cn(FIELD_GROUP, 'w-[210px]')}>
+        <label htmlFor="filter-process-stage" className={FIELD_LABEL}>
+          Estado
+        </label>
+        <Select
+          id="filter-process-stage"
+          value={filters.processStageId}
+          onChange={(e) => set('processStageId', e.target.value)}
+        >
+          <option value="">Todos</option>
+          {stages.map((stage) => (
+            <option key={stage.id} value={stage.id}>{stage.name}</option>
+          ))}
+        </Select>
       </div>
 
       <div className="ml-auto flex items-center gap-3 pb-0.5">

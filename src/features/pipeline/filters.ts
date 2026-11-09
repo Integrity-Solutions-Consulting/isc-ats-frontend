@@ -11,6 +11,8 @@ import type { PipelineCard } from './types';
  * legitimate value the recruiter can type.
  */
 export interface PipelineFilters {
+  /** Process stage id, or '' for every stage (including rejected). */
+  processStageId: string;
   /** Free-text search over the candidate's name, or '' for no search. */
   name: string;
   /** Minimum match percentage, inclusive. */
@@ -34,6 +36,7 @@ export interface PipelineFilters {
 }
 
 export const EMPTY_FILTERS: PipelineFilters = {
+  processStageId: '',
   name: '',
   minMatch: null,
   city: '',
@@ -134,6 +137,7 @@ export function filterCards(
   filters: PipelineFilters,
 ): PipelineCard[] {
   return cards.filter((card) => {
+    if (filters.processStageId !== '' && card.stageId !== filters.processStageId) return false;
     if (!passesName(card, filters.name)) return false;
     if (!passesMatch(card, filters.minMatch)) return false;
     if (filters.city !== '' && card.city !== filters.city) return false;
@@ -173,6 +177,7 @@ export function universityOptionsFrom(cards: PipelineCard[]): string[] {
 
 export function hasActiveFilters(filters: PipelineFilters): boolean {
   return (
+    filters.processStageId !== '' ||
     filters.name !== '' ||
     filters.minMatch !== null ||
     filters.city !== '' ||
@@ -197,6 +202,7 @@ export function hasActiveFilters(filters: PipelineFilters): boolean {
  * The URL also survives a reload and can be shared as-is.
  */
 export const FILTER_PARAM_KEYS = [
+  'processStageId',
   'name',
   'minMatch',
   'city',
@@ -233,6 +239,7 @@ function paramToDay(raw: string | undefined): string {
 export function parseFilters(query: FilterQuery): PipelineFilters {
   const studying = query.studying;
   return {
+    processStageId: query.processStageId ?? '',
     name: query.name ?? '',
     minMatch: paramToNumberOrNull(query.minMatch),
     city: query.city ?? '',
@@ -252,6 +259,7 @@ export function parseFilters(query: FilterQuery): PipelineFilters {
  */
 export function filtersToParams(filters: PipelineFilters): Record<string, string> {
   const params: Record<string, string> = {};
+  if (filters.processStageId !== '') params.processStageId = filters.processStageId;
   if (filters.name !== '') params.name = filters.name;
   if (filters.minMatch !== null) params.minMatch = String(filters.minMatch);
   if (filters.city !== '') params.city = filters.city;

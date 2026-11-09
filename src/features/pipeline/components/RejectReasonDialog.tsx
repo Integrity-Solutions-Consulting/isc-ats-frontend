@@ -72,7 +72,7 @@ export function RejectReasonDialog({
       title="Rechazar candidato"
       description={
         candidateName
-          ? `${candidateName} pasará a la columna Rechazados y recibirá este motivo por correo.`
+          ? `${candidateName} pasará al estado Rechazados y recibirá este motivo por correo.`
           : 'El candidato recibirá este motivo por correo.'
       }
       footer={

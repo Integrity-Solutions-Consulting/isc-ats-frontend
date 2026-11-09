@@ -1,7 +1,14 @@
 'use client';
 
-import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
-import { useSearchParams } from 'next/navigation';
+import { DropdownMenu } from 'radix-ui';
+import { ChevronDown } from 'lucide-react';
+import { CandidatesTable } from '@/features/candidates/components/CandidatesTable';
+import { useCandidateDirectory } from '@/features/candidates/hooks/useCandidates';
+import type { CandidateDirectoryRow } from '@/features/candidates/directoryRows';
+import { Pagination } from '@/design-system/molecules/Pagination';
+import { ROUTES } from '@/shared/constants/routes';
+import { sortCardsByMatch } from '../navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
 import { Button } from '@/design-system/ui/button';
@@ -19,8 +26,6 @@ import {
 } from '../filters';
 import { useMovePipelineCard, usePipeline } from '../hooks/usePipeline';
 import type { PipelineCard } from '../types';
-import { CandidateCardOverlay } from './CandidateCard';
-import { PipelineColumn } from './PipelineColumn';
 import { PipelineFilterBar } from './PipelineFilterBar';
 import { RejectReasonDialog } from './RejectReasonDialog';
 
@@ -35,34 +40,16 @@ interface PendingReject {
   candidateName: string;
 }
 
-// ─── Loading skeleton ─────────────────────────────────────────────────────────
-
-function BoardSkeleton() {
-  return (
-    <div className="flex gap-4 overflow-x-auto pb-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="flex w-60 shrink-0 flex-col gap-2">
-          {/* Header skeleton */}
-          <div className="h-9 rounded-md bg-surface-2 animate-pulse" />
-          {/* Card skeletons */}
-          {Array.from({ length: 3 }).map((_, j) => (
-            <div key={j} className="h-20 rounded-md bg-surface-2 animate-pulse" />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ─── Component ───────────────────────────────────────────────────────────────
-
 export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
+  const router = useRouter();
+  const { data: entries = [], isLoading: isDirectoryLoading, error: directoryError, refetch: refetchDirectory } = useCandidateDirectory({ vacancyId });
+  const [page, setPage] = useState(0);
+  const [moveError, setMoveError] = useState<string | null>(null);
   const { data: pipeline, isLoading, isError, refetch } = usePipeline(vacancyId);
   const { mutate: moveCard, isPending: isMoving } = useMovePipelineCard();
   const { has } = usePermissions();
   const searchParams = useSearchParams();
   const canMove = has(PERM.applicationsUpdate);
-  const [activeCard, setActiveCard] = useState<PipelineCard | null>(null);
   // Seeded from the URL so returning from a candidate's profile — or reloading,
   // or opening a shared link — lands on the same filtered board.
   const [filters, setFilters] = useState<PipelineFilters>(() =>
@@ -71,17 +58,16 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
   const [pendingReject, setPendingReject] = useState<PendingReject | null>(null);
   const [rejectError, setRejectError] = useState<string | null>(null);
 
-  // Filtering happens once for the whole board — the columns render whatever
-  // they are handed. Keeping it here means a card and its stage count can never
-  // disagree about which filters were applied.
+  // Keep the same vacancy filters for the table and profile navigation.
   const allCards = useMemo(() => pipeline?.cards ?? [], [pipeline]);
-  const visibleCards = useMemo(() => filterCards(allCards, filters), [allCards, filters]);
+  const visibleCards = useMemo(() => sortCardsByMatch(filterCards(allCards, filters)), [allCards, filters]);
   const cityOptions = useMemo(() => cityOptionsFrom(allCards), [allCards]);
   const universityOptions = useMemo(() => universityOptionsFrom(allCards), [allCards]);
   const filterParams = useMemo(() => filtersToParams(filters), [filters]);
 
   const handleFiltersChange = useCallback((next: PipelineFilters) => {
     setFilters(next);
+    setPage(0);
     // Mirrored into the URL with the native history API rather than
     // `router.replace`: every keystroke in a numeric field would otherwise
     // re-run the vacancy server page for data the board already holds.
@@ -96,7 +82,7 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
     );
   }, []);
 
-  if (isLoading) return <BoardSkeleton />;
+  if (isLoading) return <CandidatesTable data={[]} isLoading />;
 
   if (isError) {
     return (
@@ -113,31 +99,14 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
 
   const sortedStages = [...pipeline.stages].sort((a, b) => a.order - b.order);
 
-  function handleDragStart(event: DragStartEvent) {
-    const card = pipeline!.cards.find((c) => c.id === event.active.id);
-    setActiveCard(card ?? null);
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    setActiveCard(null);
-    // Defense in depth: cards render non-draggable without applicationsUpdate,
-    // so this path shouldn't be reachable — guarded anyway.
-    if (!canMove) return;
-    const { active, over } = event;
-    if (!over) return;
-
-    const fromCard = pipeline!.cards.find((c) => c.id === active.id);
-    if (!fromCard) return;
-
-    const toStageId = over.id as string;
+  function handleStageChange(fromCard: PipelineCard, toStageId: string) {
+    if (!canMove || isMoving || pendingReject) return;
+    setMoveError(null);
     const action = resolveDropAction(pipeline!.stages, fromCard.stageId, toStageId);
     if (action.type === 'noop') return;
 
     if (action.type === 'reject') {
-      // Prompt for a required reason before moving. The card's stageId is left
-      // untouched until the user confirms, so it simply renders back in its
-      // original column once the drag overlay clears — no explicit "revert" of
-      // drag/optimistic state is needed on cancel.
+      // Keep the current stage until the rejection reason is confirmed.
       setRejectError(null);
       setPendingReject({
         cardId: fromCard.id,
@@ -152,6 +121,8 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
       cardId: fromCard.id,
       toStageId: action.toStageId,
       fromStageId: fromCard.stageId,
+    }, {
+      onError: (error) => setMoveError(error.message || 'No se pudo cambiar el estado.'),
     });
   }
 
@@ -161,7 +132,7 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
   }
 
   function handleConfirmReject(reason: string) {
-    if (!pendingReject) return;
+    if (!pendingReject || !canMove || isMoving) return;
     setRejectError(null);
     moveCard(
       {
@@ -178,9 +149,37 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
     );
   }
 
+  const entriesById = new Map(entries.map((entry) => [entry.id, entry]));
+  const cardsById = new Map(visibleCards.map((card) => [card.id, card]));
+  const rows: CandidateDirectoryRow[] = visibleCards.map((card) => {
+    const entry = entriesById.get(card.candidateId);
+    const vacancy = entry?.vacancies.find((item) => item.vacancyId === vacancyId);
+    return {
+      id: card.candidateId,
+      candidateName: card.candidateName,
+      candidateInitials: card.initials,
+      avatarColor: card.avatarColor,
+      candidateAvatarFileId: card.avatarFileId,
+      career: '', phone: '', email: '', isActive: true,
+      inTalentPool: false, skills: [], tools: [], createdAt: '',
+      ...entry,
+      rowId: card.id,
+      applicationId: card.id,
+      vacancies: [{
+        vacancyId,
+        vacancyTitle: vacancy?.vacancyTitle ?? '-',
+        applicationId: card.id,
+        matchPercent: card.matchStatus === 'analyzing' ? null : card.matchPercent,
+      }],
+    };
+  });
+  const pageCount = Math.max(1, Math.ceil(rows.length / 10));
+  const currentPage = Math.min(page, pageCount - 1);
+
   return (
     <div className="flex flex-col gap-4">
       <PipelineFilterBar
+        stages={sortedStages}
         filters={filters}
         onChange={handleFiltersChange}
         cityOptions={cityOptions}
@@ -189,27 +188,87 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
         totalCount={allCards.length}
       />
 
-      {/* Board */}
-      <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {sortedStages.map((stage) => {
-            const stageCards = visibleCards.filter((c) => c.stageId === stage.id);
-            return (
-              <PipelineColumn
-                key={stage.id}
-                stage={stage}
-                cards={stageCards}
-                canDrag={canMove}
-                filterParams={filterParams}
-              />
-            );
-          })}
+      {directoryError && (
+        <div role="alert" className="flex items-center gap-3 text-sm text-danger">
+          No se pudieron cargar los datos adicionales de los candidatos.
+          <Button variant="outline" size="sm" onClick={() => void refetchDirectory()}>Reintentar</Button>
         </div>
-
-        <DragOverlay>
-          {activeCard ? <CandidateCardOverlay card={activeCard} /> : null}
-        </DragOverlay>
-      </DndContext>
+      )}
+      {moveError && <p role="alert" className="text-sm text-danger">{moveError}</p>}
+      {isMoving && <p role="status" className="text-sm text-ink-muted">Guardando estado...</p>}
+      <CandidatesTable
+        isLoading={isDirectoryLoading}
+        data={rows.slice(currentPage * 10, (currentPage + 1) * 10)}
+        additionalColumns={[
+          {
+            key: 'salary',
+            header: 'Salario',
+            render: (entry) => {
+              const salary = cardsById.get(entry.rowId)?.salaryExpectation;
+              return <span className="whitespace-nowrap text-ink-muted">{salary == null ? 'Sin registrar' : `$ ${salary.toLocaleString('es-EC')}`}</span>;
+            },
+          },
+          {
+            key: 'experience',
+            header: 'Experiencia',
+            render: (entry) => {
+              const years = cardsById.get(entry.rowId)?.yearsOfExperience;
+              return <span className="whitespace-nowrap text-ink-muted">{years == null ? 'Sin registrar' : `${years.toLocaleString('es-EC')} ${years === 1 ? 'año' : 'años'}`}</span>;
+            },
+          },
+        ]}
+        onRowClick={(entry) => {
+          const card = cardsById.get(entry.rowId);
+          if (!card) return;
+          router.push(ROUTES.candidatoEnVacante(vacancyId, card.candidateId, {
+            appId: card.id, stageId: card.stageId, filters: filterParams,
+          }));
+        }}
+        renderStatus={(entry) => {
+          const card = cardsById.get(entry.rowId)!;
+          const stage = sortedStages.find((item) => item.id === card.stageId);
+          if (!canMove) return <span>{stage?.name ?? 'Sin etapa'}</span>;
+          return (
+            <div onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isMoving || pendingReject !== null}
+                    aria-label={`Cambiar estado de ${card.candidateName}: ${stage?.name ?? 'Sin etapa'}`}
+                    className="gap-2 whitespace-nowrap"
+                  >
+                    {stage?.name ?? 'Sin etapa'}
+                    <ChevronDown className="size-4" aria-hidden="true" />
+                  </Button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content align="start" sideOffset={4} className="z-50 min-w-48 rounded-md border border-border bg-surface p-1 shadow-lg">
+                    <DropdownMenu.RadioGroup value={card.stageId} onValueChange={(value) => handleStageChange(card, value)}>
+                      {sortedStages.map((option) => (
+                        <DropdownMenu.RadioItem
+                          key={option.id}
+                          value={option.id}
+                          disabled={option.id === card.stageId}
+                          className="cursor-pointer rounded px-3 py-2 text-sm text-ink outline-none focus:bg-primary-50 data-[state=checked]:font-semibold data-[disabled]:opacity-50"
+                        >
+                          {option.name}
+                        </DropdownMenu.RadioItem>
+                      ))}
+                    </DropdownMenu.RadioGroup>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+            </div>
+          );
+        }}
+        emptyState={{ title: 'Sin resultados para los filtros seleccionados.' }}
+      />
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-ink-muted">
+        <span>Mostrando {rows.length ? currentPage * 10 + 1 : 0} a {Math.min((currentPage + 1) * 10, rows.length)} de {rows.length} registros</span>
+        <Pagination page={currentPage} pageCount={pageCount} onPrev={() => setPage(currentPage - 1)} onNext={() => setPage(currentPage + 1)} />
+      </div>
 
       <RejectReasonDialog
         open={pendingReject !== null}
