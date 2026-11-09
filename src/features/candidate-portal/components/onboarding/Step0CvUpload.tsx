@@ -43,9 +43,15 @@ export function Step0CvUpload({
 
   const handleContinue = async () => {
     if (!file) return;
+    if (file.type !== 'application/pdf' || file.size > 5 * 1024 * 1024) {
+      setError('Selecciona un PDF de hasta 5 MB.');
+      return;
+    }
     setLoading(true);
     setError(null);
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
     try {
       // Extract prefill data in memory. The CV is NOT stored here — it is only
       // persisted when the candidate finishes registration (data minimisation).
@@ -56,6 +62,7 @@ export function Step0CvUpload({
       const prefillRes = await fetch('/api/candidate/cv/prefill', {
         method: 'POST',
         body: formData,
+        signal: controller.signal,
       });
 
       const prefillData: CvPrefillData = prefillRes.ok
@@ -69,6 +76,8 @@ export function Step0CvUpload({
       setError('No pudimos analizar tu hoja de vida. Puedes continuar sin el pre-llenado.');
       // Keep going with the file so it still gets stored when registration ends.
       onComplete({}, file);
+    } finally {
+      clearTimeout(timeout);
     }
   };
 
@@ -138,7 +147,7 @@ export function Step0CvUpload({
       )}
 
       <div className="rounded-md border-l-2 border-primary-600 bg-surface-2 px-4 py-3 text-sm text-ink-muted">
-        Usaremos tu CV para pre-completar el formulario. Tu información está protegida.
+        Intentaremos completar tus datos con el CV. Si la IA no está disponible, podrás completarlos manualmente. El archivo se guardará al finalizar el registro.
       </div>
 
       <Button

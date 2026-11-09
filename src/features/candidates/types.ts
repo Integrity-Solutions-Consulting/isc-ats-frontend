@@ -12,6 +12,7 @@ export interface AIExtractedTag {
 
 export interface AIAnalysis {
   applicationId?: string;
+  analysisStatus?: 'pending' | 'queued' | 'processing' | 'completed' | 'failed' | 'unavailable' | 'superseded';
   isAnalyzing?: boolean; // true = still pending
   noTextLayer?: boolean; // true = CV has no extractable text
   matchPercent: number | null;
