@@ -19,6 +19,7 @@ import {
 } from "../hooks/useCandidates";
 import { useCandidateDirectoryNavStore } from "@/shared/stores/candidateDirectoryNavStore";
 import { CandidateCvActions } from "./CandidateCvActions";
+import { SalaryRangeFilter, salaryValue } from "./SalaryRangeFilter";
 import { getCandidateDirectoryRows, type CandidateDirectoryRow } from "../directoryRows";
 import type { CandidateDirectoryEntry } from "../types";
 
@@ -46,6 +47,9 @@ const MATCH_COLORS = (pct: number) => {
 };
 
 interface UnifiedCandidateFilters {
+  city?: string;
+  salaryFrom?: string;
+  salaryTo?: string;
   search: string;
   career: string | null;
   vacancyId: string | null;
@@ -81,6 +85,16 @@ export function CandidatesPage() {
     ).sort((a, b) => a.localeCompare(b));
   }, [entries]);
 
+  const cities = useMemo(() => {
+    const unique = new Map<string, string>();
+    for (const entry of entries) {
+      const city = entry.city?.trim();
+      if (city) unique.set(normalizeTechnology(city), city);
+    }
+    return Array.from(unique, ([id, label]) => ({ id, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, "es"));
+  }, [entries]);
+
   const vacancies = useMemo(() => {
     const map = new Map<string, string>();
     for (const e of entries) {
@@ -107,6 +121,7 @@ export function CandidatesPage() {
   }, [entries]);
 
   const hasActiveFilters = Boolean(
+    filters.city || filters.salaryFrom || filters.salaryTo ||
     filters.search ||
     filters.career ||
     filters.vacancyId ||
@@ -116,6 +131,9 @@ export function CandidatesPage() {
 
   const resetFilters = () => {
     setFilters({
+      city: "",
+      salaryFrom: "",
+      salaryTo: "",
       search: "",
       career: null,
       vacancyId: null,
@@ -145,6 +163,14 @@ export function CandidatesPage() {
     return getCandidateDirectoryRows(entries)
       .sort((a, b) => Number(b.id) - Number(a.id))
       .filter((e) => {
+        if (filters.city && !normalizeTechnology(e.city ?? "").includes(normalizeTechnology(filters.city))) return false;
+        const from = salaryValue(filters.salaryFrom);
+        const to = salaryValue(filters.salaryTo);
+        if (from !== null && to !== null && from > to) return false;
+        if (from !== null || to !== null) {
+          const salary = e.vacancies[0]?.salaryExpectation;
+          if (salary == null || (from !== null && salary < from) || (to !== null && salary > to)) return false;
+        }
         const q = filters.search.trim().toLowerCase();
         if (q) {
           const matchName = e.candidateName.toLowerCase().includes(q);
@@ -456,6 +482,21 @@ export function CandidatesPage() {
             { id: "active", label: "Activo" },
             { id: "inactive", label: "Inactivo" },
           ]}
+        />
+
+        <Combobox
+          aria-label="Filtrar por ciudad"
+          placeholder="Ciudad"
+          className="w-auto min-w-[170px]"
+          value={filters.city ?? ""}
+          onChange={(city) => setFilters((f) => ({ ...f, city }))}
+          options={cities}
+        />
+
+        <SalaryRangeFilter
+          from={filters.salaryFrom}
+          to={filters.salaryTo}
+          onChange={(range) => setFilters((f) => ({ ...f, ...range }))}
         />
 
         {hasActiveFilters && (
