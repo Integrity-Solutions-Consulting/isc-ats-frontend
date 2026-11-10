@@ -1,5 +1,7 @@
 'use client';
 
+import type { ReactNode } from 'react';
+import { TechnologyFilter } from './TechnologyFilter';
 import { Button } from '@/design-system/ui/button';
 import { Input } from '@/design-system/ui/input';
 import { Select } from '@/design-system/atoms/Select';
@@ -9,6 +11,9 @@ import { EMPTY_FILTERS, hasActiveFilters, type PipelineFilters } from '../filter
 import type { PipelineStage } from '../types';
 
 interface PipelineFilterBarProps {
+  technologyOptions: string[];
+  technologiesDisabled?: boolean;
+  actions?: ReactNode;
   stages: PipelineStage[];
   filters: PipelineFilters;
   onChange: (filters: PipelineFilters) => void;
@@ -28,17 +33,9 @@ function toNumberOrNull(raw: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-const FIELD_LABEL = 'text-[11px] font-medium uppercase tracking-wide text-ink-muted';
+const FIELD_LABEL = 'text-xs font-medium text-ink-muted';
 
-/**
- * Width lives on the field group, never on the control itself.
- *
- * `Select` anchors its chevron to an outer full-width wrapper while `className`
- * lands on the inner `<select>` — so a control narrower than its group leaves
- * the arrow floating outside the box. Sizing the group keeps label, control and
- * chevron on the same edge, and lets each control keep its base `w-full`.
- */
-const FIELD_GROUP = 'flex flex-col gap-1';
+const FIELD_GROUP = 'flex min-w-0 flex-col gap-2';
 
 export function PipelineFilterBar({
   stages,
@@ -48,6 +45,9 @@ export function PipelineFilterBar({
   universityOptions,
   shownCount,
   totalCount,
+  technologyOptions,
+  technologiesDisabled,
+  actions,
 }: PipelineFilterBarProps) {
   function set<K extends keyof PipelineFilters>(key: K, value: PipelineFilters[K]) {
     onChange({ ...filters, [key]: value });
@@ -57,24 +57,15 @@ export function PipelineFilterBar({
 
   return (
     <FilterBar
-      className="items-end"
-      // `w-full` gives the search its own line inside the wrapping bar: it is the
-      // most-used control and reads better full width than squeezed between two
-      // selects. The filters below then wrap on their own, fitting a single row
-      // on a wide monitor and folding to two on a laptop without any breakpoint.
+      className="grid grid-cols-1 items-end gap-x-4 gap-y-5 bg-surface p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-6 [&_input]:bg-surface-2/50 [&_input]:shadow-none [&_select]:bg-surface-2/50 [&_select]:shadow-none"
       search={{
         value: filters.name,
         onChange: (value) => set('name', value),
         placeholder: 'Buscar candidato por nombre',
-        className: 'w-full flex-none',
+        className: 'col-span-full min-w-0 w-full',
       }}
     >
-      {/* Field order follows how often Talento Humano reaches for each one, so
-          the frequent ones stay on the first row when the bar wraps. */}
-
-      {/* Minimum match — replaces the old fixed 50/75 pills so HR can type any
-          threshold. Matches are kept when equal to or greater than this value. */}
-      <div className={cn(FIELD_GROUP, 'w-[165px]')}>
+      <div className={FIELD_GROUP}>
         <label htmlFor="filter-min-match" className={FIELD_LABEL}>
           Cumplimiento mínimo
         </label>
@@ -97,7 +88,7 @@ export function PipelineFilterBar({
         </div>
       </div>
 
-      <div className={cn(FIELD_GROUP, 'w-[250px]')}>
+      <div className={cn(FIELD_GROUP, 'sm:col-span-2')}>
         <span className={FIELD_LABEL}>Aspiración salarial</span>
         <div className="flex items-center gap-1.5">
           <Input
@@ -126,7 +117,7 @@ export function PipelineFilterBar({
         </div>
       </div>
 
-      <div className={cn(FIELD_GROUP, 'w-[165px]')}>
+      <div className={FIELD_GROUP}>
         <label htmlFor="filter-min-experience" className={FIELD_LABEL}>
           Experiencia mínima
         </label>
@@ -148,7 +139,7 @@ export function PipelineFilterBar({
         </div>
       </div>
 
-      <div className={cn(FIELD_GROUP, 'w-[170px]')}>
+      <div className={FIELD_GROUP}>
         <label htmlFor="filter-city" className={FIELD_LABEL}>
           Ciudad
         </label>
@@ -166,9 +157,7 @@ export function PipelineFilterBar({
         </Select>
       </div>
 
-      {/* Wider than the other selects: university names run long
-          ("Escuela Superior Politécnica del Litoral"). */}
-      <div className={cn(FIELD_GROUP, 'w-[210px]')}>
+      <div className={FIELD_GROUP}>
         <label htmlFor="filter-university" className={FIELD_LABEL}>
           Universidad
         </label>
@@ -186,7 +175,7 @@ export function PipelineFilterBar({
         </Select>
       </div>
 
-      <div className={cn(FIELD_GROUP, 'w-[165px]')}>
+      <div className={FIELD_GROUP}>
         <label htmlFor="filter-studying" className={FIELD_LABEL}>
           Estudia actualmente
         </label>
@@ -203,7 +192,7 @@ export function PipelineFilterBar({
 
       {/* Named for what it filters: the card's date moves on any activity — a
           stage change included — not only when the candidate applied. */}
-      <div className={cn(FIELD_GROUP, 'w-[300px]')}>
+      <div className={cn(FIELD_GROUP, 'sm:col-span-2')}>
         <span className={FIELD_LABEL}>Última actualización</span>
         <div className="flex items-center gap-1.5">
           <Input
@@ -226,7 +215,7 @@ export function PipelineFilterBar({
         </div>
       </div>
 
-      <div className={cn(FIELD_GROUP, 'w-[210px]')}>
+      <div className={FIELD_GROUP}>
         <label htmlFor="filter-process-stage" className={FIELD_LABEL}>
           Estado
         </label>
@@ -242,15 +231,20 @@ export function PipelineFilterBar({
         </Select>
       </div>
 
-      <div className="ml-auto flex items-center gap-3 pb-0.5">
-        <span className="text-xs text-ink-muted">
+      <TechnologyFilter options={technologyOptions} selected={filters.technologies} onChange={(values) => set('technologies', values)} disabled={technologiesDisabled} />
+
+      <div className="col-span-full flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+        <span className="text-sm text-ink-muted">
           {shownCount} de {totalCount} candidatos
         </span>
-        {isFiltering && (
-          <Button variant="outline" size="sm" onClick={() => onChange(EMPTY_FILTERS)}>
-            Limpiar filtros
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {isFiltering && (
+            <Button type="button" variant="ghost" size="sm" onClick={() => onChange(EMPTY_FILTERS)}>
+              Limpiar filtros
+            </Button>
+          )}
+          {actions}
+        </div>
       </div>
     </FilterBar>
   );

@@ -20,6 +20,7 @@ const samplePipeline: VacancyPipeline = {
       vacancyId: "vac-1",
       stageId: "stage-1",
       candidateName: "Jane Doe",
+      skills: ['SQL'],
       initials: "JD",
       avatarColor: "bg-primary-600",
       matchPercent: 80,
@@ -38,7 +39,8 @@ const samplePipeline: VacancyPipeline = {
 
 vi.mock("../hooks/usePipeline", () => ({
   usePipeline: () => ({ data: samplePipeline, isLoading: false, isError: false, refetch: vi.fn() }),
-  useMovePipelineCard: () => ({ mutate: mocks.move, isPending: mocks.pending }),
+  usePendingPipelineCards: () => mocks.pending ? ['app-1'] : [],
+  useMovePipelineCard: () => ({ mutateAsync: mocks.move }),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -60,9 +62,29 @@ vi.mock("@/features/candidates/hooks/useCandidates", () => ({
 }));
 
 describe("Pipeline table", () => {
+  it('keeps Excel inside the filters and applies technology selections to exports and profile links', async () => {
+    const user = userEvent.setup();
+    renderBoard([PERM.applicationsUpdate]);
+    const download = screen.getByRole('button', { name: 'Descargar Excel' });
+    const search = screen.getByPlaceholderText('Buscar candidato por nombre');
+    expect(search.parentElement?.parentElement).toContainElement(download);
+    await user.click(screen.getByRole('button', { name: /Tecnologías y conocimientos/ }));
+    await user.click(screen.getByRole('checkbox', { name: 'SQL' }));
+    await user.keyboard('{Escape}');
+    expect(window.location.search).toContain('technologies=');
+    expect(download).toHaveAttribute('title', 'Exportar los 1 postulantes que coinciden con los filtros');
+    fireEvent.click(screen.getByText('Jane Doe'));
+    expect(mocks.push).toHaveBeenCalledWith(expect.stringContaining('technologies='));
+    fireEvent.change(search, { target: { value: 'Nobody' } });
+    expect(download).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
+    expect(window.location.search).not.toContain('technologies=');
+    expect(download).toBeEnabled();
+  });
   beforeEach(() => {
     cleanup();
     vi.clearAllMocks();
+    mocks.move.mockResolvedValue(undefined);
     mocks.pending = false;
     window.history.replaceState(null, "", "/");
   });
@@ -84,7 +106,7 @@ describe("Pipeline table", () => {
     await user.keyboard("{Enter}");
     await waitFor(() => expect(mocks.move).toHaveBeenCalledWith({
       cardId: "app-1", fromStageId: "stage-1", toStageId: "stage-2",
-    }, expect.any(Object)));
+    }));
     expect(mocks.push).not.toHaveBeenCalled();
   });
 
@@ -110,13 +132,23 @@ describe("Pipeline table", () => {
     await waitFor(() => expect(mocks.move).toHaveBeenCalledWith({
       cardId: "app-1", fromStageId: "stage-1", toStageId: "rejected",
       rejectionReason: "No cumple con la experiencia requerida",
-    }, expect.any(Object)));
+    }));
   });
 
-  it("disables changes while saving", () => {
+  it("disables only the saving candidate and keeps other rows usable", async () => {
+    const user = userEvent.setup();
+    samplePipeline.cards.push({ ...samplePipeline.cards[0], id: "app-2", candidateId: "cand-2", candidateName: "John Smith" });
     mocks.pending = true;
     renderBoard([PERM.applicationsUpdate]);
-    expect(screen.getByRole("button", { name: /Cambiar estado/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Cambiar estado de Jane/ })).toBeDisabled();
+    const other = screen.getByRole("button", { name: /Cambiar estado de John/ });
+    expect(other).toBeEnabled();
+    await user.click(other);
+    await user.click(screen.getByRole("menuitemradio", { name: "Entrevista" }));
+    expect(mocks.move).toHaveBeenCalledWith({ cardId: "app-2", fromStageId: "stage-1", toStageId: "stage-2" });
+    expect(mocks.push).not.toHaveBeenCalled();
+    expect(document.body.style.pointerEvents).not.toBe("none");
+    samplePipeline.cards.pop();
     expect(screen.getByRole("status")).toHaveTextContent("Guardando");
   });
 

@@ -49,7 +49,7 @@ export function ExportApplicantsButton({ cards, entries, vacancy, disabled }: Ex
     <div className="flex flex-col items-start gap-2">
       <Button
         type="button"
-        variant="outline"
+        variant="default"
         size="sm"
         disabled={disabled || isExporting || cards.length === 0}
         aria-busy={isExporting}

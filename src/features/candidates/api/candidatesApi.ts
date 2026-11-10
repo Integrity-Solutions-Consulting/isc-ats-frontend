@@ -208,8 +208,9 @@ export async function listCandidateDirectory(
   if (filters?.vacancyId) qs.set("vacancyId", filters.vacancyId);
   if (filters?.status) qs.set("status", filters.status);
 
-  const res = await fetch(`/api/recruitment/candidates?${qs.toString()}`, {
+  const res = await fetch(`${BASE}/api/recruitment/candidates?${qs.toString()}`, {
     cache: "no-store",
+    headers: await serverAuthHeaders(),
   });
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string };

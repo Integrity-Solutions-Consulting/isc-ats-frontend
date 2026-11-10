@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
 
-import { getCandidate, getCandidateApplication, getAIAnalysis, getOtherApplications } from '@/features/candidates/api/candidatesApi';
+import { getCandidate, getCandidateApplication, getAIAnalysis, getOtherApplications, listCandidateDirectory } from '@/features/candidates/api/candidatesApi';
 import { getVacancy } from '@/features/vacancies/api/vacanciesApi';
 import { getVacancyPipeline } from '@/features/pipeline/api/pipelineApi';
-import { filtersToParams, parseFilters } from '@/features/pipeline/filters';
+import { filtersToParams, parseFilters, withCandidateTechnologies } from '@/features/pipeline/filters';
 import { resolveStageNavigation } from '@/features/pipeline/navigation';
 import { ROUTES } from '@/shared/constants/routes';
 import { VacancyBreadcrumbSetter } from '@/features/vacancies/components/VacancyBreadcrumbSetter';
@@ -26,6 +26,7 @@ export default async function CandidateProfilePage({
   const { from, pos: posParam, total: totalParam, appId, tpId, stageId } = query;
 
   const isTalentPool = from === 'banco-talento';
+  const filters = parseFilters(query);
   // Talent-pool position still comes from the URL; the pipeline navigator is
   // derived below from the reviewed stage instead, so it survives moving the
   // candidate out of it.
@@ -44,20 +45,20 @@ export default async function CandidateProfilePage({
   if (!candidate || !application) notFound();
   if (!vacancy) notFound();
 
-  const [aiAnalysis, otherApplications] = await Promise.all([
+  const [aiAnalysis, otherApplications, directory] = await Promise.all([
     getAIAnalysis(applicationId),
     isTalentPool ? Promise.resolve([]) : getOtherApplications(candidateId, application.id),
+    !isTalentPool && filters.technologies.length ? listCandidateDirectory({ vacancyId }) : Promise.resolve([]),
   ]);
 
   // The queue being reviewed: the stage the profile was opened from, narrowed
   // by the board's filters. `stageId` is absent on links made before it started
   // travelling in the URL — those fall back to the candidate's current stage.
-  const filters = parseFilters(query);
   const filterParams = filtersToParams(filters);
   const reviewStageId = stageId ?? application.stageId;
   const nav = isTalentPool
     ? null
-    : resolveStageNavigation(pipeline.cards, filters, reviewStageId, candidateId);
+    : resolveStageNavigation(withCandidateTechnologies(pipeline.cards, directory), filters, reviewStageId, candidateId);
 
   // Where the recruiter continues once this candidate leaves the queue — the
   // next one still waiting in the reviewed stage, or the board when it is done.
