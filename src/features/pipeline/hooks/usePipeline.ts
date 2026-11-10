@@ -2,6 +2,7 @@
 
 import {
   useMutation,
+  useMutationState,
   useQuery,
   useQueryClient,
   type UseMutationResult,
@@ -41,6 +42,15 @@ export function usePipeline(vacancyId: string): UseQueryResult<VacancyPipeline> 
   });
 }
 
+const MOVE_CARD_KEY = ['move-pipeline-card'];
+
+export function usePendingPipelineCards(): string[] {
+  return useMutationState({
+    filters: { mutationKey: MOVE_CARD_KEY, status: 'pending' },
+    select: (mutation) => (mutation.state.variables as { cardId: string }).cardId,
+  });
+}
+
 export function useMovePipelineCard(): UseMutationResult<
   void,
   Error,
@@ -49,6 +59,7 @@ export function useMovePipelineCard(): UseMutationResult<
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: MOVE_CARD_KEY,
     mutationFn: ({ cardId, toStageId, rejectionReason }) =>
       movePipelineCard(cardId, toStageId, rejectionReason),
 
@@ -91,12 +102,17 @@ export function useMovePipelineCard(): UseMutationResult<
     },
 
     onError: (_err, _vars, context) => {
-      // Rollback on error
+      // Restore only the failed card; other candidates may have moved concurrently.
       const ctx = context as { previousData?: VacancyPipeline; targetVacancyId?: string } | undefined;
       if (ctx?.targetVacancyId && ctx?.previousData) {
         queryClient.setQueryData(
           pipelineKeys.pipeline(ctx.targetVacancyId),
-          ctx.previousData,
+          (current: VacancyPipeline | undefined) => current ? {
+            ...current,
+            cards: current.cards.map((card) => card.id === _vars.cardId
+              ? { ...card, stageId: ctx.previousData!.cards.find((previous) => previous.id === card.id)!.stageId }
+              : card),
+          } : current,
         );
       }
     },
@@ -106,8 +122,8 @@ export function useMovePipelineCard(): UseMutationResult<
       // rejectionSummary, match) reflect the move — the optimistic update only
       // shifts the card's stageId and cannot recompute those counts.
       const ctx = context as { targetVacancyId?: string } | undefined;
-      if (ctx?.targetVacancyId) {
-        queryClient.invalidateQueries({ queryKey: pipelineKeys.pipeline(ctx.targetVacancyId) });
+      if (ctx?.targetVacancyId && queryClient.isMutating({ mutationKey: MOVE_CARD_KEY }) === 1) {
+        queryClient.invalidateQueries({ queryKey: pipelineKeys.all });
       }
     },
   });
