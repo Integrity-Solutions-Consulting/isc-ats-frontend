@@ -49,7 +49,7 @@ vi.mock("next/navigation", () => ({
 function renderBoard(codes: string[]) {
   return render(
     <PermissionsProvider codes={codes} loaded>
-      <PipelineBoard vacancyId="vac-1" />
+      <PipelineBoard vacancyId="vac-1" vacancy={{ position: 'Developer', clientCompany: 'Cliente' }} />
     </PermissionsProvider>,
   );
 }

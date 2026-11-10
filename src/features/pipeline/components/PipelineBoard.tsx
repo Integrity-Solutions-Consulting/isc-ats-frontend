@@ -28,9 +28,11 @@ import { useMovePipelineCard, usePipeline } from '../hooks/usePipeline';
 import type { PipelineCard } from '../types';
 import { PipelineFilterBar } from './PipelineFilterBar';
 import { RejectReasonDialog } from './RejectReasonDialog';
+import { ExportApplicantsButton } from './ExportApplicantsButton';
 
 interface PipelineBoardProps {
   vacancyId: string;
+  vacancy: { position: string; clientCompany: string };
 }
 
 interface PendingReject {
@@ -40,7 +42,7 @@ interface PendingReject {
   candidateName: string;
 }
 
-export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
+export function PipelineBoard({ vacancyId, vacancy }: PipelineBoardProps) {
   const router = useRouter();
   const { data: entries = [], isLoading: isDirectoryLoading, error: directoryError, refetch: refetchDirectory } = useCandidateDirectory({ vacancyId });
   const [page, setPage] = useState(0);
@@ -187,6 +189,15 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
         shownCount={visibleCards.length}
         totalCount={allCards.length}
       />
+
+      <div className="flex justify-end">
+        <ExportApplicantsButton
+          cards={visibleCards}
+          entries={entries}
+          vacancy={vacancy}
+          disabled={isDirectoryLoading || Boolean(directoryError)}
+        />
+      </div>
 
       {directoryError && (
         <div role="alert" className="flex items-center gap-3 text-sm text-danger">

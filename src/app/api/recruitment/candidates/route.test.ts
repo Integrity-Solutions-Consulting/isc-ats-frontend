@@ -8,11 +8,11 @@ describe("Candidate directory application identities", () => {
   it("uses each application's own score and id, including later pages", async () => {
     backendGet.mockImplementation(async (path: string) => {
       if (path.startsWith("/recruitment/candidates/directory")) return { total: 2, items: [
-        { candidate_id: 1, first_name: "Ana", last_name: "Perez", city: "Quito", applied_vacancies: [{ id: 4, title: "Developer", match_score: 99 }], is_active: true },
+        { candidate_id: 1, first_name: "Ana", last_name: "Perez", city: "Quito", birth_date: "2000-02-15", title: "Ingeniera", university: "ESPOL", is_studying: false, applied_vacancies: [{ id: 4, title: "Developer", match_score: 99 }], is_active: true },
         { candidate_id: 2, first_name: "Luis", last_name: "Perez", applied_vacancies: [], is_active: true },
       ] };
       if (path === "/recruitment/applications?page=1&size=100") return { total: 3, items: [
-        { id: 11, candidate_id: 1, vacancy_id: 4, vacancy_name: "Developer", match_score: "70.4", salary_expectation: "1200.50", is_active: true },
+        { id: 11, candidate_id: 1, vacancy_id: 4, vacancy_name: "Developer", applied_at: "2026-11-01T10:00:00Z", match_score: "70.4", salary_expectation: "1200.50", is_active: true },
       ] };
       if (path === "/recruitment/applications?page=2&size=100") return { total: 3, items: [
         { id: 12, candidate_id: 1, vacancy_id: 4, vacancy_name: "Developer", match_score: null, is_active: true },
@@ -24,10 +24,11 @@ describe("Candidate directory application identities", () => {
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(data[0].vacancies).toEqual([
-      { applicationId: "11", vacancyId: "4", vacancyTitle: "Developer", matchPercent: 70, salaryExpectation: 1200.5 },
+      { applicationId: "11", vacancyId: "4", vacancyTitle: "Developer", appliedAt: "2026-11-01T10:00:00Z", matchPercent: 70, salaryExpectation: 1200.5 },
       { applicationId: "12", vacancyId: "4", vacancyTitle: "Developer", matchPercent: null, salaryExpectation: null },
     ]);
     expect(data[1].vacancies).toEqual([]);
     expect(data[0].city).toBe("Quito");
+    expect(data[0]).toMatchObject({ dateOfBirth: "2000-02-15", title: "Ingeniera" });
   });
 });
