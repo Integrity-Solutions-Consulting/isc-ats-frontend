@@ -11,6 +11,7 @@ import type { PipelineCard } from './types';
  * legitimate value the recruiter can type.
  */
 export interface PipelineFilters {
+  technologies: string[];
   /** Process stage id, or '' for every stage (including rejected). */
   processStageId: string;
   /** Free-text search over the candidate's name, or '' for no search. */
@@ -36,6 +37,7 @@ export interface PipelineFilters {
 }
 
 export const EMPTY_FILTERS: PipelineFilters = {
+  technologies: [],
   processStageId: '',
   name: '',
   minMatch: null,
@@ -55,7 +57,7 @@ export const EMPTY_FILTERS: PipelineFilters = {
  * NFD splits an accented letter into base letter + combining mark, which the
  * diacritic class then strips — leaving plain ASCII to compare against.
  */
-function normalizeText(value: string): string {
+export function normalizeText(value: string): string {
   return value
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
@@ -137,6 +139,8 @@ export function filterCards(
   filters: PipelineFilters,
 ): PipelineCard[] {
   return cards.filter((card) => {
+    const technologies = new Set([...(card.skills ?? []), ...(card.tools ?? [])].map((value) => normalizeText(value.trim())));
+    if (!filters.technologies.every((value) => technologies.has(normalizeText(value.trim())))) return false;
     if (filters.processStageId !== '' && card.stageId !== filters.processStageId) return false;
     if (!passesName(card, filters.name)) return false;
     if (!passesMatch(card, filters.minMatch)) return false;
@@ -177,6 +181,7 @@ export function universityOptionsFrom(cards: PipelineCard[]): string[] {
 
 export function hasActiveFilters(filters: PipelineFilters): boolean {
   return (
+    filters.technologies.length > 0 ||
     filters.processStageId !== '' ||
     filters.name !== '' ||
     filters.minMatch !== null ||
@@ -202,6 +207,7 @@ export function hasActiveFilters(filters: PipelineFilters): boolean {
  * The URL also survives a reload and can be shared as-is.
  */
 export const FILTER_PARAM_KEYS = [
+  'technologies',
   'processStageId',
   'name',
   'minMatch',
@@ -239,6 +245,7 @@ function paramToDay(raw: string | undefined): string {
 export function parseFilters(query: FilterQuery): PipelineFilters {
   const studying = query.studying;
   return {
+    technologies: parseTechnologies(query.technologies),
     processStageId: query.processStageId ?? '',
     name: query.name ?? '',
     minMatch: paramToNumberOrNull(query.minMatch),
@@ -259,6 +266,7 @@ export function parseFilters(query: FilterQuery): PipelineFilters {
  */
 export function filtersToParams(filters: PipelineFilters): Record<string, string> {
   const params: Record<string, string> = {};
+  if (filters.technologies.length) params.technologies = JSON.stringify(filters.technologies);
   if (filters.processStageId !== '') params.processStageId = filters.processStageId;
   if (filters.name !== '') params.name = filters.name;
   if (filters.minMatch !== null) params.minMatch = String(filters.minMatch);
@@ -271,4 +279,37 @@ export function filtersToParams(filters: PipelineFilters): Record<string, string
   if (filters.updatedFrom !== '') params.updatedFrom = filters.updatedFrom;
   if (filters.updatedTo !== '') params.updatedTo = filters.updatedTo;
   return params;
+}
+
+function parseTechnologies(raw: string | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const values: unknown = JSON.parse(raw);
+    return Array.isArray(values) ? [...new Set(values.filter((value): value is string => typeof value === 'string' && value.trim() !== '').map((value) => value.trim()))] : [];
+  } catch {
+    return [];
+  }
+}
+
+export function withCandidateTechnologies(
+  cards: PipelineCard[],
+  entries: { id: string; skills: string[]; tools: string[] }[],
+): PipelineCard[] {
+  const byId = new Map(entries.map((entry) => [entry.id, entry]));
+  return cards.map((card) => {
+    const entry = byId.get(card.candidateId);
+    return entry ? { ...card, skills: entry.skills, tools: entry.tools } : card;
+  });
+}
+
+export function technologyOptionsFrom(cards: PipelineCard[]): string[] {
+  const options = new Map<string, string>();
+  for (const card of cards) {
+    for (const value of [...(card.skills ?? []), ...(card.tools ?? [])]) {
+      const label = value.trim();
+      const key = normalizeText(label);
+      if (label && !options.has(key)) options.set(key, label);
+    }
+  }
+  return [...options.values()].sort((a, b) => a.localeCompare(b, 'es'));
 }

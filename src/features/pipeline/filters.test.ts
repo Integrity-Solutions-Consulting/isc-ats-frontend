@@ -8,9 +8,39 @@ import {
   hasActiveFilters,
   parseFilters,
   universityOptionsFrom,
+  technologyOptionsFrom,
+  withCandidateTechnologies,
   type PipelineFilters,
 } from "./filters";
 import type { PipelineCard } from "./types";
+
+describe('technology and knowledge filters', () => {
+  it('requires every selection across skills and tools, ignoring case and accents', () => {
+    const cards = [
+      makeCard({ id: 'both', skills: ['Gestión'], tools: ['SQL'] }),
+      makeCard({ id: 'one', skills: ['Gestión'] }),
+      makeCard({ id: 'none' }),
+    ];
+    expect(filterCards(cards, { ...EMPTY_FILTERS, technologies: ['gestion', 'sql'] }).map((card) => card.id)).toEqual(['both']);
+    expect(filterCards(cards, EMPTY_FILTERS)).toEqual(cards);
+  });
+
+  it('builds deduplicated options only from candidates on the board', () => {
+    const cards = withCandidateTechnologies([makeCard()], [
+      { id: 'cand-1', skills: [' SQL ', 'Gestión'], tools: ['sql'] },
+      { id: 'outside', skills: ['Python'], tools: [] },
+    ]);
+    expect(technologyOptionsFrom(cards)).toEqual(['Gestión', 'SQL']);
+  });
+
+  it('preserves punctuation in shared URLs and ignores malformed values', () => {
+    const filters = { ...EMPTY_FILTERS, technologies: ['C++', 'Diseño, análisis'] };
+    expect(parseFilters(filtersToParams(filters))).toEqual(filters);
+    expect(hasActiveFilters(filters)).toBe(true);
+    expect(parseFilters({ technologies: 'broken' }).technologies).toEqual([]);
+    expect(parseFilters({ technologies: '[null,2,"SQL"]' }).technologies).toEqual(['SQL']);
+  });
+});
 
 function makeCard(overrides: Partial<PipelineCard> = {}): PipelineCard {
   return {

@@ -16,6 +16,8 @@ export interface PipelineStage {
 }
 
 export interface PipelineCard {
+  skills?: string[];
+  tools?: string[];
   id: string;            // application id
   candidateId: string;
   vacancyId: string;

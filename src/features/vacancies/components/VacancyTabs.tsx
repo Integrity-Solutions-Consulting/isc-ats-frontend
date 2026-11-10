@@ -71,7 +71,7 @@ export function VacancyTabs({ vacancy, initialTab }: VacancyTabsProps) {
           }
         >
           {activeTab === 'pipeline' && (
-            <PipelineBoard vacancyId={vacancy.id} />
+            <PipelineBoard vacancyId={vacancy.id} vacancy={vacancy} />
           )}
           {activeTab === 'detalles' && (
             <DetallesTab vacancy={vacancy} />

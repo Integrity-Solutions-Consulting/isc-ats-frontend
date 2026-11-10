@@ -22,15 +22,19 @@ import {
   filtersToParams,
   parseFilters,
   universityOptionsFrom,
+  technologyOptionsFrom,
+  withCandidateTechnologies,
   type PipelineFilters,
 } from '../filters';
-import { useMovePipelineCard, usePipeline } from '../hooks/usePipeline';
+import { useMovePipelineCard, usePendingPipelineCards, usePipeline } from '../hooks/usePipeline';
 import type { PipelineCard } from '../types';
 import { PipelineFilterBar } from './PipelineFilterBar';
 import { RejectReasonDialog } from './RejectReasonDialog';
+import { ExportApplicantsButton } from './ExportApplicantsButton';
 
 interface PipelineBoardProps {
   vacancyId: string;
+  vacancy: { position: string; clientCompany: string };
 }
 
 interface PendingReject {
@@ -40,13 +44,14 @@ interface PendingReject {
   candidateName: string;
 }
 
-export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
+export function PipelineBoard({ vacancyId, vacancy }: PipelineBoardProps) {
   const router = useRouter();
   const { data: entries = [], isLoading: isDirectoryLoading, error: directoryError, refetch: refetchDirectory } = useCandidateDirectory({ vacancyId });
   const [page, setPage] = useState(0);
   const [moveError, setMoveError] = useState<string | null>(null);
   const { data: pipeline, isLoading, isError, refetch } = usePipeline(vacancyId);
-  const { mutate: moveCard, isPending: isMoving } = useMovePipelineCard();
+  const { mutateAsync: moveCard } = useMovePipelineCard();
+  const pendingCardIds = usePendingPipelineCards();
   const { has } = usePermissions();
   const searchParams = useSearchParams();
   const canMove = has(PERM.applicationsUpdate);
@@ -57,9 +62,11 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
   );
   const [pendingReject, setPendingReject] = useState<PendingReject | null>(null);
   const [rejectError, setRejectError] = useState<string | null>(null);
+  const isRejecting = pendingReject !== null && pendingCardIds.includes(pendingReject.cardId);
 
   // Keep the same vacancy filters for the table and profile navigation.
-  const allCards = useMemo(() => pipeline?.cards ?? [], [pipeline]);
+  const allCards = useMemo(() => withCandidateTechnologies(pipeline?.cards ?? [], entries), [pipeline, entries]);
+  const technologyOptions = useMemo(() => technologyOptionsFrom(allCards), [allCards]);
   const visibleCards = useMemo(() => sortCardsByMatch(filterCards(allCards, filters)), [allCards, filters]);
   const cityOptions = useMemo(() => cityOptionsFrom(allCards), [allCards]);
   const universityOptions = useMemo(() => universityOptionsFrom(allCards), [allCards]);
@@ -100,7 +107,7 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
   const sortedStages = [...pipeline.stages].sort((a, b) => a.order - b.order);
 
   function handleStageChange(fromCard: PipelineCard, toStageId: string) {
-    if (!canMove || isMoving || pendingReject) return;
+    if (!canMove || pendingCardIds.includes(fromCard.id) || pendingReject) return;
     setMoveError(null);
     const action = resolveDropAction(pipeline!.stages, fromCard.stageId, toStageId);
     if (action.type === 'noop') return;
@@ -117,13 +124,11 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
       return;
     }
 
-    moveCard({
+    void moveCard({
       cardId: fromCard.id,
       toStageId: action.toStageId,
       fromStageId: fromCard.stageId,
-    }, {
-      onError: (error) => setMoveError(error.message || 'No se pudo cambiar el estado.'),
-    });
+    }).catch((error: Error) => setMoveError(`${fromCard.candidateName}: ${error.message || 'No se pudo cambiar el estado.'}`));
   }
 
   function handleCancelReject() {
@@ -132,20 +137,15 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
   }
 
   function handleConfirmReject(reason: string) {
-    if (!pendingReject || !canMove || isMoving) return;
+    if (!pendingReject || !canMove || isRejecting) return;
     setRejectError(null);
-    moveCard(
-      {
-        cardId: pendingReject.cardId,
-        toStageId: pendingReject.toStageId,
-        fromStageId: pendingReject.fromStageId,
-        rejectionReason: reason,
-      },
-      {
-        onSuccess: () => setPendingReject(null),
-        onError: (err) =>
-          setRejectError(err instanceof Error ? err.message : 'No se pudo rechazar al candidato.'),
-      },
+    void moveCard({
+      cardId: pendingReject.cardId,
+      toStageId: pendingReject.toStageId,
+      fromStageId: pendingReject.fromStageId,
+      rejectionReason: reason,
+    }).then(() => setPendingReject(null)).catch((err: unknown) =>
+      setRejectError(err instanceof Error ? err.message : 'No se pudo rechazar al candidato.'),
     );
   }
 
@@ -186,6 +186,16 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
         universityOptions={universityOptions}
         shownCount={visibleCards.length}
         totalCount={allCards.length}
+        technologyOptions={technologyOptions}
+        technologiesDisabled={isDirectoryLoading || Boolean(directoryError)}
+        actions={
+          <ExportApplicantsButton
+            cards={visibleCards}
+            entries={entries}
+            vacancy={vacancy}
+            disabled={isDirectoryLoading || Boolean(directoryError)}
+          />
+        }
       />
 
       {directoryError && (
@@ -195,7 +205,6 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
         </div>
       )}
       {moveError && <p role="alert" className="text-sm text-danger">{moveError}</p>}
-      {isMoving && <p role="status" className="text-sm text-ink-muted">Guardando estado...</p>}
       <CandidatesTable
         isLoading={isDirectoryLoading}
         data={rows.slice(currentPage * 10, (currentPage + 1) * 10)}
@@ -230,16 +239,18 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
           if (!canMove) return <span>{stage?.name ?? 'Sin etapa'}</span>;
           return (
             <div onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-              <DropdownMenu.Root>
+              <DropdownMenu.Root modal={false}>
                 <DropdownMenu.Trigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={isMoving || pendingReject !== null}
+                    type="button"
+                    disabled={pendingCardIds.includes(card.id)}
+                    aria-busy={pendingCardIds.includes(card.id)}
                     aria-label={`Cambiar estado de ${card.candidateName}: ${stage?.name ?? 'Sin etapa'}`}
                     className="gap-2 whitespace-nowrap"
                   >
-                    {stage?.name ?? 'Sin etapa'}
+                    {pendingCardIds.includes(card.id) ? <span role="status">Guardando...</span> : stage?.name ?? 'Sin etapa'}
                     <ChevronDown className="size-4" aria-hidden="true" />
                   </Button>
                 </DropdownMenu.Trigger>
@@ -273,7 +284,7 @@ export function PipelineBoard({ vacancyId }: PipelineBoardProps) {
       <RejectReasonDialog
         open={pendingReject !== null}
         candidateName={pendingReject?.candidateName}
-        isSubmitting={isMoving}
+        isSubmitting={isRejecting}
         submitError={rejectError}
         onCancel={handleCancelReject}
         onConfirm={handleConfirmReject}

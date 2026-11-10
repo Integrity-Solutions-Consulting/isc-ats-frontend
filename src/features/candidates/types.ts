@@ -101,6 +101,7 @@ export interface OtherApplication {
 }
 
 export interface CandidateAppliedVacancy {
+  appliedAt?: string;
   salaryExpectation?: number | null;
   applicationId?: string;
   vacancyId: string;
@@ -109,6 +110,8 @@ export interface CandidateAppliedVacancy {
 }
 
 export interface CandidateDirectoryEntry {
+  dateOfBirth?: string | null;
+  title?: string | null;
   city?: string;
   id: string;
   candidateName: string;
