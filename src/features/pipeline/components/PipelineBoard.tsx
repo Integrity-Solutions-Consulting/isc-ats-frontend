@@ -210,6 +210,14 @@ export function PipelineBoard({ vacancyId, vacancy }: PipelineBoardProps) {
         data={rows.slice(currentPage * 10, (currentPage + 1) * 10)}
         additionalColumns={[
           {
+            key: 'city',
+            header: 'Ciudad',
+            render: (entry) => {
+              const city = cardsById.get(entry.rowId)?.city?.trim();
+              return <span className="text-ink-muted">{city || 'Sin registrar'}</span>;
+            },
+          },
+          {
             key: 'salary',
             header: 'Salario',
             render: (entry) => {
