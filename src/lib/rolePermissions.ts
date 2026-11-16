@@ -55,7 +55,7 @@ export async function getRoleUserCounts(): Promise<Map<string, number>> {
   try {
     // Every page, not just the first: counting a single 100-row page reported a
     // role as empty whenever its members happened to sit past that cut-off.
-    const users = await backendGetAllPages<BackendUserRoles>("/auth/users");
+    const users = await backendGetAllPages<BackendUserRoles>("/auth/users", { pageSize: 1000 });
     for (const user of users) {
       for (const roleName of user.roles) {
         counts.set(roleName, (counts.get(roleName) ?? 0) + 1);

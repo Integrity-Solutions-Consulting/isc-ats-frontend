@@ -30,7 +30,7 @@ function mapUser(u: BackendUser) {
 
 export async function GET() {
   try {
-    const users = await backendGetAllPages<BackendUser>("/auth/users");
+    const users = await backendGetAllPages<BackendUser>("/auth/users", { pageSize: 1000 });
     return NextResponse.json(users.map(mapUser));
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });

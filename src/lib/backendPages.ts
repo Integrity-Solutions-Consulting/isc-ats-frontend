@@ -7,8 +7,8 @@ interface BackendPage<T> {
 }
 
 /**
- * Largest page the backend accepts: its list endpoints declare
- * `size: Query(ge=1, le=100)`, so asking for more is rejected outright.
+ * Default size for endpoints whose public limit is 100. The directory and user
+ * endpoints additionally support bounded 1000-row batches for local filtering.
  */
 const MAX_BACKEND_PAGE_SIZE = 100;
 
@@ -20,24 +20,59 @@ const MAX_BACKEND_PAGE_SIZE = 100;
  * id, so the NEWEST records fell off the end — a freshly created user was invisible
  * on the Usuarios screen while a hundred older accounts showed fine.
  *
- * Pages are fetched sequentially rather than in parallel so a large collection
- * cannot fan out into dozens of simultaneous backend requests. The cost is one
- * round trip per 100 records, which is why this belongs only on screens that
- * genuinely need the full set in memory to filter and paginate client-side.
+ * Fetch at most four pages at a time, preserving the backend order. This avoids
+ * one network round trip per page without flooding the backend with requests.
+ * No data is cached here: authorization remains attached to every caller.
  */
-export async function backendGetAllPages<T>(path: string): Promise<T[]> {
+export async function backendGetAllPages<T>(path: string, options: { pageSize?: 100 | 1000 } = {}): Promise<T[]> {
+  let pageSize = options.pageSize ?? MAX_BACKEND_PAGE_SIZE;
   const separator = path.includes("?") ? "&" : "?";
   const pageUrl = (page: number) =>
-    `${path}${separator}page=${page}&size=${MAX_BACKEND_PAGE_SIZE}`;
+    `${path}${separator}page=${page}&size=${pageSize}`;
 
-  const first = await backendGet<BackendPage<T>>(pageUrl(1));
+  let first: BackendPage<T>;
+  try {
+    first = await backendGet<BackendPage<T>>(pageUrl(1));
+  } catch (error) {
+    // Older deployments accept only 100; do not hide authentication or network errors.
+    if (pageSize === 1000 && typeof error === "object" && error !== null && "status" in error && error.status === 422) {
+      pageSize = MAX_BACKEND_PAGE_SIZE;
+      first = await backendGet<BackendPage<T>>(pageUrl(1));
+    } else {
+      throw error;
+    }
+  }
   const items = [...first.items];
 
-  const pageCount = Math.ceil(first.total / MAX_BACKEND_PAGE_SIZE);
-  for (let page = 2; page <= pageCount; page += 1) {
-    const next = await backendGet<BackendPage<T>>(pageUrl(page));
-    items.push(...next.items);
+  if (items.length >= first.total) return items;
+  if (!items.length) throw new Error("El listado devolvió una página vacía antes de completarse.");
+
+  // A short non-final page may mean the endpoint imposes a smaller limit.
+  // Follow those pages until complete rather than guessing their count.
+  if (first.items.length < pageSize) {
+    for (let page = 2; items.length < first.total; page += 1) {
+      const next = await backendGet<BackendPage<T>>(pageUrl(page));
+      if (!next.items.length) throw new Error("No se pudo cargar el listado completo.");
+      items.push(...next.items);
+    }
+    return items;
   }
+  const pageCount = Math.ceil(first.total / pageSize);
+  for (let page = 2; page <= pageCount; page += 4) {
+    const pages = await Promise.all(
+      Array.from({ length: Math.min(4, pageCount - page + 1) }, (_, index) =>
+        backendGet<BackendPage<T>>(pageUrl(page + index)),
+      ),
+    );
+    for (const next of pages) {
+      if (!next.items.length && items.length < first.total) {
+        throw new Error("El listado devolvió una página vacía antes de completarse.");
+      }
+      items.push(...next.items);
+    }
+  }
+
+  if (items.length < first.total) throw new Error("No se pudo cargar el listado completo.");
 
   return items;
 }

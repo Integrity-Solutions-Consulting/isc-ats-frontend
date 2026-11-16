@@ -48,7 +48,7 @@ describe("PersonalDataCard — CV download stays ungated", () => {
   it("renders 'Ver' and 'Descargar' with no permissions at all (fail-open by design)", () => {
     renderCard();
     expect(screen.getByRole("button", { name: /ver/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /descargar/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /descargar/i })).toBeInTheDocument();
   });
 });
 

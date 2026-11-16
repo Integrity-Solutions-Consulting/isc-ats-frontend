@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 import { backendGet } from "@/lib/backendFetch";
 import type { CatalogOption, MockCatalogs } from "@/features/vacancies/api/mockData";
@@ -55,8 +56,24 @@ async function fetchSafe<T>(fetcher: () => Promise<T>, fallback: T): Promise<T> 
   }
 }
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   const emptyPage = { items: [], total: 0 };
+
+  // The table needs only three sources; the other six belong to the editor.
+  if (request.nextUrl.searchParams.get("scope") === "list") {
+    const [companies, departments, levels] = await Promise.all([
+      fetchSafe(() => backendGet<BackendPage<BackendCompany>>("/org/client-companies?size=100"), emptyPage),
+      fetchSafe(() => backendGet<BackendPage<BackendDept>>("/org/departments?size=100"), emptyPage),
+      fetchSafe(() => backendGet<BackendPage<BackendParam>>("/org/parameters?type=resource_level&size=100"), emptyPage),
+    ]);
+    return NextResponse.json({
+      clients: companies.items.map((c) => toOption(c.id, c.name)),
+      departments: departments.items.map((d) => toOption(d.id, d.name)),
+      resourceLevels: levels.items.map((p) => ({ id: p.code, label: p.name })),
+      contacts: [], processes: [], cities: [], careers: [], profileTemplates: [],
+      vacancyNames: [], workModes: [],
+    } satisfies MockCatalogs);
+  }
 
   const [companies, departments, contacts, processes, cities, careers, workModesData, levelsData, names] =
     await Promise.all([

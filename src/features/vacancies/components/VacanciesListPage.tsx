@@ -16,7 +16,7 @@ import { usePermissions } from "@/features/auth/PermissionsProvider";
 
 export function VacanciesListPage() {
   const { data: vacancies, isLoading, isError } = useVacancies();
-  const { data: catalogs } = useVacancyCatalogs();
+  const { data: catalogs } = useVacancyCatalogs("list");
   const { has } = usePermissions();
   const canCreate = has(PERM.vacanciesCreate);
   const filters = useVacanciesListStore((state) => state.filters);
