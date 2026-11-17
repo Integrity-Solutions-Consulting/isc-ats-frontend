@@ -1,7 +1,7 @@
 /** Rasterize the existing SVG at export time; Excel embeds PNG images. */
 export async function loadBrandLogo(): Promise<string> {
   const image = new Image();
-  image.src = '/brand/logo_integrity_full.svg';
+  image.src = '/brand/logo_integrity_full_nv.svg';
   await image.decode();
   const canvas = document.createElement('canvas');
   canvas.width = 780;
