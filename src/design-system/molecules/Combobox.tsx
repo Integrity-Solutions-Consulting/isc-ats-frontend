@@ -20,6 +20,7 @@ interface ComboboxProps {
   "aria-invalid"?: boolean;
   "aria-label"?: string;
   disabled?: boolean;
+  readOnly?: boolean;
   valueKey?: "label" | "id";
   /** En modo id, muestra el placeholder cuando el valor es vacío. */
   emptyValueShowsPlaceholder?: boolean;
@@ -38,6 +39,7 @@ export function Combobox({
   "aria-invalid": ariaInvalid,
   "aria-label": ariaLabel,
   disabled,
+  readOnly = false,
   valueKey = "label",
   emptyValueShowsPlaceholder = false,
   clearSearchOnOpen = false,
@@ -118,6 +120,7 @@ export function Combobox({
         type="text"
         autoComplete="off"
         disabled={disabled}
+        readOnly={readOnly}
         value={query}
         placeholder={open && isIdMode && clearSearchOnOpen ? "" : placeholder}
         role="combobox"
@@ -126,8 +129,9 @@ export function Combobox({
         aria-controls={listboxId}
         aria-invalid={ariaInvalid}
         aria-label={ariaLabel}
-        aria-autocomplete="list"
+        aria-autocomplete={readOnly ? "none" : "list"}
         onChange={(event) => {
+          if (readOnly) return;
           setQuery(event.target.value);
           if (!isIdMode) onChange(event.target.value);
           setOpen(true);
