@@ -1,5 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import { cn } from "@/shared/utils";
+import { useChristmasSeason } from "@/providers/SeasonalBrandingProvider";
+import { getBrandAssets } from "@/shared/branding/christmasSeason";
 
 interface BrandProps {
   className?: string;
@@ -23,11 +27,14 @@ interface BrandProps {
 
 /** Corporate brand lockup using official SVG assets. */
 export function Brand({ className, logoSize = "default", tone = "light", compact = false, subtitle = "Bolsa de Empleo" }: BrandProps) {
+  const christmas = useChristmasSeason();
+  const assets = getBrandAssets(christmas);
+  const enlargedHeader = christmas && logoSize === "large";
   if (tone === "dark") {
     return (
       <div className={cn("flex items-center gap-3", className)}>
         <Image
-          src="/brand/logo_integrity_icon_nv.svg"
+          src={assets.icon}
           alt="Integrity Solutions"
           width={30}
           height={30}
@@ -48,13 +55,13 @@ export function Brand({ className, logoSize = "default", tone = "light", compact
   // Frosted header — renders the full white/cyan wordmark logo on dark backgrounds.
   if (tone === "header") {
     return (
-      <div className={cn("flex items-center", logoSize === "large" && "relative h-[30px] w-[94px] shrink-0", className)}>
+      <div className={cn("flex items-center", enlargedHeader && "relative h-[30px] w-[94px] shrink-0", className)}>
         <Image
-          src="/brand/logoBlanco_nv.svg"
+          src={assets.white}
           alt="Integrity Solutions"
-          width={logoSize === "large" ? 200 : 140}
-          height={logoSize === "large" ? 85 : 45}
-          className={cn("w-auto select-none", logoSize === "large" ? "absolute left-1/2 top-1/2 h-[36px] max-w-none -translate-x-1/2 -translate-y-1/2" : "h-[30px]")}
+          width={enlargedHeader ? 200 : 140}
+          height={enlargedHeader ? 85 : 45}
+          className={cn("w-auto select-none", enlargedHeader ? "absolute left-1/2 top-1/2 h-[36px] max-w-none -translate-x-1/2 -translate-y-1/2" : "h-[30px]")}
           priority
         />
       </div>
@@ -64,7 +71,7 @@ export function Brand({ className, logoSize = "default", tone = "light", compact
   return (
     <div className={cn("flex items-center", className)}>
       <Image
-        src="/brand/logo_integrity_full_nv.svg"
+        src={assets.full}
         alt="Integrity Solutions"
         width={130}
         height={50}
