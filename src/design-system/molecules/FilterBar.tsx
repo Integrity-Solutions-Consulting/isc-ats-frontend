@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+import { useId } from "react";
 
 import { Input } from "@/design-system/ui/input";
 import { cn } from "@/shared/utils";
@@ -11,6 +12,7 @@ interface SearchSlotProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  label?: string;
   /** Min width in Tailwind class form. Defaults to "min-w-[220px]". */
   className?: string;
 }
@@ -44,6 +46,7 @@ interface FilterBarProps {
  * props — no feature imports, no fetching.
  */
 export function FilterBar({ search, children, className }: FilterBarProps) {
+  const searchId = useId();
   return (
     <div
       className={cn(
@@ -54,18 +57,22 @@ export function FilterBar({ search, children, className }: FilterBarProps) {
       {search && (
         <div
           className={cn(
-            "relative min-w-[220px] flex-1",
+            "min-w-[220px] flex-1",
             search.className,
           )}
         >
+          {search.label && <label htmlFor={searchId} className="mb-1 block text-sm font-medium text-ink-muted">{search.label}</label>}
+          <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-subtle" />
           <Input
+            id={searchId}
             type="search"
             value={search.value}
             onChange={(e) => search.onChange(e.target.value)}
             placeholder={search.placeholder}
             className="pl-9"
           />
+          </div>
         </div>
       )}
       {children}

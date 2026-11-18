@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { TechnologyFilter } from './TechnologyFilter';
 import { Button } from '@/design-system/ui/button';
 import { Input } from '@/design-system/ui/input';
-import { Select } from '@/design-system/atoms/Select';
+import { Combobox } from '@/design-system/molecules/Combobox';
 import { FilterBar } from '@/design-system/molecules/FilterBar';
 import { cn } from '@/shared/utils';
 import { EMPTY_FILTERS, hasActiveFilters, type PipelineFilters } from '../filters';
@@ -28,12 +28,13 @@ interface PipelineFilterBarProps {
 
 /** '' clears a numeric filter; anything unparseable is ignored the same way. */
 function toNumberOrNull(raw: string): number | null {
-  if (raw.trim() === '') return null;
-  const parsed = Number(raw);
+  const digits = raw.replace(/\D/g, '');
+  if (digits === '') return null;
+  const parsed = Number(digits);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-const FIELD_LABEL = 'text-xs font-medium text-ink-muted';
+const FIELD_LABEL = 'text-sm font-medium text-ink-muted';
 
 const FIELD_GROUP = 'flex min-w-0 flex-col gap-2';
 
@@ -72,10 +73,7 @@ export function PipelineFilterBar({
         <div className="relative">
           <Input
             id="filter-min-match"
-            type="number"
-            min={0}
-            max={100}
-            step={5}
+            type="text"
             inputMode="numeric"
             placeholder="Sin filtro"
             value={filters.minMatch ?? ''}
@@ -93,9 +91,7 @@ export function PipelineFilterBar({
         <div className="flex items-center gap-1.5">
           <Input
             aria-label="Aspiración salarial desde"
-            type="number"
-            min={0}
-            step={50}
+            type="text"
             inputMode="numeric"
             placeholder="Desde"
             value={filters.minSalary ?? ''}
@@ -105,9 +101,7 @@ export function PipelineFilterBar({
           <span className="shrink-0 text-sm text-ink-subtle">—</span>
           <Input
             aria-label="Aspiración salarial hasta"
-            type="number"
-            min={0}
-            step={50}
+            type="text"
             inputMode="numeric"
             placeholder="Hasta"
             value={filters.maxSalary ?? ''}
@@ -124,9 +118,7 @@ export function PipelineFilterBar({
         <div className="relative">
           <Input
             id="filter-min-experience"
-            type="number"
-            min={0}
-            step={0.5}
+            type="text"
             inputMode="numeric"
             placeholder="Sin filtro"
             value={filters.minExperience ?? ''}
@@ -143,51 +135,52 @@ export function PipelineFilterBar({
         <label htmlFor="filter-city" className={FIELD_LABEL}>
           Ciudad
         </label>
-        <Select
+        <Combobox
           id="filter-city"
+          valueKey="id"
+          lettersOnly
+          clearSearchOnOpen
+          emptyValueShowsPlaceholder
+          placeholder="Ciudad"
           value={filters.city}
-          onChange={(e) => set('city', e.target.value)}
-        >
-          <option value="">Todas</option>
-          {cityOptions.map((city) => (
-            <option key={city} value={city}>
-              {city}
-            </option>
-          ))}
-        </Select>
+          onChange={(value) => set('city', value)}
+          options={[{ id: '', label: 'Todas' }, ...cityOptions.map((city) => ({ id: city, label: city }))]}
+        />
       </div>
 
       <div className={FIELD_GROUP}>
         <label htmlFor="filter-university" className={FIELD_LABEL}>
           Universidad
         </label>
-        <Select
+        <Combobox
           id="filter-university"
+          valueKey="id"
+          lettersOnly
+          clearSearchOnOpen
+          emptyValueShowsPlaceholder
+          placeholder="Universidad"
           value={filters.university}
-          onChange={(e) => set('university', e.target.value)}
-        >
-          <option value="">Todas</option>
-          {universityOptions.map((university) => (
-            <option key={university} value={university}>
-              {university}
-            </option>
-          ))}
-        </Select>
+          onChange={(value) => set('university', value)}
+          options={[{ id: '', label: 'Todas' }, ...universityOptions.map((university) => ({ id: university, label: university }))]}
+        />
       </div>
 
       <div className={FIELD_GROUP}>
         <label htmlFor="filter-studying" className={FIELD_LABEL}>
           Estudia actualmente
         </label>
-        <Select
+        <Combobox
           id="filter-studying"
-          value={filters.studying}
-          onChange={(e) => set('studying', e.target.value as PipelineFilters['studying'])}
-        >
-          <option value="all">Todos</option>
-          <option value="yes">Sí</option>
-          <option value="no">No</option>
-        </Select>
+          valueKey="id"
+          selectOnly
+          emptyValueShowsPlaceholder
+          placeholder="Estudia actualmente"
+          value={filters.studying === 'all' ? '' : filters.studying}
+          onChange={(value) => {
+            if (value === '' || value === 'yes' || value === 'no') set('studying', value || 'all');
+          }}
+          options={[{ id: '', label: 'Todos' }, { id: 'yes', label: 'Sí' }, { id: 'no', label: 'No' }]}
+        />
       </div>
 
       {/* Named for what it filters: the card's date moves on any activity — a
@@ -201,7 +194,7 @@ export function PipelineFilterBar({
             value={filters.updatedFrom}
             max={filters.updatedTo || undefined}
             onChange={(e) => set('updatedFrom', e.target.value)}
-            className="min-w-0 flex-1"
+            className="min-w-0 flex-1 text-ink-muted [&::-webkit-calendar-picker-indicator]:opacity-50"
           />
           <span className="shrink-0 text-sm text-ink-subtle">—</span>
           <Input
@@ -210,7 +203,7 @@ export function PipelineFilterBar({
             value={filters.updatedTo}
             min={filters.updatedFrom || undefined}
             onChange={(e) => set('updatedTo', e.target.value)}
-            className="min-w-0 flex-1"
+            className="min-w-0 flex-1 text-ink-muted [&::-webkit-calendar-picker-indicator]:opacity-50"
           />
         </div>
       </div>
@@ -219,16 +212,16 @@ export function PipelineFilterBar({
         <label htmlFor="filter-process-stage" className={FIELD_LABEL}>
           Estado
         </label>
-        <Select
+        <Combobox
           id="filter-process-stage"
+          valueKey="id"
+          selectOnly
+          emptyValueShowsPlaceholder
+          placeholder="Estado"
           value={filters.processStageId}
-          onChange={(e) => set('processStageId', e.target.value)}
-        >
-          <option value="">Todos</option>
-          {stages.map((stage) => (
-            <option key={stage.id} value={stage.id}>{stage.name}</option>
-          ))}
-        </Select>
+          onChange={(value) => set('processStageId', value)}
+          options={[{ id: '', label: 'Todos' }, ...stages.map((stage) => ({ id: stage.id, label: stage.name }))]}
+        />
       </div>
 
       <TechnologyFilter options={technologyOptions} selected={filters.technologies} onChange={(values) => set('technologies', values)} disabled={technologiesDisabled} />

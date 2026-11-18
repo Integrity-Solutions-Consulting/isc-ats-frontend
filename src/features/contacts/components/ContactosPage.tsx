@@ -226,8 +226,11 @@ export function ContactosPage() {
         )}
       </div>
 
-      <FilterBar search={{ value: search, onChange: (v) => { setSearch(v); setPage(0); }, placeholder: 'Buscar por nombre o correo…' }}>
+      <FilterBar className="items-end" search={{ label: 'Buscar', value: search, onChange: (v) => { setSearch(v); setPage(0); }, placeholder: 'Buscar por nombre o correo…' }}>
+        <div>
+        <label htmlFor="contacts-filter-client" className="mb-1 block text-sm font-medium text-ink-muted">Cliente</label>
         <Combobox
+          id="contacts-filter-client"
           valueKey="id"
           aria-label="Filtrar por cliente"
           className="w-auto min-w-[180px]"
@@ -238,7 +241,11 @@ export function ContactosPage() {
             ...clientNames.map((name) => ({ id: name, label: name })),
           ]}
         />
+        </div>
+        <div>
+        <label htmlFor="contacts-filter-status" className="mb-1 block text-sm font-medium text-ink-muted">Estado</label>
         <Combobox
+          id="contacts-filter-status"
           valueKey="id"
           aria-label="Filtrar por estado"
           className="w-auto min-w-[150px]"
@@ -250,6 +257,7 @@ export function ContactosPage() {
             { id: 'inactive', label: 'Inactivo' },
           ]}
         />
+        </div>
       </FilterBar>
 
       {deleteMut.isError && (

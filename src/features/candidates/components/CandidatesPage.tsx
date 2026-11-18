@@ -2,25 +2,37 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 import { CandidatesTable } from "./CandidatesTable";
 import { Pagination } from "@/design-system/molecules/Pagination";
 import { Button } from "@/design-system/ui/button";
 import { Input } from "@/design-system/ui/input";
-import { DataTable, type ColumnDef } from "@/design-system/organisms/DataTable";
+import type { ColumnDef } from "@/design-system/organisms/DataTable";
 import { FilterBar } from "@/design-system/molecules/FilterBar";
-import { Combobox } from "@/design-system/molecules/Combobox";
+import { CandidateFilter } from "./CandidateFilter";
 import { ROUTES } from "@/shared/constants/routes";
 import {
   useCandidateDirectory,
   useAddToTalentPool,
 } from "../hooks/useCandidates";
 import { useCandidateDirectoryNavStore } from "@/shared/stores/candidateDirectoryNavStore";
-import { CandidateCvActions } from "./CandidateCvActions";
 import { SalaryRangeFilter, salaryValue } from "./SalaryRangeFilter";
-import { getCandidateDirectoryRows, type CandidateDirectoryRow } from "../directoryRows";
+import { compareLatestApplications, getCandidateDirectoryRows, type CandidateDirectoryRow } from "../directoryRows";
 import type { CandidateDirectoryEntry } from "../types";
+
+const applicationDateFormat = new Intl.DateTimeFormat("es-EC", {
+  timeZone: "America/Guayaquil",
+  day: "2-digit", month: "2-digit", year: "numeric",
+});
+
+const applicationDateColumns: ColumnDef<CandidateDirectoryRow>[] = [{
+  key: "lastAppliedAt",
+  header: "Última postulación",
+  render: (entry) => entry.lastAppliedAt
+    ? <time dateTime={entry.lastAppliedAt} className="whitespace-nowrap text-ink-muted">{applicationDateFormat.format(new Date(entry.lastAppliedAt))}</time>
+    : <span className="text-ink-subtle">Sin fecha</span>,
+}];
 
 const normalizeTechnology = (value: string) =>
   value.trim().replace(/\s+/g, " ").toLocaleLowerCase("es");
@@ -157,7 +169,7 @@ export function CandidatesPage() {
 
   const filtered = useMemo(() => {
     return getCandidateDirectoryRows(entries)
-      .sort((a, b) => Number(b.id) - Number(a.id))
+      .sort(compareLatestApplications)
       .filter((e) => {
         if (filters.matchMin !== undefined && filters.matchMin !== "") {
           const match = e.vacancies[0]?.matchPercent;
@@ -242,19 +254,23 @@ export function CandidatesPage() {
       )}
 
       {/* Filters */}
-      <FilterBar
-        search={{
-          value: filters.search,
-          onChange: (value) => setFilters((f) => ({ ...f, search: value })),
-          placeholder: "Buscar candidato, carrera, tecnología…",
-        }}
-      >
-        <Combobox
-          valueKey="id"
-          aria-label="Filtrar por tecnología"
-          placeholder="Tecnología"
-          emptyValueShowsPlaceholder
-          clearSearchOnOpen
+      <FilterBar className="items-end">
+        <div className="flex min-w-[220px] flex-1 flex-col gap-1">
+          <label htmlFor="candidate-search" className="text-xs font-medium text-ink-muted">Buscar candidato</label>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-subtle" />
+            <Input id="candidate-search" type="search" className="pl-9"
+              placeholder="Buscar candidato, carrera, tecnología…"
+              value={filters.search}
+              onChange={(event) => {
+                const value = event.target.value.normalize("NFC").replace(/[^\p{L}\p{N} .]/gu, "");
+                setFilters((f) => ({ ...f, search: value }));
+              }} />
+          </div>
+        </div>
+        <CandidateFilter
+          title="Tecnología"
+          ariaLabel="Filtrar por tecnología"
           className="w-auto min-w-[190px]"
           value={filters.technology ?? ""}
           onChange={(value) =>
@@ -263,12 +279,9 @@ export function CandidatesPage() {
           options={[{ id: "", label: "Todas" }, ...availableTechnologies]}
         />
 
-        <Combobox
-          valueKey="id"
-          aria-label="Filtrar por carrera"
-          placeholder="Carrera"
-          emptyValueShowsPlaceholder
-          clearSearchOnOpen
+        <CandidateFilter
+          title="Carrera"
+          ariaLabel="Filtrar por carrera"
           className="w-auto min-w-[170px]"
           value={filters.career ?? ""}
           onChange={(value) =>
@@ -280,12 +293,9 @@ export function CandidatesPage() {
           ]}
         />
 
-        <Combobox
-          valueKey="id"
-          aria-label="Filtrar por vacante postulada"
-          placeholder="Vacante postulada"
-          emptyValueShowsPlaceholder
-          clearSearchOnOpen
+        <CandidateFilter
+          title="Vacante postulada"
+          ariaLabel="Filtrar por vacante postulada"
           className="w-auto min-w-[190px]"
           value={filters.vacancyId ?? ""}
           onChange={(value) =>
@@ -297,12 +307,9 @@ export function CandidatesPage() {
           ]}
         />
 
-        <Combobox
-          valueKey="id"
-          aria-label="Filtrar por estado"
-          placeholder="Estado"
-          emptyValueShowsPlaceholder
-          clearSearchOnOpen
+        <CandidateFilter
+          title="Estado"
+          ariaLabel="Filtrar por estado"
           className="w-auto min-w-[140px]"
           value={filters.status}
           onChange={(value) => setFilters((f) => ({ ...f, status: value }))}
@@ -313,13 +320,13 @@ export function CandidatesPage() {
           ]}
         />
 
-        <Combobox
-          aria-label="Filtrar por ciudad"
-          placeholder="Ciudad"
+        <CandidateFilter
+          title="Ciudad"
+          ariaLabel="Filtrar por ciudad"
           className="w-auto min-w-[170px]"
           value={filters.city ?? ""}
           onChange={(city) => setFilters((f) => ({ ...f, city }))}
-          options={cities}
+          options={[{ id: "", label: "Todas" }, ...cities.map((city) => ({ id: city.label, label: city.label }))]}
         />
 
         <SalaryRangeFilter
@@ -328,14 +335,15 @@ export function CandidatesPage() {
           onChange={(range) => setFilters((f) => ({ ...f, ...range }))}
         />
 
-        <div className="relative w-[120px]">
+        <div className="flex w-[120px] flex-col gap-1">
+          <label htmlFor="candidate-match" className="text-xs font-medium text-ink-muted">Match mínimo (%)</label>
           <Input
+            id="candidate-match"
+            placeholder="Ej. 80"
             type="text"
             inputMode="numeric"
             aria-label="Filtrar por match mínimo"
-            placeholder="Match"
             value={filters.matchMin ?? ""}
-            className="pr-8"
             onChange={(event) => {
               const value = event.target.value;
               if (value === "" || (/^\d+$/.test(value) && Number(value) <= 100)) {
@@ -343,7 +351,6 @@ export function CandidatesPage() {
               }
             }}
           />
-          <span aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ink-muted">%</span>
         </div>
 
         {hasActiveFilters && (
@@ -360,6 +367,7 @@ export function CandidatesPage() {
       </FilterBar>
 
       <CandidatesTable
+        additionalColumns={applicationDateColumns}
         technology={filters.technology}
         addingCandidateId={addingCandidateId}
         isAddingToTalentPool={addToTalentPoolMutation.isPending}

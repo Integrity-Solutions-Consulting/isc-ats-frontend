@@ -25,7 +25,7 @@ export function RoleList({ roles, selectedId, totalPerms, onSelect }: {
             <div className="flex items-center gap-2">
               <p className="flex-1 truncate text-sm font-medium text-ink">{role.name}</p>
               {role.isSystem && (
-                <span className="rounded border border-border px-1 text-[10px] text-ink-subtle">
+                <span className="shrink-0 text-[10px] text-ink-subtle">
                   sistema
                 </span>
               )}

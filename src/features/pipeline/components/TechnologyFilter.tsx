@@ -24,11 +24,11 @@ export function TechnologyFilter({ options, selected, onChange, disabled }: Tech
 
   return (
     <div className="flex min-w-0 flex-col gap-2 sm:col-span-2">
-      <span id={`${id}-label`} className="text-xs font-medium text-ink-muted">Tecnologías y conocimientos</span>
+      <span id={`${id}-label`} className="text-sm font-medium text-ink-muted">Tecnologías y conocimientos</span>
       <Popover.Root onOpenChange={() => setQuery('')}>
         <Popover.Trigger asChild>
           <Button type="button" variant="outline" disabled={disabled} aria-labelledby={`${id}-label ${id}-value`} className="w-full justify-between bg-surface-2/50 font-normal shadow-none">
-            <span id={`${id}-value`}>{selected.length ? `${selected.length} seleccionados` : 'Seleccionar'}</span>
+            <span id={`${id}-value`} className={selected.length ? undefined : 'text-ink-subtle'}>{selected.length ? `${selected.length} seleccionados` : 'Tecnologías y conocimientos'}</span>
             <ChevronDown className="size-4" aria-hidden="true" />
           </Button>
         </Popover.Trigger>
