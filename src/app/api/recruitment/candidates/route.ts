@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { backendGet, backendErrorResponse } from "@/lib/backendFetch";
+import { backendGetAllPages } from "@/lib/backendPages";
 import type {
   Candidate,
   CandidateDirectoryEntry,
@@ -42,15 +43,13 @@ interface BackendDirectoryCandidate extends BackendCandidate {
   is_in_talent_pool: boolean;
   talent_pool_id: number | null;
   applied_vacancies: {
+    application_id?: number | null;
+    applied_at?: string;
+    salary_expectation?: number | string | null;
     id: number;
     title: string;
     match_score: number | string | null;
   }[];
-}
-
-interface BackendDirectoryPage {
-  items: BackendDirectoryCandidate[];
-  total: number;
 }
 
 /** `null` stays `null` â€” undeclared experience is unknown, not zero. */
@@ -111,32 +110,39 @@ export async function GET(request: NextRequest) {
     const view = searchParams.get("view");
 
     if (view === "directory") {
-      // The directory already enriches candidates with applications and talent
-      // pool membership. Its maximum page size is 100; load every page so local
-      // filters and their options include the complete directory.
-      const candidates: BackendDirectoryCandidate[] = [];
-      for (let page = 1; ; page++) {
-        const data = await backendGet<BackendDirectoryPage>(
-          `/recruitment/candidates/directory?page=${page}&size=100&include_inactive=true`,
-        );
-        candidates.push(...data.items);
-        if (candidates.length >= data.total) break;
-        if (data.items.length === 0) {
-          throw new Error(
-            "La API devolviÃ³ una pÃ¡gina vacÃ­a antes de completar el directorio.",
-          );
-        }
-      }
+      // Keep the complete filter/navigation dataset, but scope vacancy views
+      // at the backend and fetch the remaining pages with bounded concurrency.
+      const params = new URLSearchParams({ include_inactive: "true" });
+      const vacancyId = searchParams.get("vacancyId");
+      if (vacancyId && /^\d+$/.test(vacancyId)) params.set("vacancy_id", vacancyId);
+      const candidates = await backendGetAllPages<BackendDirectoryCandidate>(
+        `/recruitment/candidates/directory?${params}`,
+        { pageSize: 1000 },
+      );
 
       // Application ids keep each row and its analysis tied to the same submission.
       const applications: { id: number; candidate_id: number; vacancy_id: number; vacancy_name?: string | null; applied_at?: string; match_score: string | number | null; salary_expectation?: string | number | null; is_active: boolean }[] = [];
-      for (let page = 1; ; page++) {
-        const result = await backendGet<{ items: typeof applications; total: number }>(
-          `/recruitment/applications?page=${page}&size=100`,
-        );
-        applications.push(...result.items);
-        if (applications.length >= result.total) break;
-        if (!result.items.length) throw new Error("No se pudieron cargar todas las postulaciones.");
+      const enriched = candidates.every((candidate) =>
+        candidate.applied_vacancies.every((vacancy) => vacancy.application_id != null),
+      );
+      if (enriched) {
+        for (const candidate of candidates) {
+          for (const vacancy of candidate.applied_vacancies) {
+            applications.push({
+              id: vacancy.application_id!, candidate_id: candidate.candidate_id,
+              vacancy_id: vacancy.id, vacancy_name: vacancy.title,
+              applied_at: vacancy.applied_at, match_score: vacancy.match_score,
+              salary_expectation: vacancy.salary_expectation, is_active: true,
+            });
+          }
+        }
+        // Preserve the original application ordering used by detail navigation.
+        applications.sort((a, b) => a.id - b.id);
+      } else {
+        // Rolling deployments remain compatible with the previous backend.
+        applications.push(...await backendGetAllPages<(typeof applications)[number]>(
+          "/recruitment/applications",
+        ));
       }
       const byCandidate = new Map<number, typeof applications>();
       for (const application of applications) {

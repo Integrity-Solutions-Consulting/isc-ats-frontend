@@ -10,7 +10,7 @@ export async function listUsers(): Promise<PortalUser[]> {
 
 export async function listRoles(): Promise<{ id: number; name: string }[]> {
   try {
-    const res = await fetch('/api/auth/roles', { cache: 'no-store' });
+    const res = await fetch('/api/auth/roles?scope=options', { cache: 'no-store' });
     if (!res.ok) return [];
     const data = await res.json() as { id: string; name: string }[];
     // BFF /api/auth/roles returns id as string — convert back for the form

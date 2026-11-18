@@ -17,7 +17,7 @@ import type {
   TopCandidate,
 } from '../types';
 
-// ─── KPI Card ────────────────────────────────────────────────────────────────
+// ─── KPI Card ────────────────────────────────────────────────────────────────────
 
 function KPICard({ kpi }: { kpi: DashboardKPI }) {
   return (

@@ -29,15 +29,15 @@ export function useVacancy(id: string) {
   });
 }
 
-export function useVacancyCatalogs() {
+export function useVacancyCatalogs(scope?: "list") {
   return useQuery({
-    queryKey: vacancyKeys.catalogs,
-    queryFn: getVacancyCatalogs,
+    queryKey: scope ? [...vacancyKeys.catalogs, scope] : vacancyKeys.catalogs,
+    queryFn: () => getVacancyCatalogs(scope),
     // Fresh on every open: this catalog aggregates clients, departments,
     // contacts, processes and parameters that are managed in other screens, so
     // caching it would show a stale combo right after one of them is created.
     // The endpoint is cheap and the form is opened occasionally — refetch wins.
-    staleTime: 0,
+    staleTime: scope === "list" ? 60_000 : 0,
   });
 }
 

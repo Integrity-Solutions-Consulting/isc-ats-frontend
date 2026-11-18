@@ -4,6 +4,8 @@ import { Inter } from "next/font/google";
 import "../../globals.css";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { CookieConsentBanner } from "@/features/cookies/CookieConsentBanner";
+import { SeasonalBrandingProvider } from "@/providers/SeasonalBrandingProvider";
+import { isChristmasSeason } from "@/shared/branding/christmasSeason";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -27,7 +29,9 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full">
-        <QueryProvider>{children}</QueryProvider>
+        <SeasonalBrandingProvider initialActive={isChristmasSeason()}>
+          <QueryProvider>{children}</QueryProvider>
+        </SeasonalBrandingProvider>
         <CookieConsentBanner />
       </body>
     </html>

@@ -5,6 +5,24 @@ import { GET } from "./route";
 
 describe("Candidate directory application identities", () => {
   beforeEach(() => vi.clearAllMocks());
+  it("uses enriched submissions without downloading the applications collection", async () => {
+    backendGet.mockResolvedValue({ total: 1, items: [{
+      candidate_id: 7, first_name: "Ana", last_name: "Perez", is_active: true,
+      applied_vacancies: [
+        { application_id: 12, id: 4, title: "Developer", match_score: null, salary_expectation: null },
+        { application_id: 11, id: 4, title: "Developer", match_score: "70.4", salary_expectation: "1200.50", applied_at: "2026-11-01T10:00:00Z" },
+      ],
+    }] });
+    const response = await GET(new Request("http://localhost/api/recruitment/candidates?view=directory&vacancyId=4") as import("next/server").NextRequest);
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data[0].vacancies).toMatchObject([
+      { applicationId: "11", vacancyId: "4", matchPercent: 70, salaryExpectation: 1200.5 },
+      { applicationId: "12", vacancyId: "4", matchPercent: null, salaryExpectation: null },
+    ]);
+    expect(backendGet).toHaveBeenCalledTimes(1);
+    expect(backendGet.mock.calls[0][0]).toContain("vacancy_id=4");
+  });
   it("uses each application's own score and id, including later pages", async () => {
     backendGet.mockImplementation(async (path: string) => {
       if (path.startsWith("/recruitment/candidates/directory")) return { total: 2, items: [

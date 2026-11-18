@@ -21,8 +21,13 @@ interface BackendPermission {
   module: string;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // User forms only need role names/ids, not all users and role permissions.
+    if (request.nextUrl.searchParams.get("scope") === "options") {
+      const roles = await backendGet<BackendPage<BackendRole>>("/auth/roles?size=100");
+      return NextResponse.json(roles.items.map((role) => ({ id: String(role.id), name: role.name })));
+    }
     const [rolesData, userCounts] = await Promise.all([
       backendGet<BackendPage<BackendRole>>("/auth/roles?size=100"),
       getRoleUserCounts(),

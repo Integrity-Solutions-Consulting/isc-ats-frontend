@@ -8,6 +8,7 @@ interface BackendTalentPoolRead {
   candidate_id: number;
   source_vacancy_id: number | null;
   source_vacancy_title?: string | null;
+  match_score?: number | string | null;
   is_active: boolean;
   created_at: string;
   first_name?: string | null;
@@ -24,22 +25,6 @@ interface BackendTalentPoolRead {
   avatar_file_id?: number | null;
   skills?: string[];
   tools?: string[];
-}
-
-interface BackendCandidateExpanded {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string | null;
-  career: string | null;
-  avatar_file_id: number | null;
-  is_active: boolean;
-}
-
-interface BackendVacancyListItem {
-  id: number;
-  vacancy_name: string;
 }
 
 interface BackendApplication {
@@ -81,24 +66,16 @@ export async function GET(request: NextRequest) {
     if (vacancyId) backendParams.set("source_vacancy_id", vacancyId);
     if (candidateId) backendParams.set("candidate_id", candidateId);
 
-    const [entries, candidates, vacancies, applications] =
-      await Promise.all([
-        backendGetAllPages<BackendTalentPoolRead>(
-          `/talent/talent-pool?${backendParams.toString()}`,
-        ),
-        backendGetAllPages<BackendCandidateExpanded>(
-          "/recruitment/candidates/expanded",
-        ),
-        backendGetAllPages<BackendVacancyListItem>(
-          "/recruitment/vacancies/expanded",
-        ),
-        backendGetAllPages<BackendApplication>(
-          "/recruitment/applications",
-        ),
-      ]);
-
-    const candidateMap = new Map(candidates.map((c) => [c.id, c]));
-    const vacancyMap = new Map(vacancies.map((v) => [v.id, v]));
+    // Candidate and vacancy details are already resolved by the backend.
+    const entries = await backendGetAllPages<BackendTalentPoolRead>(
+      `/talent/talent-pool?${backendParams.toString()}`,
+    );
+    const needsLegacyScores = entries.some((entry) =>
+      entry.source_vacancy_id != null && !("match_score" in entry),
+    );
+    const applications = needsLegacyScores
+      ? await backendGetAllPages<BackendApplication>("/recruitment/applications")
+      : [];
 
     // Map candidateId + vacancyId to match_score
     const appMatchMap = new Map<string, number>();
@@ -113,31 +90,25 @@ export async function GET(request: NextRequest) {
 
     const resolvedEntries = entries
       .map((entry) => {
-        const candidate = candidateMap.get(entry.candidate_id);
+        const firstName = entry.first_name ?? "";
+        const lastName = entry.last_name ?? "";
 
-        const firstName = entry.first_name ?? candidate?.first_name ?? "";
-        const lastName = entry.last_name ?? candidate?.last_name ?? "";
-
-        // If neither the enriched entry nor the expanded candidate list has the candidate, skip
-        if (!firstName && !lastName && !candidate) return null;
+        if (!firstName && !lastName) return null;
 
         const initials =
           ((firstName[0] ?? "") + (lastName[0] ?? "")).toUpperCase() || "C";
-        const vacancy = entry.source_vacancy_id
-          ? vacancyMap.get(entry.source_vacancy_id)
-          : null;
-        const vacancyTitle =
-          entry.source_vacancy_title ||
-          (vacancy ? vacancy.vacancy_name : "General");
+        const vacancyTitle = entry.source_vacancy_title || "General";
 
         const matchPercent = entry.source_vacancy_id
-          ? (appMatchMap.get(
+          ? ("match_score" in entry
+            ? entry.match_score == null ? null : Math.round(Number(entry.match_score))
+            : appMatchMap.get(
               `${entry.candidate_id}:${entry.source_vacancy_id}`,
             ) ?? null)
           : null;
 
         const avatarFileId =
-          entry.avatar_file_id ?? candidate?.avatar_file_id ?? undefined;
+          entry.avatar_file_id ?? undefined;
 
         return {
           id: String(entry.id),
@@ -147,9 +118,9 @@ export async function GET(request: NextRequest) {
           avatarColor: AVATAR_COLORS[entry.candidate_id % AVATAR_COLORS.length],
           candidateAvatarFileId: avatarFileId,
           career:
-            entry.career ?? candidate?.career ?? "Sin carrera especificada",
-          phone: entry.phone ?? candidate?.phone ?? "Sin teléfono",
-          email: entry.email ?? candidate?.email ?? "",
+            entry.career ?? "Sin carrera especificada",
+          phone: entry.phone ?? "Sin teléfono",
+          email: entry.email ?? "",
           vacancyId: entry.source_vacancy_id
             ? String(entry.source_vacancy_id)
             : "",

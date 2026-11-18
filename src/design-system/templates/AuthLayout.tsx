@@ -1,17 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { cn } from "@/shared/utils";
+import styles from "./AuthSnow.module.css";
+import { useChristmasSeason } from "@/providers/SeasonalBrandingProvider";
+import { getBrandAssets } from "@/shared/branding/christmasSeason";
 
 const CAROUSEL_IMAGES = [
-  "/brand/carousel_1.jpeg",
-  "/brand/carousel_2.jpeg",
-  "/brand/carousel_3.jpeg",
-  "/brand/carousel_4.jpeg",
-  "/brand/carousel_5.jpeg",
+  "/brand/carousel_0_1.jpeg",
+  "/brand/carousel_2_2.jpeg",
+  "/brand/carousel_1_1.jpeg",
+  "/brand/carousel_3_3.jpeg",
+  "/brand/carousel_4_4.jpeg",
+  "/brand/carousel5_5.jpeg",
+  "/brand/carousel_6_6.jpeg",
+  "/brand/carousel_7_7.jpeg",
+  "/brand/carousel_9_9.jpeg",
 ];
 
 interface AuthLayoutProps {
@@ -20,6 +26,7 @@ interface AuthLayoutProps {
 
 /** Split-screen auth shell: form column on the left, brand panel on the right. */
 export function AuthLayout({ children }: AuthLayoutProps) {
+  const christmas = useChristmasSeason();
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -46,13 +53,13 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
         {/* Large centered logo */}
         <div className="flex justify-center mt-4 mb-0">
-          <Link href="/empleos" className="transition-opacity hover:opacity-90">
+          <Link href="/empleos" className={christmas ? "block w-[280px] max-w-full transition-opacity hover:opacity-90 sm:w-[320px]" : "transition-opacity hover:opacity-90"}>
             <Image
-              src="/brand/LogoBlanco.svg"
+              src={getBrandAssets(christmas).white}
               alt="Integrity Solutions"
-              width={200}
-              height={65}
-              className="h-[65px] w-auto select-none"
+              width={christmas ? 320 : 200}
+              height={christmas ? 136 : 65}
+              className={christmas ? "h-auto w-full select-none" : "h-[65px] w-auto select-none"}
               priority
             />
           </Link>
@@ -87,6 +94,24 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
         {/* Dark gradient overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-transparent" />
+
+        {christmas && <div className={styles.snow} aria-hidden="true">
+          {Array.from({ length: 20 }, (_, i) => (
+            <span
+              key={i}
+              className={styles.flake}
+              style={{
+                left: `${(i * 37 + 7) % 100}%`,
+                width: `${3 + (i % 3)}px`,
+                height: `${3 + (i % 3)}px`,
+                opacity: 0.3 + (i % 4) * 0.08,
+                animationDuration: `${14 + (i % 7) * 2}s`,
+                animationDelay: `${-i * 3.7}s`,
+                "--snow-drift": `${i % 2 ? -24 : 24}px`,
+              } as CSSProperties}
+            />
+          ))}
+        </div>}
 
         <div className="relative flex h-full flex-col justify-end p-12">
           <h2 className="max-w-md text-3xl font-bold leading-tight text-white drop-shadow-md">

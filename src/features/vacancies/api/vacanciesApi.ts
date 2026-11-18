@@ -32,9 +32,9 @@ export async function getVacancy(id: string): Promise<Vacancy | null> {
 
 // ── Catalogs ──────────────────────────────────────────────────────────────────
 
-export async function getVacancyCatalogs(): Promise<MockCatalogs> {
+export async function getVacancyCatalogs(scope?: "list"): Promise<MockCatalogs> {
   try {
-    const res = await fetch("/api/catalogs/vacancies", { cache: "no-store" });
+    const res = await fetch(scope ? "/api/catalogs/vacancies?scope=list" : "/api/catalogs/vacancies", { cache: "no-store" });
     if (res.ok) return res.json() as Promise<MockCatalogs>;
   } catch {}
   return {
