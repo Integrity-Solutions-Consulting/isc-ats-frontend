@@ -20,6 +20,7 @@ interface ComboboxProps {
   "aria-invalid"?: boolean;
   "aria-label"?: string;
   disabled?: boolean;
+  readOnly?: boolean;
   valueKey?: "label" | "id";
   /** En modo id, muestra el placeholder cuando el valor es vacío. */
   emptyValueShowsPlaceholder?: boolean;
@@ -44,6 +45,7 @@ export function Combobox({
   "aria-invalid": ariaInvalid,
   "aria-label": ariaLabel,
   disabled,
+  readOnly = false,
   valueKey = "label",
   emptyValueShowsPlaceholder = false,
   clearSearchOnOpen = false,
