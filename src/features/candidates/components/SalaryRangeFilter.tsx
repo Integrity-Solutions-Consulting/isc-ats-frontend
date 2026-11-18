@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useId } from "react";
 import { Input } from "@/design-system/ui/input";
 
 export const salaryValue = (value?: string): number | null =>
@@ -11,12 +12,14 @@ export function SalaryRangeFilter({ from = "", to = "", onChange }: {
   to?: string;
   onChange: (range: { salaryFrom: string; salaryTo: string }) => void;
 }) {
+  const id = useId();
   const minimum = salaryValue(from);
   const maximum = salaryValue(to);
   const invalid = minimum !== null && maximum !== null && minimum > maximum;
 
   return (
     <fieldset aria-label="Aspiración salarial" className="flex flex-col gap-1">
+      <legend className="sr-only">Aspiración salarial</legend>
       <div className="flex items-center gap-2">
         {(["from", "to"] as const).map((bound) => {
           const value = bound === "from" ? from : to;
@@ -34,8 +37,11 @@ export function SalaryRangeFilter({ from = "", to = "", onChange }: {
           return (
             <div key={bound} className="flex items-center gap-2">
               {bound === "to" && <span aria-hidden="true" className="text-ink-muted">-</span>}
-              <div className="relative w-[140px]">
+              <div className="flex w-[140px] flex-col gap-1">
+              <label htmlFor={`${id}-${bound}`} className="text-xs font-medium text-ink-muted">Salario {label.toLowerCase()} ($)</label>
+              <div className="relative">
               <Input
+                id={`${id}-${bound}`}
                 type="text"
                 role="spinbutton"
                 inputMode="decimal"
@@ -45,12 +51,12 @@ export function SalaryRangeFilter({ from = "", to = "", onChange }: {
                 aria-valuenow={salaryValue(value) ?? undefined}
                 aria-invalid={invalid}
                 aria-describedby={invalid ? "salary-range-error" : undefined}
-                placeholder={`${label} $`}
-                value={value}
+                placeholder={bound === "from" ? "Ej. 1000.00" : "Ej. 2000.00"}
+                value={value.replace(",", ".")}
                 className={`pr-7 ${invalid ? "border-danger" : ""}`}
                 onChange={(event) => {
                   const next = event.target.value;
-                  if (/^\d*(?:[.,]\d{0,2})?$/.test(next) && (next === "" || /\d/.test(next))) update(next);
+                  if (/^\d*(?:\.\d{0,2})?$/.test(next) && (next === "" || /\d/.test(next))) update(next);
                 }}
                 onKeyDown={(event) => {
                   if (event.key === "ArrowUp" || event.key === "ArrowDown") {
@@ -68,6 +74,7 @@ export function SalaryRangeFilter({ from = "", to = "", onChange }: {
                     {direction === 1 ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
                   </button>
                 ))}
+              </div>
               </div>
               </div>
             </div>

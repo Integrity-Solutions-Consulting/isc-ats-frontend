@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within, cleanup } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { CandidatesPage } from "./CandidatesPage";
 import { useCandidateDirectoryNavStore } from "@/shared/stores/candidateDirectoryNavStore";
 import type { CandidateDirectoryEntry } from "../types";
@@ -30,6 +31,20 @@ describe("Candidates directory rows", () => {
       { applicationId: "12", vacancyId: "4", vacancyTitle: "Developer", matchPercent: null },
     ] }];
   });
+  it("allows letters, numbers, spaces and dots in the main search, including when pasting", async () => {
+    const user = userEvent.setup();
+    render(<CandidatesPage />);
+    const search = screen.getByRole("searchbox", { name: "Buscar candidato" });
+    await user.type(search, "Ana. 123 ñá@*/");
+    expect(search).toHaveValue("Ana. 123 ñá");
+    await user.clear(search);
+    await user.paste("Jose\u0301@example.com*/ 123");
+    expect(search).toHaveValue("Joséexample.com 123");
+    expect(useCandidateDirectoryNavStore.getState().filters.search).toBe("Joséexample.com 123");
+    await user.clear(search);
+    await user.type(search, "Ana");
+    expect(candidateRows()).toHaveLength(2);
+  });
   it("renders separate rows for submissions to the same vacancy and opens the exact analysis", () => {
     render(<CandidatesPage />);
     const rows = candidateRows();
@@ -49,13 +64,35 @@ describe("Candidates directory rows", () => {
     expect(candidateRows()).toHaveLength(1);
     expect(screen.getByText("Sin postulaciones")).toBeInTheDocument();
   });
+  it("shows each candidate's latest application in Ecuador time, newest first regardless of candidate id", () => {
+    directory.entries = [
+      { ...candidate, id: "99", candidateName: "Anterior", vacancies: [{ applicationId: "21", vacancyId: "4", vacancyTitle: "Developer", matchPercent: 80, appliedAt: "2026-11-01T12:00:00Z" }] },
+      { ...candidate, id: "1", candidateName: "Reciente", vacancies: [
+        { applicationId: "11", vacancyId: "4", vacancyTitle: "Developer", matchPercent: 80, appliedAt: "2026-11-10T12:00:00Z" },
+        { applicationId: "12", vacancyId: "4", vacancyTitle: "Developer", matchPercent: 90, appliedAt: "2026-11-18T03:00:00Z" },
+      ] },
+      { ...candidate, id: "100", candidateName: "Sin fecha", createdAt: "2026-12-01", vacancies: [] },
+    ];
+    render(<CandidatesPage />);
+    expect(screen.getByRole("columnheader", { name: "Última postulación" })).toBeInTheDocument();
+    const rows = candidateRows();
+    expect(within(rows[0]).getByText("Reciente")).toBeInTheDocument();
+    expect(within(rows[1]).getByText("Reciente")).toBeInTheDocument();
+    expect(within(rows[2]).getByText("Anterior")).toBeInTheDocument();
+    expect(rows[0].querySelector("time")).toHaveAttribute("datetime", "2026-11-18T03:00:00Z");
+    expect(within(rows[0]).getByText("17/11/2026")).not.toHaveTextContent("22:00");
+    expect(rows[3].querySelector("time")).toBeNull();
+    fireEvent.click(rows[0]);
+    expect(new URL(push.mock.calls[0][0], "http://localhost").searchParams.get("appId")).toBe("12");
+  });
   it("filters minimum match inclusively from 0 to 100 and resets the filter", () => {
     directory.entries = [{ ...candidate, vacancies: [0, 49, 50, 79, 80, 100, null].map((matchPercent, index) => ({
       applicationId: String(index + 1), vacancyId: "4", vacancyTitle: "Developer", matchPercent,
     })) }];
     const view = render(<CandidatesPage />);
     const input = screen.getByRole("textbox", { name: "Filtrar por match mínimo" });
-    expect(input).toHaveAttribute("placeholder", "Match");
+    expect(input).toHaveAttribute("placeholder", "Ej. 80");
+    expect(screen.getByText("Match mínimo (%)")).toBeInTheDocument();
     expect(candidateRows()).toHaveLength(7);
     for (const [value, count] of [["0", 6], ["50", 4], ["80", 2], ["100", 1]] as const) {
       fireEvent.change(input, { target: { value } });
@@ -103,22 +140,25 @@ describe("Candidate city and salary filters", () => {
       { ...candidate, id: "2", city: "Guayaquil", vacancies: [] },
     ];
   });
-  it("filters typed cities and allows selecting available cities", () => {
+  it("searches city options by typing and applies the selected city", () => {
     render(<CandidatesPage />);
     const city = screen.getByRole("combobox", { name: "Filtrar por ciudad" });
-    fireEvent.change(city, { target: { value: "quito" } });
-    expect(candidateRows()).toHaveLength(2);
-    fireEvent.change(city, { target: { value: "" } });
+    expect(city).not.toHaveAttribute("readonly");
+    expect(city).toHaveValue("");
+    expect(city).toHaveAttribute("placeholder", "Seleccionar ciudad");
     fireEvent.focus(city);
+    fireEvent.change(city, { target: { value: "guaya" } });
+    expect(screen.getByRole("option", { name: "Guayaquil" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Quito" })).not.toBeInTheDocument();
     fireEvent.mouseDown(screen.getByRole("option", { name: "Guayaquil" }));
     expect(candidateRows()).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
     expect(candidateRows()).toHaveLength(3);
     expect(city).toHaveValue("");
   });
-  it("filters each application inclusively using comma or point decimals and clears both bounds", () => {
+  it("filters each application inclusively using point decimals and clears both bounds", () => {
     render(<CandidatesPage />);
-    fireEvent.change(screen.getByRole("spinbutton", { name: "Aspiración salarial desde" }), { target: { value: "1200,50" } });
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Aspiración salarial desde" }), { target: { value: "1200.50" } });
     fireEvent.change(screen.getByRole("spinbutton", { name: "Aspiración salarial hasta" }), { target: { value: "1200.50" } });
     expect(candidateRows()).toHaveLength(1);
     fireEvent.click(candidateRows()[0]);
@@ -129,7 +169,9 @@ describe("Candidate city and salary filters", () => {
   it("rejects letters, negative amounts, malformed decimals and flags inverted ranges", () => {
     render(<CandidatesPage />);
     const from = screen.getByRole("spinbutton", { name: "Aspiración salarial desde" });
-    for (const value of ["abc", "1e3", "-1", "1,2.3", "12.345"]) {
+    expect(from).toHaveAttribute("placeholder", "Ej. 1000.00");
+    expect(screen.getByText("Salario desde ($)")).toBeInTheDocument();
+    for (const value of ["abc", "1e3", "-1", "1,2.3", "12.345", "1200,50", "$1200", "1+2", "10%", "."]) {
       fireEvent.change(from, { target: { value } });
       expect(from).toHaveValue("");
     }
