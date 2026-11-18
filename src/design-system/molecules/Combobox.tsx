@@ -25,6 +25,12 @@ interface ComboboxProps {
   emptyValueShowsPlaceholder?: boolean;
   /** En modo id, limpia la búsqueda al abrir sin cambiar la selección. */
   clearSearchOnOpen?: boolean;
+  /** Permite elegir opciones sin editar el texto. */
+  selectOnly?: boolean;
+  /** Limita la búsqueda a letras y espacios. */
+  lettersOnly?: boolean;
+  /** Permite letras, números, espacios y los separadores - _ /. */
+  limitedSearchCharacters?: boolean;
 }
 
 export function Combobox({
@@ -41,6 +47,9 @@ export function Combobox({
   valueKey = "label",
   emptyValueShowsPlaceholder = false,
   clearSearchOnOpen = false,
+  selectOnly = false,
+  lettersOnly = false,
+  limitedSearchCharacters = false,
 }: ComboboxProps) {
   const isIdMode = valueKey === "id";
   const labelForOption = (option: ComboboxOption) =>
@@ -54,6 +63,7 @@ export function Combobox({
     : value;
 
   const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [query, setQuery] = useState(selectedLabel);
   const [prevSelectedLabel, setPrevSelectedLabel] = useState(selectedLabel);
   if (selectedLabel !== prevSelectedLabel) {
@@ -95,6 +105,7 @@ export function Combobox({
 
   const openList = () => {
     if (isIdMode && clearSearchOnOpen) setQuery("");
+    if (selectOnly) setActiveIndex(Math.max(0, options.findIndex((option) => option.id === value)));
     setOpen(true);
   };
 
@@ -118,6 +129,7 @@ export function Combobox({
         type="text"
         autoComplete="off"
         disabled={disabled}
+        readOnly={selectOnly}
         value={query}
         placeholder={open && isIdMode && clearSearchOnOpen ? "" : placeholder}
         role="combobox"
@@ -126,10 +138,16 @@ export function Combobox({
         aria-controls={listboxId}
         aria-invalid={ariaInvalid}
         aria-label={ariaLabel}
-        aria-autocomplete="list"
+        aria-autocomplete={selectOnly ? "none" : "list"}
+        aria-activedescendant={selectOnly && open && filtered[activeIndex] ? `${listboxId}-option-${activeIndex}` : undefined}
         onChange={(event) => {
-          setQuery(event.target.value);
-          if (!isIdMode) onChange(event.target.value);
+          const nextQuery = lettersOnly
+            ? event.target.value.replace(/[^\p{L}\p{M} ]/gu, "")
+            : limitedSearchCharacters
+              ? event.target.value.replace(/[^\p{L}\p{M}\p{N} _/-]/gu, "")
+              : event.target.value;
+          setQuery(nextQuery);
+          if (!isIdMode) onChange(nextQuery);
           setOpen(true);
         }}
         onFocus={() => {
@@ -154,10 +172,17 @@ export function Combobox({
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             closeList();
-          } else if (event.key === "Enter") {
+          } else if (selectOnly && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+            event.preventDefault();
+            if (!open) openList();
+            else setActiveIndex((index) => Math.max(0, Math.min(filtered.length - 1, index + (event.key === "ArrowDown" ? 1 : -1))));
+          } else if (event.key === "Enter" || (selectOnly && event.key === " ")) {
             if (open && filtered.length > 0) {
               event.preventDefault();
-              selectOption(filtered[0]);
+              selectOption(filtered[selectOnly ? activeIndex : 0]);
+            } else if (selectOnly) {
+              event.preventDefault();
+              openList();
             } else {
               closeList();
             }
@@ -180,13 +205,14 @@ export function Combobox({
           className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-border bg-surface py-1 shadow-lg"
         >
           {filtered.length > 0 ? (
-            filtered.map((option) => {
+            filtered.map((option, index) => {
               const selected = isIdMode
                 ? value === option.id
                 : value === option.label;
               return (
                 <li
                   key={option.id}
+                  id={`${listboxId}-option-${index}`}
                   role="option"
                   aria-selected={selected}
                   onMouseDown={(event) => {
@@ -196,6 +222,7 @@ export function Combobox({
                   className={cn(
                     "cursor-pointer px-3 py-2 text-sm text-ink hover:bg-surface-2",
                     selected && "bg-primary-50 font-medium text-primary-700",
+                    selectOnly && activeIndex === index && "bg-surface-2",
                   )}
                 >
                   {option.label}

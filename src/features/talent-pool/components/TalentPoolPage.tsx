@@ -290,13 +290,19 @@ export function TalentPoolPage() {
 
       {/* Filters */}
       <FilterBar
+        className="items-end"
         search={{
+          label: "Buscar",
           value: filters.search,
-          onChange: (value) => setFilters((f) => ({ ...f, search: value })),
+          onChange: (value) => setFilters((f) => ({ ...f, search: value.replace(/[^\p{L}\p{M}\p{N} _/-]/gu, "") })),
           placeholder: "Buscar candidato, carrera, tecnología…",
         }}
       >
+        <div>
+        <label htmlFor="talent-technology" className="mb-1 block text-sm font-medium text-ink-muted">Tecnología</label>
         <Combobox
+          id="talent-technology"
+          limitedSearchCharacters
           valueKey="id"
           aria-label="Filtrar por tecnología"
           placeholder="Tecnología"
@@ -309,8 +315,13 @@ export function TalentPoolPage() {
           }
           options={[{ id: "", label: "Todas" }, ...availableTechnologies]}
         />
+        </div>
 
+        <div>
+        <label htmlFor="talent-career" className="mb-1 block text-sm font-medium text-ink-muted">Carrera</label>
         <Combobox
+          id="talent-career"
+          limitedSearchCharacters
           valueKey="id"
           aria-label="Filtrar por carrera"
           placeholder="Carrera"
@@ -326,8 +337,13 @@ export function TalentPoolPage() {
             ...careers.map((c) => ({ id: c, label: c })),
           ]}
         />
+        </div>
 
+        <div>
+        <label htmlFor="talent-vacancy" className="mb-1 block text-sm font-medium text-ink-muted">Vacante de origen</label>
         <Combobox
+          id="talent-vacancy"
+          limitedSearchCharacters
           valueKey="id"
           aria-label="Filtrar por vacante de origen"
           placeholder="Vacante de origen"
@@ -343,13 +359,17 @@ export function TalentPoolPage() {
             ...vacancies.map(([id, title]) => ({ id, label: title })),
           ]}
         />
+        </div>
 
+        <div>
+        <label htmlFor="talent-status" className="mb-1 block text-sm font-medium text-ink-muted">Estado</label>
         <Combobox
+          id="talent-status"
+          selectOnly
           valueKey="id"
           aria-label="Filtrar por estado"
           placeholder="Estado"
           emptyValueShowsPlaceholder
-          clearSearchOnOpen
           className="w-auto min-w-[140px]"
           value={filters.status}
           onChange={(value) => setFilters((f) => ({ ...f, status: value }))}
@@ -359,6 +379,7 @@ export function TalentPoolPage() {
             { id: "inactive", label: "Inactivo" },
           ]}
         />
+        </div>
 
         {hasActiveFilters && (
           <Button

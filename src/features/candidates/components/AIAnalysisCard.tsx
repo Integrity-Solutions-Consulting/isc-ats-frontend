@@ -15,6 +15,12 @@ function tagDotClass(match: AITagMatch): string {
   return 'bg-ink-subtle';
 }
 
+const TAG_MEANING: Record<AITagMatch, string> = {
+  match: 'Requisito encontrado en el CV',
+  miss: 'Requisito no encontrado en el CV',
+  neutral: 'Presente en el CV, no requerido por la vacante',
+};
+
 // ─── Tag grid section ────────────────────────────────────────────────────────
 
 interface TagSectionProps {
@@ -39,8 +45,10 @@ function TagSection({ title, tags }: TagSectionProps) {
             >
               <span
                 className={cn('h-2 w-2 rounded-full shrink-0', tagDotClass(tag.match))}
+                aria-hidden="true"
               />
               {tag.label}
+              <span className="sr-only">: {TAG_MEANING[tag.match]}</span>
             </span>
           ))}
         </div>
@@ -129,6 +137,14 @@ export function AIAnalysisCard({ analysis }: AIAnalysisCardProps) {
       )}
 
       {/* Tag grids — 2×2 */}
+      <div aria-label="Significado de los colores" className="mb-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-ink-muted">
+        {(['match', 'miss', 'neutral'] as const).map((match) => (
+          <span key={match} className="flex items-center gap-1.5">
+            <span aria-hidden="true" className={cn('h-2 w-2 shrink-0 rounded-full', tagDotClass(match))} />
+            {TAG_MEANING[match]}
+          </span>
+        ))}
+      </div>
       <div className="grid grid-cols-2 gap-4">
         <TagSection title="Conocimientos" tags={analysis.skills} />
         <TagSection title="Herramientas" tags={analysis.tools} />

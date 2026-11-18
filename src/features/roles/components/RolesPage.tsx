@@ -240,8 +240,8 @@ export function RolesPage() {
       {/* Page header */}
       <div className="flex items-center gap-4">
         <h1 className="text-2xl font-bold text-ink">Roles y permisos</h1>
-        <Button size="sm" className="ml-auto" onClick={openCreateModal} disabled={createMutation.isPending}>
-          <Plus className="mr-1.5 size-4" />
+        <Button className="ml-auto" onClick={openCreateModal} disabled={createMutation.isPending}>
+          <Plus />
           Nuevo rol
         </Button>
       </div>

@@ -297,13 +297,18 @@ export function UsersPage() {
       )}
 
       <FilterBar
+        className="items-end"
         search={{
+          label: 'Buscar',
           value: search,
           onChange: (value) => { setSearch(value); setPage(0); },
           placeholder: 'Buscar por nombre o correo…',
         }}
       >
+        <div>
+        <label htmlFor="users-filter-role" className="mb-1 block text-sm font-medium text-ink-muted">Rol</label>
         <Combobox
+          id="users-filter-role"
           valueKey="id"
           aria-label="Filtrar por rol"
           className="w-auto min-w-[160px]"
@@ -314,7 +319,11 @@ export function UsersPage() {
             ...roleOptions.map((r) => ({ id: r, label: r })),
           ]}
         />
+        </div>
+        <div>
+        <label htmlFor="users-filter-status" className="mb-1 block text-sm font-medium text-ink-muted">Estado</label>
         <Combobox
+          id="users-filter-status"
           valueKey="id"
           aria-label="Filtrar por estado"
           className="w-auto min-w-[150px]"
@@ -326,6 +335,7 @@ export function UsersPage() {
             { id: 'inactive', label: 'Inactivo' },
           ]}
         />
+        </div>
       </FilterBar>
 
       <DataTable

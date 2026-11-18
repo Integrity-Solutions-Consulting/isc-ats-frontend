@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { Briefcase, Download, Loader2, Plus } from "lucide-react";
+import { Briefcase, Loader2, Plus } from "lucide-react";
 
 import { Button } from "@/design-system/ui/button";
 import { EmptyState } from "@/design-system/molecules/EmptyState";
@@ -48,10 +48,6 @@ export function VacanciesListPage() {
       <div className="flex items-end justify-between gap-4">
         <h1 className="text-2xl font-semibold text-ink">Vacantes</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" disabled>
-            <Download />
-            Exportar
-          </Button>
           {canCreate && (
             <Button asChild>
               <Link href={ROUTES.vacanteNueva}>

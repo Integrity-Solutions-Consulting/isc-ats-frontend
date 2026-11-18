@@ -11,6 +11,13 @@ const OPTIONS: ComboboxOption[] = [
 ];
 
 describe("Combobox", () => {
+  it("limits search to letters, numbers and permitted separators", async () => {
+    render(<Combobox options={OPTIONS} value="" onChange={vi.fn()} valueKey="id" limitedSearchCharacters />);
+    const input = screen.getByRole("combobox");
+    await userEvent.type(input, 'Árbol 12-_/!@');
+    expect(input).toHaveValue('Árbol 12-_/');
+  });
+
   it("renders the input element", () => {
     render(
       <Combobox options={OPTIONS} value="" onChange={vi.fn()} placeholder="Search..." />

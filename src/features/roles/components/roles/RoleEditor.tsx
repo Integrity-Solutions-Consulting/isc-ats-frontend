@@ -39,18 +39,20 @@ export function RoleEditor({
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Role name + description */}
-      <div className="flex items-end gap-4 border-b border-border bg-surface-2 p-5">
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-ink-muted">Nombre del rol</label>
+      <div className="flex min-h-[106px] flex-wrap items-end gap-4 border-b border-border bg-surface-2 p-5">
+        <div className="flex min-w-0 flex-col gap-1">
+          <label htmlFor="role-name" className="text-xs text-ink-muted">Nombre del rol</label>
           <Input
+            id="role-name"
             value={role.name}
             onChange={(e) => onUpdate({ name: e.target.value })}
             disabled={role.isSystem}
           />
         </div>
-        <div className="flex-1 flex flex-col gap-1">
-          <label className="text-xs text-ink-muted">Descripción</label>
+        <div className="flex min-w-[200px] flex-1 flex-col gap-1">
+          <label htmlFor="role-description" className="text-xs text-ink-muted">Descripción</label>
           <Input
+            id="role-description"
             value={role.description}
             onChange={(e) => onUpdate({ description: e.target.value })}
             disabled={role.isSystem}
@@ -78,6 +80,7 @@ export function RoleEditor({
         {canManageCatalogTypes && (
           <div className="mb-4 rounded-md border border-border bg-surface p-4">
             <p className="mb-3 text-sm font-semibold text-ink">Catálogos que puede crear/editar</p>
+            <p className="mb-3 text-xs text-ink-muted">Selecciona los tipos de catálogo que este rol puede crear o editar, según los permisos de Catálogos asignados en Organización.</p>
             <div className="flex flex-wrap gap-1.5">
               {CATALOG_TYPE_LABELS.map((type) => {
                 const checked = role.parameterTypes.has(type.key);

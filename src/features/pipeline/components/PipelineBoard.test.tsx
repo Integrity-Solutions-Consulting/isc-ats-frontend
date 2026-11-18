@@ -155,13 +155,16 @@ describe("Pipeline table", () => {
   it("filters by process stage, preserves it in profile links and clears it", () => {
     renderBoard([PERM.applicationsUpdate]);
     const status = screen.getByRole("combobox", { name: "Estado" });
-    fireEvent.change(status, { target: { value: "stage-2" } });
+    fireEvent.focus(status);
+    fireEvent.mouseDown(screen.getByRole("option", { name: "Entrevista" }));
     expect(screen.queryByText("Jane Doe")).not.toBeInTheDocument();
     expect(window.location.search).toContain("processStageId=stage-2");
-    fireEvent.change(status, { target: { value: "stage-1" } });
+    fireEvent.focus(status);
+    fireEvent.mouseDown(screen.getByRole("option", { name: "Por revisar" }));
     fireEvent.click(screen.getByText("Jane Doe"));
     expect(mocks.push).toHaveBeenCalledWith(expect.stringContaining("processStageId=stage-1"));
-    fireEvent.change(status, { target: { value: "rejected" } });
+    fireEvent.focus(status);
+    fireEvent.mouseDown(screen.getByRole("option", { name: "Rechazados" }));
     expect(screen.queryByText("Jane Doe")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
     expect(status).toHaveValue("");

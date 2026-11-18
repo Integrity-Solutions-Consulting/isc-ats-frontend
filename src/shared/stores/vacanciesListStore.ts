@@ -18,7 +18,7 @@ export const useVacanciesListStore = create<VacanciesListState>((set) => ({
     department: null,
     status: null,
     level: null,
-    isActiveFilter: "active",
+    isActiveFilter: "all",
   },
   setPage: (page) => set({ page }),
   setFilters: (patch) => set((state) => ({

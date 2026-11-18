@@ -1,8 +1,19 @@
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Info } from 'lucide-react';
+import { Popover } from 'radix-ui';
 import { cn } from '@/shared/utils';
 import { Card } from '@/design-system/ui/card';
 import { type ModuleGroup } from './permissions';
 import { moduleGranted } from './helpers';
+
+const MODULE_DESCRIPTIONS: Record<string, string> = {
+  recruitment: 'Controla las acciones disponibles sobre vacantes, candidatos, postulaciones y entrevistas.',
+  org: 'Controla la gestión de catálogos, clientes, contactos, procesos y plantillas.',
+  talent: 'Controla el acceso y las acciones sobre los registros del banco de talento.',
+  comms: 'Controla el acceso a notificaciones y registros de correo.',
+  storage: 'Controla las acciones disponibles sobre los archivos.',
+  ai: 'Controla el acceso al procesamiento de hojas de vida, imágenes promocionales y registros de uso de IA.',
+  auth: 'Controla la administración de usuarios, roles, permisos y accesos.',
+};
 
 export function PermissionModuleCard({
   mod,
@@ -27,6 +38,21 @@ export function PermissionModuleCard({
           {mod.label[0]}
         </span>
         <span className="flex-1 text-sm font-semibold text-ink">{mod.label}</span>
+        {MODULE_DESCRIPTIONS[mod.key] && (
+          <Popover.Root>
+            <Popover.Trigger asChild>
+              <button type="button" aria-label={`Información sobre ${mod.label}`} className="rounded text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">
+                <Info className="size-4" aria-hidden="true" />
+              </button>
+            </Popover.Trigger>
+            <Popover.Portal>
+              <Popover.Content sideOffset={6} className="z-50 w-72 max-w-[calc(100vw-2rem)] rounded-md border border-border bg-surface p-3 text-sm text-ink shadow-lg">
+                <p>{MODULE_DESCRIPTIONS[mod.key]}</p>
+                <p className="mt-2 text-xs text-ink-muted">Activa cada acción para concederla al rol. Guarda los cambios para aplicarlos.</p>
+              </Popover.Content>
+            </Popover.Portal>
+          </Popover.Root>
+        )}
         <button
           type="button"
           onClick={() => onToggleModule(mod, state !== 'all')}
